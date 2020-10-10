@@ -68,10 +68,8 @@ function initServer(db, dbMssql) {
     
     app.use(checkAuthenticated);
     
-    app.use(
-        "/api/v1/agent",
-        require("./routes/agentRoute")
-    );
+    app.use("/api/v1/agent", require("./routes/agentRoute"));
+    app.use("/api/v1/callType", require("./routes/callTypeRoute"));
 
     app.use("/", (req, res) => {
         
