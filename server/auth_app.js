@@ -68,13 +68,14 @@ function initServer(db, dbMssql) {
     
     app.use(checkAuthenticated);
     
-    app.use("/api/v1/agent", require("./routes/agentRoute"));
-    app.use("/api/v1/callType", require("./routes/callTypeRoute"));
-
-    app.use("/", (req, res) => {
-        
+    app.get("/", (req, res) => {
         res.json({message: "Welcome to Cisco API!"});
     });
+
+    app.use("/api/v1/agent", require("./routes/agentRoute"));
+    app.use("/api/v1/callType", require("./routes/callTypeRoute"));
+    app.use("/api/v1/reportTRCallType", require("./routes/reportTRCallTypeRoute"));
+
 
     app.use("*", (req, res, next) => {
         const err = new ResError(ERR_404.code, `Page ${ERR_404.message}`);
