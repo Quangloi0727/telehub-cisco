@@ -32,6 +32,6 @@ exports.getAll = async (db, dbMssql) => {
 
     return await dbMssql.query(_query);
   } catch (error) {
-    return error;
+    throw new Error(error);
   }
 };

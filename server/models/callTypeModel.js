@@ -24,6 +24,6 @@ FROM t_Call_Type`;
 
     return await dbMssql.query(_query);
   } catch (error) {
-    return error;
+    throw new Error(error);
   }
 };

@@ -39,7 +39,8 @@ exports.getAll = async (req, res, next) => {
         let db = req.app.locals.db;
         let dbMssql = req.app.locals.dbMssql;
 
-        const doc = await _model.getAll(db, dbMssql);
+        let query  = req.query;
+        const doc = await _model.getAll(db, dbMssql, query);
 
         if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
         // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
