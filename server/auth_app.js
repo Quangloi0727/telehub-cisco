@@ -18,11 +18,13 @@ const globalErrHandler = require("./controllers/errorController");
 const AppError = require("./utils/appError");
 const ResError = require("./utils/resError");
 
-function initServer(db) {
+function initServer(db, dbMssql) {
     const app = new express();
     // const initPassport = require("./auth/init");
     // write code middleware do something in HERE...
     app.locals.db = db;
+    app.locals.dbMssql = dbMssql;
+
     // for parsing application/x-www-form-urlencoded
     app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
     // app.use(express.bodyParser({limit: '50mb'}));
@@ -64,15 +66,19 @@ function initServer(db) {
 	// 	next()
     // })
     
-    app.use(checkAuthenticated)
-
+    app.use(checkAuthenticated);
+    
     app.use(
         "/api/v1/agent",
-        // checkAuthenticated,
         require("./routes/agentRoute")
     );
 
-    app.use("*", checkAuthenticated, (req, res, next) => {
+    app.use("/", (req, res) => {
+        
+        res.json({message: "Welcome to Cisco API!"});
+    });
+
+    app.use("*", (req, res, next) => {
         const err = new ResError(ERR_404.code, `Page ${ERR_404.message}`);
         next(err, req, res, next);
     });

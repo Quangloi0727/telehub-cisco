@@ -1,8 +1,10 @@
 {
   "cisco": {
-    "ipDB": "https://172.16.86.244",
-    "username": "ccadmin@bhs.local",
+    "user": "sa",
     "password": "Bhs24hs@123",
+    "server": "srv-ahd-a.bhs.local",
+    "database": "ins1_awdb",
+
     "auth": {
       "uid": "api",
       "pwd": "APIer@123",

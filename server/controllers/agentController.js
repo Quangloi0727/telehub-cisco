@@ -23,7 +23,7 @@ const {
 
 
 const {
-    FIELD_INTRO,
+    FIELD_AGENT,
     TYPE_NOTE,
 } = require('../helpers/constants');
 
@@ -34,13 +34,26 @@ const {
 const ResError = require('../utils/resError');
 const APIFeatures = require('../utils/apiFeatures');
 
-exports.getAllIntro = base.getAll(process.env.INTRO_COLLECTION);
-exports.getByIDIntro = base.getByID(process.env.INTRO_COLLECTION);
-exports.getDistinct = base.getDistinct(process.env.INTRO_COLLECTION);
-exports.getLastIndex = base.getLastIndex(process.env.INTRO_COLLECTION);
-exports.getByIDs = base.getByIDs(process.env.INTRO_COLLECTION);
+exports.getAll = async (req, res, next) => {
+    try {
+        let db = req.app.locals.db;
+        let dbMssql = req.app.locals.dbMssql;
 
-// base.create(process.env.INTRO_COLLECTION);
+        const doc = await _model.getAll(db, dbMssql);
+
+        if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+        // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+        console.log(doc.recordset.length);
+        res.status(SUCCESS_200.code).json({ data: doc });
+
+    } catch (error) {
+        next(error);
+    }
+}
+// exports.getByIDIntro = base.getByID(process.env.AGENT_COLLECTION);
+// exports.getByIDs = base.getByIDs(process.env.AGENT_COLLECTION);
+
+// base.create(process.env.AGENT_COLLECTION);
 
 exports.createIntro = async (req, res, next) => {
     try {
@@ -48,8 +61,8 @@ exports.createIntro = async (req, res, next) => {
         // let id = req.params.id;
         let body = req.body;
         // console.log(body);
-        let keyRequires = FIELD_INTRO.require;
-        let keyCheckEXISTS = FIELD_INTRO.checkExists;
+        let keyRequires = FIELD_AGENT.require;
+        let keyCheckEXISTS = FIELD_AGENT.checkExists;
 
         if (!body) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
@@ -57,7 +70,7 @@ exports.createIntro = async (req, res, next) => {
             const element = keyRequires[index];
 
             if (!body[element]) {
-                return next(new ResError(ERR_400.code, `${ERR_400.message_detail.missingKey} ${FIELD_INTRO.getName[element]}`), req, res, next);
+                return next(new ResError(ERR_400.code, `${ERR_400.message_detail.missingKey} ${FIELD_AGENT.getName[element]}`), req, res, next);
             }
         };
 
@@ -70,7 +83,7 @@ exports.createIntro = async (req, res, next) => {
         let keyNameExists = Object.keys(doc)[0];
         if (keyCheckEXISTS.includes(keyNameExists)) {
 
-            return next(new ResError(ERR_400.code, `${FIELD_INTRO.getName[keyNameExists]} ${body[keyNameExists]} ${ERR_400.message_detail.isExists}`), req, res, next);
+            return next(new ResError(ERR_400.code, `${FIELD_AGENT.getName[keyNameExists]} ${body[keyNameExists]} ${ERR_400.message_detail.isExists}`), req, res, next);
         }
 
         res.status(SUCCESS_200.code).json({ _id: doc.insertedId });
@@ -138,4 +151,4 @@ exports.download = async (req, res, next) => {
     }
 }
 
-exports.deleteIntro = base.delete(process.env.INTRO_COLLECTION);
+exports.deleteIntro = base.delete(process.env.AGENT_COLLECTION);

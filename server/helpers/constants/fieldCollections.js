@@ -155,7 +155,7 @@ module.exports = {
         checkExists: ["user_id"],
     },
 
-    FIELD_INTRO: {
+    FIELD_AGENT: {
         getName: {
             title: "Tiêu đề",
             content: "Nội dung",

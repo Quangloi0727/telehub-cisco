@@ -9,13 +9,7 @@ let pathFileConfig = path.normalize(path.join(__dirname, 'config', 'conf.json'))
 //  define val
 const port = process.env.PORT;
 const {
-    USER_COLLECTION,
-    NGHIDINH_COLLECTION,
-    DIEUKHOAN_COLLECTION,
-    INTRO_COLLECTION,
-    QA_COLLECTION,
-    NOTE_COLLECTION,
-    SETTING_COLLECTION,
+    AGENT_COLLECTION,
 } = process.env;
 
 global._rootPath = path.dirname(require.main.filename);
@@ -30,19 +24,21 @@ process.on('uncaughtException', err => {
     process.exit(1);
 });
 
-const { initDB } = require('./server/db/connection');
+const { initDB, initMssqlDB } = require('./server/db/connection');
 
 let connect = initDB();
-
+let _db;
 connect.then((db) => {
+    _db = db
+    // connect mssql cisco
+    return initMssqlDB();
+}).then((dbMssql) => {
 
-    const app = require('./server/auth_app')(db);
-
+    const app = require('./server/auth_app')(_db, dbMssql);
     app.listen(port, () => {
 
-        _logger.log('info', `Application Passport is running on port ${port}`);
+        _logger.log('info', `Application is running on port ${port}`);
     });
-
 }).catch((err) => {
     _logger.log('error', new AppError(err).get());
 });

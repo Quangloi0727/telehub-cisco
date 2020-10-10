@@ -1,8 +1,9 @@
 const { MongoClient } = require("mongodb");
+var sqlsv = require("mssql");
 
 const { DATABASE, DB_HOST, DB_PORT, DB_USER, DB_PASS } = process.env;
 
-initDB = async (
+let initDB = async (
     host = DB_HOST,
     port = DB_PORT,
     user = DB_USER,
@@ -26,7 +27,27 @@ function pathDB(host, port, database, user, pass) {
     return path;
 }
 
+
+let initMssqlDB = async () => {
+  try {
+    var { user, password, server, database } = _config.cisco;
+    // connect to your database
+    return await sqlsv.connect({
+      user,
+      password,
+      server,
+      database,
+      "options": {
+        "enableArithAbort": false, // ko hiểu, chỉ là thêm vào config mssql cho ko báo warning khi running
+      }
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
 module.exports = {
     initDB,
     pathDB,
+    initMssqlDB,
 };

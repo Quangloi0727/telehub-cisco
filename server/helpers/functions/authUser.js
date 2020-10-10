@@ -17,7 +17,7 @@ exports.checkAuthenticated = function(req, res, next) {
     if (token) {
 
         // verifies secret and checks exp
-        jwt.verify(token, _config.cisco.auth.secret, function(err, decoded) {
+        return jwt.verify(token, _config.cisco.auth.secret, function(err, decoded) {
             if (err) {
                 // log.info(MSG_LOG.AUTH_API.FAIL);
                 const err = new ResError(ERR_401.code, 'Failed to authenticate token.');
@@ -27,7 +27,7 @@ exports.checkAuthenticated = function(req, res, next) {
                 // log.info(MSG_LOG.AUTH_API.SUCCESS);
 
                 req.decoded = decoded;
-                next();
+                return next();
             }
         });
     } else {
@@ -39,14 +39,6 @@ exports.checkAuthenticated = function(req, res, next) {
         return next(err);
     }
 };
-// (r, res, next) => {
-//     const { sessionID } = req;
-//     // console.log(JSON.stringify({ sessionID, time: formatDate(Date.now()) }));
-//     _logger.log('info', `${req.baseUrl}, body: ${JSON.stringify(req.body)}`);
-//     if (req.isAuthenticated()) return next();
-//     const err = new ResError(ERR_401.code, `${ERR_401.message}`);
-//     return next(err);
-// };eq
 
 /**
  * Mã hóa mật khẩu dùng thuật toán SHA-256

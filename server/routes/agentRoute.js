@@ -4,21 +4,14 @@ let agentController = require('../controllers/agentController');
 
 router
     .route('/')
-    .get(agentController.getAllIntro)
-    .post(agentController.createIntro)
+    .get(agentController.getAll)
 
 // /**
 //  * Chỉ nhận params từ a-z 0-9 và có độ dài bằng 24
 //  */
 router
     .route('/:id([0-9a-f]{24})')
-    .get(agentController.getByIDIntro)
-
-router
-    .get('/last', agentController.getLast);
-
-router
-    .get('/download', agentController.download);
+    // .get(agentController.getByIDIntro)
 
 module.exports = router;
 
