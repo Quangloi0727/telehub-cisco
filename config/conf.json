@@ -1,0 +1,13 @@
+{
+  "cisco": {
+    "ipDB": "https://172.16.86.244",
+    "username": "ccadmin@bhs.local",
+    "password": "Bhs24hs@123",
+    "auth": {
+      "uid": "api",
+      "pwd": "APIer@123",
+      "secret": "eyJhbGciOi",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJhcGkiLCJwd2QiOiJBUEllckAxMjMifQ.zbcraPNh7IvmAFX0D2dBjVfRB_vRzkAJA6P3BU3dh2E"
+    }
+  }
+}
