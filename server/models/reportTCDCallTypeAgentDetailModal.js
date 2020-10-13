@@ -41,8 +41,8 @@ exports.getAll = async (db, dbMssql, query) => {
         ELSE 0 
         END
         ) missed
-        ,Max(DateTime) DateTime -- cuoc goi dai nhat
-     ,Max(AgentPeripheralNumber) AgentPeripheralNumber -- cuoc goi dai nhat
+     ,Max(DateTime) DateTime -- cuoc goi dai nhat
+     ,Max(AgentPeripheralNumber) _id -- cuoc goi dai nhat
 
 FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
 --INNER JOIN Agent
