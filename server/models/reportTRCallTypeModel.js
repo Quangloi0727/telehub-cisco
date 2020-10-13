@@ -7,6 +7,16 @@ const { DB_HOST, PORT, IP_PUBLIC } = process.env;
 const { FIELD_AGENT } = require("../helpers/constants");
 const { checkKeyValueExists } = require("../helpers/functions");
 
+/**
+ * db: 
+ * dbMssql:
+ * query: 
+ *   { startDate: '2020-10-13 00:00:00'
+ *   , endDate: '2020-10-13 23:59:59'
+ *   , callTypeID: '5014'
+ *    }
+ */
+
 exports.getAll = async (db, dbMssql, query) => {
   try {
     let { startDate, endDate, callTypeID } = query;

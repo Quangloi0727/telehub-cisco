@@ -75,6 +75,7 @@ function initServer(db, dbMssql) {
     app.use("/api/v1/agent", require("./routes/agentRoute"));
     app.use("/api/v1/callType", require("./routes/callTypeRoute"));
     app.use("/api/v1/reportTRCallType", require("./routes/reportTRCallTypeRoute"));
+    app.use("/api/v1/reportTCDCallTypeAgentDetail", require("./routes/reportTCDCallTypeAgentDetailRoute"));
 
 
     app.use("*", (req, res, next) => {
