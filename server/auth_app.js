@@ -1,6 +1,7 @@
 const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
+const favicon = require('serve-favicon');
 const cors = require("cors");
 
 const { pathDB } = require("./db/connection");
@@ -36,6 +37,8 @@ function initServer(db, dbMssql) {
     app.use(express.static("public"));
 
     app.use('/static', express.static("uploads"));
+
+    app.use(favicon(path.join(_rootPath, 'public', 'favicon.ico')))
 
     // const optionsCors = {
     //     origin: function (origin, callback) {
