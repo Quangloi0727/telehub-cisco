@@ -6,6 +6,10 @@ router
     .route('/')
     .get(_controller.getAll);
 
+router
+    .route('/byHourBlock')
+    .get(_controller.getByHourBlock);
+
 
 module.exports = router;
 
