@@ -40,6 +40,13 @@ exports.getAll = async (req, res, next) => {
         let dbMssql = req.app.locals.dbMssql;
 
         let query  = req.query;
+
+        if (
+            !query.startDate ||
+            !query.endDate ||
+            !query.callTypeID
+        ) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+        
         const doc = await _model.getAll(db, dbMssql, query);
 
         if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
