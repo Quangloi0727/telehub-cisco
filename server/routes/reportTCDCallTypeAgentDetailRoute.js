@@ -10,6 +10,9 @@ router
     .route('/byHourBlock')
     .get(_controller.getByHourBlock);
 
+router
+    .route('/detailAgent')
+    .get(_controller.getDetailAgent);
 
 module.exports = router;
 

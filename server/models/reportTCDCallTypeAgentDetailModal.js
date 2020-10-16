@@ -108,7 +108,7 @@ exports.getByHourBlock = async (db, dbMssql, query) => {
       DateTime >= '${startDate}'
       AND DateTime < '${endDate}'
       AND CallTypeID in (${callTypeQuery.join(",")})
-      and CallDisposition in (13, 6)
+      and CallDisposition in (13, 6) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
       AND SkillGroupSkillTargetID is not null
       AND AgentSkillTargetID is not null -- sau nay 
       AND TalkTime > 0
@@ -144,3 +144,178 @@ exports.getByHourBlock = async (db, dbMssql, query) => {
 // 		,DATEPART(MONTH, CallTypeReportingDateTime)
 // 		,DATEPART(YEAR, CallTypeReportingDateTime)
 //      `
+
+/**
+ * Paging:
+ *    0: query chi tiết dữ liệu theo trang
+ *    1: query tổng dữ liệu để phân trang
+ */
+
+exports.getDetailAgent = async (db, dbMssql, query) => {
+  try {
+    let { startDate, endDate, callTypeID, callTypeTranferID, pages, rows, paging, duration_g, wait_g, download } = query;
+    let callTypeQuery = [callTypeID];
+    let querySelect = "";
+    let queryCondition = "";
+    if (callTypeTranferID) {
+      callTypeQuery.push(callTypeTranferID);
+    }
+
+
+    if(paging == 1){
+      querySelect = `count(*) count`
+
+      if(duration_g) {
+        duration_g.forEach(item => {
+          querySelect += createChartConditions(item, "TalkTime")
+        });
+      }
+
+      if(wait_g) {
+        wait_g.forEach(item => {
+          querySelect += createChartConditions(item, "TalkTime")
+        });
+      }
+
+    }else {
+      querySelect = `[RecoveryKey]
+          --,[MRDomainID]
+          ,[AgentSkillTargetID]
+          ,[SkillGroupSkillTargetID]
+          ,[ServiceSkillTargetID]
+          ,[PeripheralID]
+          ,[RouteID]
+          ,[RouterCallKeyDay]
+          ,[RouterCallKey]
+        ,(
+        select 
+        MIN(TCDExtend.StartDateTimeUTC)
+        from [ins1_awdb].[dbo].[Termination_Call_Detail] as TCDExtend
+        where TCDExtend.RouterCallKey = TCD.RouterCallKey
+        and TCDExtend.RouterCallKeyDay = TCD.RouterCallKeyDay
+        )as FirstTimeCall
+        ,[StartDateTimeUTC]
+          ,[DateTime]
+          ,[PeripheralCallType]
+          ,[DigitsDialed]
+          ,[PeripheralCallKey]
+          ,[CallDisposition]
+          ,[NetworkTime]
+          ,[Duration]
+          ,[RingTime]
+          ,[DelayTime]
+          ,[TimeToAband]
+          ,[HoldTime]
+          ,[TalkTime]
+          ,[WorkTime]
+          --,[LocalQTime]
+          --,[BillRate]
+          --,[CallSegmentTime]
+          --,[ConferenceTime]
+          ,[Variable1]
+          ,[Variable2]
+          ,[Variable3]
+          ,[Variable4]
+          ,[Variable5]
+          ,[UserToUser]
+          ,[NewTransaction]
+          ,[RecoveryDay]
+          ,[TimeZone]
+          ,[NetworkTargetID]
+          ,[TrunkGroupID]
+          ,[DNIS]
+          ,[InstrumentPortNumber]
+          ,[AgentPeripheralNumber]
+          ,[ICRCallKey]
+          ,[ICRCallKeyParent]
+          ,[ICRCallKeyChild]
+          ,[Variable6]
+          ,[Variable7]
+          ,[Variable8]
+          ,[Variable9]
+          ,[Variable10]
+          ,[ANI]
+          ,[AnsweredWithinServiceLevel]
+          ,[Priority]
+          ,[Trunk]
+          ,[WrapupData]
+          ,[SourceAgentPeripheralNumber]
+          ,[SourceAgentSkillTargetID]
+          ,[CallDispositionFlag]
+          ,[RouterCallKeySequenceNumber]
+          ,[CED]
+          ,[CallTypeID]
+          ,[BadCallTag]
+          ,[ApplicationTaskDisposition]
+          ,[ApplicationData]
+          ,[NetQTime]
+          ,[DbDateTime]
+          ,[ECCPayloadID]
+          ,[CallTypeReportingDateTime]
+          ,[RoutedSkillGroupSkillTargetID]
+          ,[RoutedServiceSkillTargetID]
+          ,[RoutedAgentSkillTargetID]
+          ,[Originated]
+          ,[CallReferenceID]
+          ,[CallGUID]
+          ,[LocationParamPKID]
+          ,[LocationParamName]
+          ,[PstnTrunkGroupID]
+          ,[PstnTrunkGroupChannelNumber]
+          ,[NetworkSkillGroupQTime]
+          ,[EnterpriseQueueTime]
+          ,[ProtocolID]
+          ,[PrecisionQueueID]
+          ,[PrecisionQueueStepOrder]
+          ,[Attributes]`;
+
+          if(download === 0){
+            queryCondition = `ORDER BY DateTime DESC
+      OFFSET ${(pages - 1)*rows} ROWS FETCH NEXT ${rows} ROWS ONLY` 
+          }
+    }
+
+    let _query = `SELECT
+      ${querySelect}
+      FROM [ins1_awdb].[dbo].[Termination_Call_Detail] TCD
+      where 
+        DateTime >= '${startDate}'
+        AND DateTime < '${endDate}'
+        AND CallTypeID in (${callTypeQuery.join(",")})
+        and CallDisposition in (13, 6) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
+        AND SkillGroupSkillTargetID is not null
+        AND AgentSkillTargetID is not null -- sau nay 
+        AND TalkTime > 0
+        ${queryCondition}
+    `;
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+function createChartConditions(item, field) {
+  var arr = item.split('_');
+  let _query = "";
+
+  if (arr[1] == 'lt') {
+      _query = `,${arr[0]}_lt_${arr[2]}=sum(CASE  
+                  WHEN TCD.${field} < ${arr[2]} THEN 1 
+                  ELSE 0 
+                END) `;
+
+  } else if (arr[1] == 'gt') {
+      _query = `,${arr[0]}_gt_${arr[2]}=sum(CASE  
+                  WHEN TCD.${field} > ${arr[2]} THEN 1 
+                  ELSE 0 
+                END) `;
+  } else {
+    _query = `,${arr[0]}_${arr[1]}_${arr[2]}=sum(CASE  
+                when TCD.${field} < ${arr[2]}
+                and TCD.${field} >= ${arr[1]} THEN 1 
+                ELSE 0 
+              END) `;
+  }
+
+  return _query;
+}
