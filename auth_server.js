@@ -13,10 +13,13 @@ const {
 } = process.env;
 
 global._rootPath = path.dirname(require.main.filename);
+global._ = require("underscore");
 global._CRUDFile = new CRUDFlle(pathFileConfig);
 global._config = _CRUDFile.readFileSync();
 global._logger = require("./server/config/log")(path.basename(__filename));
 global._unit_inc = 1;
+global._Excel = require("exceljs");
+global._Path = require("path");
 
 process.on('uncaughtException', err => {
     _logger.log('error', 'UNCAUGHT EXCEPTION!!! shutting down...');

@@ -80,6 +80,8 @@ function initServer(db, dbMssql) {
     app.use("/api/v1/reportTRCallType", require("./routes/reportTRCallTypeRoute"));
     app.use("/api/v1/reportTCDCallTypeAgentDetail", require("./routes/reportTCDCallTypeAgentDetailRoute"));
 
+    app.use("/api/v1/exceldemo", require("./routes/excelDemoRoute"));
+
 
     app.use("*", (req, res, next) => {
         const err = new ResError(ERR_404.code, `Page ${ERR_404.message}`);
