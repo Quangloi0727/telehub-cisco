@@ -130,7 +130,7 @@ exports.getByHourBlock = async (db, dbMssql, query) => {
 //           ,DATEPART(YEAR, CallTypeReportingDateTime) YearBlock
 //           ,MAX(AgentPeripheralNumber) AgentPeripheralNumber
 //      FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
-//      where 
+//      where
 //           DateTime >= '${startDate}'
 //           AND DateTime < '${endDate}'
 //           AND CallTypeID in (${callTypeQuery.join(",")})
@@ -153,7 +153,18 @@ exports.getByHourBlock = async (db, dbMssql, query) => {
 
 exports.getDetailAgent = async (db, dbMssql, query) => {
   try {
-    let { startDate, endDate, callTypeID, callTypeTranferID, pages, rows, paging, duration_g, wait_g, download } = query;
+    let {
+      startDate,
+      endDate,
+      callTypeID,
+      callTypeTranferID,
+      pages,
+      rows,
+      paging,
+      duration_g,
+      wait_g,
+      download,
+    } = query;
     let callTypeQuery = [callTypeID];
     let querySelect = "";
     let queryCondition = "";
@@ -161,23 +172,21 @@ exports.getDetailAgent = async (db, dbMssql, query) => {
       callTypeQuery.push(callTypeTranferID);
     }
 
+    if (paging == 1) {
+      querySelect = `count(*) count`;
 
-    if(paging == 1){
-      querySelect = `count(*) count`
-
-      if(duration_g) {
-        duration_g.forEach(item => {
-          querySelect += createChartConditions(item, "TalkTime")
+      if (duration_g) {
+        duration_g.forEach((item) => {
+          querySelect += createChartConditions(item, "TalkTime");
         });
       }
 
-      if(wait_g) {
-        wait_g.forEach(item => {
-          querySelect += createChartConditions(item, "TalkTime")
+      if (wait_g) {
+        wait_g.forEach((item) => {
+          querySelect += createChartConditions(item, "TalkTime");
         });
       }
-
-    }else {
+    } else {
       querySelect = `[RecoveryKey]
           --,[MRDomainID]
           ,[AgentSkillTargetID]
@@ -269,10 +278,10 @@ exports.getDetailAgent = async (db, dbMssql, query) => {
           ,[PrecisionQueueStepOrder]
           ,[Attributes]`;
 
-          if(download === 0){
-            queryCondition = `ORDER BY DateTime DESC
-      OFFSET ${(pages - 1)*rows} ROWS FETCH NEXT ${rows} ROWS ONLY` 
-          }
+      if (download === 0) {
+        queryCondition = `ORDER BY DateTime DESC
+      OFFSET ${(pages - 1) * rows} ROWS FETCH NEXT ${rows} ROWS ONLY`;
+      }
     }
 
     let _query = `SELECT
@@ -295,17 +304,16 @@ exports.getDetailAgent = async (db, dbMssql, query) => {
 };
 
 function createChartConditions(item, field) {
-  var arr = item.split('_');
+  var arr = item.split("_");
   let _query = "";
 
-  if (arr[1] == 'lt') {
-      _query = `,${arr[0]}_lt_${arr[2]}=sum(CASE  
+  if (arr[1] == "lt") {
+    _query = `,${arr[0]}_lt_${arr[2]}=sum(CASE  
                   WHEN TCD.${field} < ${arr[2]} THEN 1 
                   ELSE 0 
                 END) `;
-
-  } else if (arr[1] == 'gt') {
-      _query = `,${arr[0]}_gt_${arr[2]}=sum(CASE  
+  } else if (arr[1] == "gt") {
+    _query = `,${arr[0]}_gt_${arr[2]}=sum(CASE  
                   WHEN TCD.${field} > ${arr[2]} THEN 1 
                   ELSE 0 
                 END) `;
@@ -319,3 +327,45 @@ function createChartConditions(item, field) {
 
   return _query;
 }
+
+exports.getGroupByCallDisposition = async (db, dbMssql, query) => {
+  try {
+    let {
+      startDate,
+      endDate,
+      callTypeID,
+      callTypeTranferID,
+      callDisposition,
+    } = query;
+    let callTypeQuery = [callTypeID];
+    let queryCallDisposition = "";
+
+    queryCallDisposition = callDisposition.map((i) => {
+      return `,Sum(case CallDisposition when ${i} then 1 else 0 end) CallDisposition_${i}`;
+    }).join("");
+
+    let _query = `SELECT 
+     [AgentSkillTargetID]
+     ,Max(AgentPeripheralNumber) AgentPeripheralNumber
+     ,Count(*) total
+	   ${queryCallDisposition}
+     FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
+          --INNER JOIN Agent
+          --ON Agent.SkillTargetID = Termination_Call_Detail.AgentSkillTargetID
+     where
+        DateTime >= '${startDate}'
+        AND DateTime < '${endDate}'
+        AND CallTypeID in (${callTypeQuery.join(",")})
+        --and CallDisposition in (13, 6) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
+        AND SkillGroupSkillTargetID is not null
+        AND AgentSkillTargetID is not null -- sau nay 
+        AND CallDisposition in (19, 3, 60, 7)
+        --and CallDisposition not in (13)
+            --AND TalkTime = 0
+        Group by AgentSkillTargetID`;
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};

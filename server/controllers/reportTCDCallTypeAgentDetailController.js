@@ -112,3 +112,30 @@ exports.getDetailAgent = async (req, res, next) => {
         next(error);
     }
 }
+
+exports.getGroupByCallDisposition = async (req, res, next) => {
+    try {
+        let db = req.app.locals.db;
+        let dbMssql = req.app.locals.dbMssql;
+
+        let query  = req.query;
+
+        if(query.callDisposition) query.callDisposition = query.callDisposition.split(",");
+        else query.callDisposition = [19, 3, 60, 7];
+        
+        if (
+            !query.startDate ||
+            !query.endDate ||
+            !query.callTypeID
+        ) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+        const doc = await _model.getGroupByCallDisposition(db, dbMssql, query);
+
+        if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+        // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+        res.status(SUCCESS_200.code).json({ data: doc });
+
+    } catch (error) {
+        next(error);
+    }
+}
