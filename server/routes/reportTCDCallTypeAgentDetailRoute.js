@@ -14,6 +14,10 @@ router
     .route('/detailAgent')
     .get(_controller.getDetailAgent);
 
+router
+    .route('/getGroupByCallDisposition')
+    .get(_controller.getGroupByCallDisposition);
+
 module.exports = router;
 
 /**
