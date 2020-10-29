@@ -58,6 +58,18 @@ exports.getAll = async (req, res, next) => {
   }
 };
 
+exports.search = async (req, res, next) => {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+    res.status(SUCCESS_200.code).send("4428844");
+  } catch (error) {
+    next(error);
+  }
+};
+
 /**
  * run dữ liệu từng sheet
  * @param {object} worksheet data sheet: name, _rows, ...

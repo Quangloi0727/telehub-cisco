@@ -6,6 +6,10 @@ router
     .route('/')
     .get(excelDemoController.getAll);
 
+router
+    .route('/search')
+    .post(excelDemoController.search);
+
 
 module.exports = router;
 
