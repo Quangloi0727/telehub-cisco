@@ -20,7 +20,7 @@ const {
   ERR_500,
 } = require("../helpers/constants/statusCodeHTTP");
 
-const { FIELD_AGENT, TYPE_NOTE } = require("../helpers/constants");
+const { FIELD_AGENT } = require("../helpers/constants");
 
 /**
  * require Utils

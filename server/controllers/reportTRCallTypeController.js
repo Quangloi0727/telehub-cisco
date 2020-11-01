@@ -24,7 +24,6 @@ const {
 
 const {
     FIELD_AGENT,
-    TYPE_NOTE,
 } = require('../helpers/constants');
 
 

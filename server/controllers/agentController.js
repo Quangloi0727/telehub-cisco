@@ -24,7 +24,6 @@ const {
 
 const {
     FIELD_AGENT,
-    TYPE_NOTE,
 } = require('../helpers/constants');
 
 
@@ -113,10 +112,7 @@ exports.getLast = async (req, res, next) => {
                 "youtubeLink": docSetting.data[0].link_youtube,
                 "mlmCompanyListUpdateAt": docSetting.data[0].mlmCompanyListUpdateAt,
             },
-            // aboutUs: doc.content,
-            // qAndA: docQA.data,
-            // luuYNhaPhanPhoi: handleResultNoteJSON(docNote.data),
-            // phapLuatBHDC: docNghiDinh.data,
+
             mockup: doc.mockup,
             created_at: doc.created_at,
             updated_at: doc.updated_at,
@@ -125,16 +121,6 @@ exports.getLast = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-}
-
-function handleResultNoteJSON(data) {
-    let header = data.find(i => i.type === TYPE_NOTE.header.number);
-    let list = data.filter(i => i.type === TYPE_NOTE.body.number);
-
-    return {
-        header: header.content,
-        list,
-    };
 }
 
 exports.download = async (req, res, next) => {

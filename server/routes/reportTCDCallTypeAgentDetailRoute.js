@@ -18,6 +18,10 @@ router
     .route('/getGroupByCallDisposition')
     .get(_controller.getGroupByCallDisposition);
 
+router
+    .route('/missCall')
+    .get(_controller.missCall);
+
 module.exports = router;
 
 /**

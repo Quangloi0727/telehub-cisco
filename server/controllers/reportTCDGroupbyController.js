@@ -24,7 +24,6 @@ const {
 
 const {
     FIELD_AGENT,
-    TYPE_NOTE,
 } = require('../helpers/constants');
 
 
@@ -51,6 +50,33 @@ exports.callDisposition = async (req, res, next) => {
         ) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
         const doc = await _model.callDisposition(db, dbMssql, query);
+
+        if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+        // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+        res.status(SUCCESS_200.code).json({ data: doc });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+exports.skillGroup = async (req, res, next) => {
+    try {
+        let db = req.app.locals.db;
+        let dbMssql = req.app.locals.dbMssql;
+
+        let query  = req.query;
+
+        if(query.skillGroup) query.skillGroup = query.skillGroup.split(",");
+        else query.skillGroup = [19, 3, 60, 7];
+        
+        if (
+            !query.startDate ||
+            !query.endDate ||
+            !query.callTypeID
+        ) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+        const doc = await _model.skillGroup(db, dbMssql, query);
 
         if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
         // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);

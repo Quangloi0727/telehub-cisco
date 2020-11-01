@@ -4,7 +4,7 @@ const ObjectID = require("mongodb").ObjectID;
  */
 const { DB_HOST, PORT, IP_PUBLIC } = process.env;
 
-const { FIELD_AGENT } = require("../helpers/constants");
+const { FIELD_AGENT, TYPE_MISSCALL } = require("../helpers/constants");
 const { checkKeyValueExists } = require("../helpers/functions");
 /**
  * db:
@@ -280,7 +280,7 @@ exports.getDetailAgent = async (db, dbMssql, query) => {
 
       if (download === 0) {
         queryCondition = `ORDER BY DateTime DESC
-      OFFSET ${(pages - 1) * rows} ROWS FETCH NEXT ${rows} ROWS ONLY`;
+        OFFSET ${(pages - 1) * rows} ROWS FETCH NEXT ${rows} ROWS ONLY`;
       }
     }
 
@@ -340,9 +340,11 @@ exports.getGroupByCallDisposition = async (db, dbMssql, query) => {
     let callTypeQuery = [callTypeID];
     let queryCallDisposition = "";
 
-    queryCallDisposition = callDisposition.map((i) => {
-      return `,Sum(case CallDisposition when ${i} then 1 else 0 end) CallDisposition_${i}`;
-    }).join("");
+    queryCallDisposition = callDisposition
+      .map((i) => {
+        return `,Sum(case CallDisposition when ${i} then 1 else 0 end) CallDisposition_${i}`;
+      })
+      .join("");
 
     let _query = `SELECT 
      [AgentSkillTargetID]
@@ -369,3 +371,252 @@ exports.getGroupByCallDisposition = async (db, dbMssql, query) => {
     throw new Error(error);
   }
 };
+
+/**
+ * API lấy dữ liệu chi tiết cuộc gọi nhỡ
+ * db:
+ * dbMssql:
+ * query:
+ *   { startDate: '2020-10-30 00:00:00'
+ *   , endDate: '2020-10-30 23:59:59'
+ *   , callTypeID: '5014'
+ *   , callTypeTranferID: '5015'
+ *    }
+ */
+
+exports.missCall = async (db, dbMssql, query) => {
+  try {
+    let {
+      startDate,
+      endDate,
+      CT_IVR,
+      CT_ToAgentGroup1,
+      CT_ToAgentGroup2,
+      CT_ToAgentGroup3,
+      CT_Queue1,
+      CT_Queue2,
+      CT_Queue3,
+      pages,
+      rows,
+      paging,
+      download,
+    } = query;
+    let querySelect = "";
+    let queryCondition = "";
+
+    if (paging == 1) {
+      querySelect = `count(*) count`;
+    } else {
+      querySelect = `
+    [RecoveryKey]
+      ,case 
+        when 
+          CallTypeID = @CT_IVR
+          and CallDisposition	= 13
+          then '${reasonToTelehub(TYPE_MISSCALL.MissIVR)}'
+        when 
+          CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3)
+          and CallDisposition	in (3)
+          then '${reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)}'
+        when 
+          CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+          and CallDisposition	in (19)
+          then '${reasonToTelehub(TYPE_MISSCALL.MissAgent)}'
+        when 
+          CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+          and CallDisposition	in (60)
+          then '${reasonToTelehub(TYPE_MISSCALL.RejectByAgent)}'
+        when 
+          CallTypeID in (@CT_Queue1, @CT_Queue2, @CT_Queue3)
+          and CallDisposition	in (13)
+          AND AgentSkillTargetID is null
+          then '${reasonToTelehub(TYPE_MISSCALL.MissQueue)}'
+        else '${reasonToTelehub(TYPE_MISSCALL.Other)}'
+        end MissReason
+         ,[CallTypeID]
+       ,[DNIS]
+      ,[RouterCallKeySequenceNumber] RCKSequenceNumber
+          ,[AgentSkillTargetID]
+          ,[SkillGroupSkillTargetID]
+        ,[ServiceSkillTargetID]
+          ,[PeripheralID]
+          ,[RouteID]
+          ,[RouterCallKeyDay]
+          ,[RouterCallKey]
+        ,[CallDisposition]
+          ,[DateTime]
+          ,[RingTime]
+        ,[TalkTime]
+          ,[Duration]
+          ,[DelayTime]
+          ,[TimeToAband]
+          ,[HoldTime]
+          ,[WorkTime]
+          ,[LocalQTime]
+          ,[BillRate]
+          ,[CallSegmentTime]
+          ,[ConferenceTime]
+          ,[Variable1]
+          ,[Variable2]
+          ,[Variable3]
+          ,[Variable4]
+          ,[Variable5]
+         ,[PeripheralCallType]
+          ,[DigitsDialed]
+          ,[PeripheralCallKey]
+          ,[NetworkTime]
+          ,[UserToUser]
+          ,[NewTransaction]
+          ,[RecoveryDay]
+          ,[TimeZone]
+          ,[NetworkTargetID]
+          ,[TrunkGroupID]
+       ,[MRDomainID]
+          ,[InstrumentPortNumber]
+          ,[AgentPeripheralNumber]
+          ,[ICRCallKey]
+          ,[ICRCallKeyParent]
+          ,[ICRCallKeyChild]
+          ,[Variable6]
+          ,[Variable7]
+          ,[Variable8]
+          ,[Variable9]
+          ,[Variable10]
+          ,[ANI]
+          ,[AnsweredWithinServiceLevel]
+          ,[Priority]
+          ,[Trunk]
+          ,[WrapupData]
+          ,[SourceAgentPeripheralNumber]
+          ,[SourceAgentSkillTargetID]
+          ,[CallDispositionFlag]
+          ,[CED]
+          ,[BadCallTag]
+          ,[ApplicationTaskDisposition]
+          ,[ApplicationData]
+          ,[NetQTime]
+          ,[DbDateTime]
+          ,[ECCPayloadID]
+          ,[CallTypeReportingDateTime]
+          ,[RoutedSkillGroupSkillTargetID]
+          ,[RoutedServiceSkillTargetID]
+          ,[RoutedAgentSkillTargetID]
+          ,[Originated]
+          ,[CallReferenceID]
+          ,[CallGUID]
+          ,[LocationParamPKID]
+          ,[LocationParamName]
+          ,[PstnTrunkGroupID]
+          ,[PstnTrunkGroupChannelNumber]
+          ,[NetworkSkillGroupQTime]
+          ,[EnterpriseQueueTime]
+          ,[StartDateTimeUTC]
+          ,[ProtocolID]
+          ,[PrecisionQueueID]
+          ,[PrecisionQueueStepOrder]
+          ,[Attributes]`;
+
+      if (download === 0) {
+        queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber
+        OFFSET ${(pages - 1) * rows} ROWS FETCH NEXT ${rows} ROWS ONLY`;
+      }
+    }
+
+    let _query = `/**
+    Mô tả:
+    - Start: 01/11/2020
+    - Detail: chi tiết dữ liệu cuộc gọi nhỡ theo, hiện tại chạy đúng theo từng ngày, chạy theo nhiều ngày thì phải test thêm
+    - đã test chạy được theo query nhiều ngày
+  */
+  
+  DECLARE @CT_IVR varchar(100);
+  DECLARE @CT_ToAgentGroup1 varchar(100);
+  DECLARE @CT_ToAgentGroup2 varchar(100);
+  DECLARE @CT_ToAgentGroup3 varchar(100);
+  DECLARE @CT_Queue1 varchar(100);
+  DECLARE @CT_Queue2 varchar(100);
+  DECLARE @CT_Queue3 varchar(100);
+  
+  DECLARE @startDate varchar(100);
+  DECLARE @endDate varchar(100);
+  
+  -- Định nghĩa CallType cho các chặng cuộc gọi có trong hệ thống
+  set @CT_IVR = ${CT_IVR}; -- Mã toAgent của skill group 1
+  set @CT_ToAgentGroup1 = ${
+    CT_ToAgentGroup1 || null
+  }; -- Mã toAgent của skill group 1
+  set @CT_ToAgentGroup2 = ${
+    CT_ToAgentGroup2 || null
+  }; -- Mã toAgent của skill group 2
+  set @CT_ToAgentGroup3 = ${
+    CT_ToAgentGroup3 || null
+  }; -- Mã toAgent của skill group 3
+  set @CT_Queue1 = ${CT_Queue1 || null}; -- Mã queue của skill group 1
+  set @CT_Queue2 = ${CT_Queue2 || null}; -- Mã queue của skill group 2
+  set @CT_Queue3 = ${CT_Queue3 || null}; -- Mã queue của skill group 3
+  
+  -- Ngày bắt đầu query
+  set @startDate = '${startDate}';
+  -- Ngày kết thúc query
+  set @endDate = '${endDate}';
+  
+  Select 
+    ${querySelect}
+   FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+   where DateTime >= @startDate
+    and DateTime < @endDate
+    and CallTypeID in (@CT_IVR, @CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+    and RecoveryKey not in (
+      
+      Select RecoveryKey FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD_handle
+        where  DateTime >= @startDate
+            and DateTime < @endDate
+            and (
+              -- loại các cuộc handle
+              AgentSkillTargetID is not null
+              and t_TCD_handle.CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+              and TalkTime > 0
+              And CallDisposition in (13)
+              
+              or (
+                -- loại các bản tin đầu tiên: 
+                t_TCD.RouterCallKeySequenceNumber in (0)
+              )
+              or (
+                -- loại các bản tin thứ 2 nhưng callType ko là IVR: tức là đã vào queue hoặc vào agent 
+                t_TCD.RouterCallKeySequenceNumber in (1)
+                and t_TCD_handle.CallTypeID not in (@CT_IVR)
+              )
+              or (
+                -- loại các bản tin thứ 2 nhưng callType ko là IVR: tức là đã vào queue hoặc vào agent 
+                t_TCD_handle.RouterCallKeySequenceNumber = 3 
+                and t_TCD_handle.CallTypeID not in (@CT_ToAgentGroup1, @CT_ToAgentGroup2,@CT_ToAgentGroup3)
+                and t_TCD_handle.AgentSkillTargetID is null
+                and t_TCD_handle.CallDisposition in (13)
+              )
+              or (
+                -- loại các bản tin thứ 2 nhưng callType ko là IVR: tức là đã vào queue hoặc vào agent 
+                t_TCD_handle.RouterCallKeySequenceNumber in (4,5) 
+                and t_TCD_handle.CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2,@CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+                and t_TCD_handle.AgentSkillTargetID is null
+                and t_TCD_handle.CallDisposition in (13)
+              )
+            )
+    )
+    --and RouterCallKeySequenceNumber = 4
+    ${queryCondition}`;
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+/**
+ * Format lý do trả về cho telehub:
+ * "MissIVR-1"
+ * @param {Object} infoReason
+ */
+function reasonToTelehub(infoReason) {
+  return [infoReason.id, infoReason.value].join("-");
+}

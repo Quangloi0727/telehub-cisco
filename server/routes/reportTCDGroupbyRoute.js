@@ -6,6 +6,10 @@ router
     .route('/callDisposition')
     .get(_controller.callDisposition);
 
+router
+    .route('/skillGroup')
+    .get(_controller.skillGroup);
+
 module.exports = router;
 
 /**
