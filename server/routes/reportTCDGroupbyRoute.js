@@ -10,6 +10,10 @@ router
     .route('/skillGroup')
     .get(_controller.skillGroup);
 
+router
+    .route('/skillGroupMapping')
+    .get(_controller.skillGroupMapping);
+
 module.exports = router;
 
 /**

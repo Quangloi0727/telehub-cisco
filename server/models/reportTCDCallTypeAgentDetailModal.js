@@ -5,7 +5,7 @@ const ObjectID = require("mongodb").ObjectID;
 const { DB_HOST, PORT, IP_PUBLIC } = process.env;
 
 const { FIELD_AGENT, TYPE_MISSCALL } = require("../helpers/constants");
-const { checkKeyValueExists } = require("../helpers/functions");
+const { checkKeyValueExists, reasonToTelehub } = require("../helpers/functions");
 /**
  * db:
  * dbMssql:
@@ -400,6 +400,7 @@ exports.missCall = async (db, dbMssql, query) => {
       rows,
       paging,
       download,
+      rawData,
     } = query;
     let querySelect = "";
     let queryCondition = "";
@@ -438,88 +439,90 @@ exports.missCall = async (db, dbMssql, query) => {
       ,[RouterCallKeySequenceNumber] RCKSequenceNumber
           ,[AgentSkillTargetID]
           ,[SkillGroupSkillTargetID]
-        ,[ServiceSkillTargetID]
-          ,[PeripheralID]
-          ,[RouteID]
-          ,[RouterCallKeyDay]
-          ,[RouterCallKey]
-        ,[CallDisposition]
-          ,[DateTime]
-          ,[RingTime]
-        ,[TalkTime]
-          ,[Duration]
-          ,[DelayTime]
-          ,[TimeToAband]
-          ,[HoldTime]
-          ,[WorkTime]
-          ,[LocalQTime]
-          ,[BillRate]
-          ,[CallSegmentTime]
-          ,[ConferenceTime]
-          ,[Variable1]
-          ,[Variable2]
-          ,[Variable3]
-          ,[Variable4]
-          ,[Variable5]
-         ,[PeripheralCallType]
-          ,[DigitsDialed]
-          ,[PeripheralCallKey]
-          ,[NetworkTime]
-          ,[UserToUser]
-          ,[NewTransaction]
-          ,[RecoveryDay]
-          ,[TimeZone]
-          ,[NetworkTargetID]
-          ,[TrunkGroupID]
-       ,[MRDomainID]
-          ,[InstrumentPortNumber]
-          ,[AgentPeripheralNumber]
-          ,[ICRCallKey]
-          ,[ICRCallKeyParent]
-          ,[ICRCallKeyChild]
-          ,[Variable6]
-          ,[Variable7]
-          ,[Variable8]
-          ,[Variable9]
-          ,[Variable10]
-          ,[ANI]
-          ,[AnsweredWithinServiceLevel]
-          ,[Priority]
-          ,[Trunk]
-          ,[WrapupData]
-          ,[SourceAgentPeripheralNumber]
-          ,[SourceAgentSkillTargetID]
-          ,[CallDispositionFlag]
-          ,[CED]
-          ,[BadCallTag]
-          ,[ApplicationTaskDisposition]
-          ,[ApplicationData]
-          ,[NetQTime]
-          ,[DbDateTime]
-          ,[ECCPayloadID]
-          ,[CallTypeReportingDateTime]
-          ,[RoutedSkillGroupSkillTargetID]
-          ,[RoutedServiceSkillTargetID]
-          ,[RoutedAgentSkillTargetID]
-          ,[Originated]
-          ,[CallReferenceID]
-          ,[CallGUID]
-          ,[LocationParamPKID]
-          ,[LocationParamName]
-          ,[PstnTrunkGroupID]
-          ,[PstnTrunkGroupChannelNumber]
-          ,[NetworkSkillGroupQTime]
-          ,[EnterpriseQueueTime]
-          ,[StartDateTimeUTC]
-          ,[ProtocolID]
-          ,[PrecisionQueueID]
-          ,[PrecisionQueueStepOrder]
-          ,[Attributes]`;
+          ,SG.EnterpriseName EnterpriseName
+          ,[ServiceSkillTargetID]
+           -- ,[PeripheralID]
+            ,[RouteID]
+            ,[RouterCallKeyDay]
+            ,[RouterCallKey]
+          ,[CallDisposition]
+            ,[DateTime]
+            ,[RingTime]
+          ,[TalkTime]
+            ,[Duration]
+            ,[DelayTime]
+            ,[TimeToAband]
+            ,[HoldTime]
+            ,[WorkTime]
+            ,[LocalQTime]
+            ,[BillRate]
+            ,[CallSegmentTime]
+            ,[ConferenceTime]
+            ,[Variable1]
+            ,[Variable2]
+            ,[Variable3]
+            ,[Variable4]
+            ,[Variable5]
+           ,[PeripheralCallType]
+            ,[DigitsDialed]
+            ,[PeripheralCallKey]
+            ,[NetworkTime]
+            ,[UserToUser]
+            ,[NewTransaction]
+            ,[RecoveryDay]
+            ,[TimeZone]
+            ,[NetworkTargetID]
+            ,[TrunkGroupID]
+        -- ,[MRDomainID]
+            ,[InstrumentPortNumber]
+            ,[AgentPeripheralNumber]
+            ,[ICRCallKey]
+            ,[ICRCallKeyParent]
+            ,[ICRCallKeyChild]
+            ,[Variable6]
+            ,[Variable7]
+            ,[Variable8]
+            ,[Variable9]
+            ,[Variable10]
+            ,[ANI]
+            ,[AnsweredWithinServiceLevel]
+            --,[Priority]
+            ,[Trunk]
+            ,[WrapupData]
+            ,[SourceAgentPeripheralNumber]
+            ,[SourceAgentSkillTargetID]
+            ,[CallDispositionFlag]
+            ,[CED]
+            ,[BadCallTag]
+            ,[ApplicationTaskDisposition]
+            ,[ApplicationData]
+            ,[NetQTime]
+            ,[DbDateTime]
+            ,[ECCPayloadID]
+            ,[CallTypeReportingDateTime]
+            ,[RoutedSkillGroupSkillTargetID]
+            ,[RoutedServiceSkillTargetID]
+            ,[RoutedAgentSkillTargetID]
+            ,[Originated]
+            ,[CallReferenceID]
+            ,[CallGUID]
+            ,[LocationParamPKID]
+            ,[LocationParamName]
+            ,[PstnTrunkGroupID]
+            ,[PstnTrunkGroupChannelNumber]
+            ,[NetworkSkillGroupQTime]
+            ,[EnterpriseQueueTime]
+            ,[StartDateTimeUTC]
+            ,[ProtocolID]
+           -- ,[PrecisionQueueID]
+            ,[PrecisionQueueStepOrder]
+            ,[Attributes]`;
 
       if (download === 0) {
         queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber
         OFFSET ${(pages - 1) * rows} ROWS FETCH NEXT ${rows} ROWS ONLY`;
       }
+      if(rawData === true) queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber`;
     }
 
     let _query = `/**
@@ -563,6 +566,8 @@ exports.missCall = async (db, dbMssql, query) => {
   Select 
     ${querySelect}
    FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+   left join [ins1_awdb].[dbo].[t_Skill_Group] SG
+   on t_TCD.SkillGroupSkillTargetID = SG.SkillTargetID
    where DateTime >= @startDate
     and DateTime < @endDate
     and CallTypeID in (@CT_IVR, @CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
@@ -611,12 +616,3 @@ exports.missCall = async (db, dbMssql, query) => {
     throw new Error(error);
   }
 };
-
-/**
- * Format lý do trả về cho telehub:
- * "MissIVR-1"
- * @param {Object} infoReason
- */
-function reasonToTelehub(infoReason) {
-  return [infoReason.id, infoReason.value].join("-");
-}

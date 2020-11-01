@@ -55,8 +55,6 @@ exports.callDisposition = async (db, dbMssql, query) => {
   }
 };
 
-
-
 /**
  * API lấy dữ liệu cuộc gọi nhỡ tổng hợp theo SkillGroup
  * db:
@@ -102,18 +100,24 @@ exports.skillGroup = async (db, dbMssql, query) => {
   DECLARE @endDate varchar(100);
   
   -- Định nghĩa CallType cho các chặng cuộc gọi có trong hệ thống
-  set @CT_IVR = ${CT_IVR}; -- Mã toAgent của skill group 1
-  set @CT_ToAgentGroup1 = ${CT_ToAgentGroup1}; -- Mã toAgent của skill group 1
-  set @CT_ToAgentGroup2 = ${CT_ToAgentGroup2}; -- Mã toAgent của skill group 2
-  set @CT_ToAgentGroup3 = ${CT_ToAgentGroup3}; -- Mã toAgent của skill group 3
-  set @CT_Queue1 = ${CT_Queue1}; -- Mã queue của skill group 1
-  set @CT_Queue2 = ${CT_Queue2}; -- Mã queue của skill group 2
-  set @CT_Queue3 = ${CT_Queue3}; -- Mã queue của skill group 3
+  set @CT_IVR = ${CT_IVR || null}; -- Mã toAgent của skill group 1
+  set @CT_ToAgentGroup1 = ${
+    CT_ToAgentGroup1 || null
+  }; -- Mã toAgent của skill group 1
+  set @CT_ToAgentGroup2 = ${
+    CT_ToAgentGroup2 || null
+  }; -- Mã toAgent của skill group 2
+  set @CT_ToAgentGroup3 = ${
+    CT_ToAgentGroup3 || null
+  }; -- Mã toAgent của skill group 3
+  set @CT_Queue1 = ${CT_Queue1 || null}; -- Mã queue của skill group 1
+  set @CT_Queue2 = ${CT_Queue2 || null}; -- Mã queue của skill group 2
+  set @CT_Queue3 = ${CT_Queue3 || null}; -- Mã queue của skill group 3
   
   -- Ngày bắt đầu query
-  set @startDate = ${startDate};
+  set @startDate = '${startDate}';
   -- Ngày kết thúc query
-  set @endDate = ${endDate};
+  set @endDate = '${endDate}';
   
   -- dùng bản tạm để lưu query, và sẽ xóa bảng này khi kết thúc phiên query ??? CÓ BỊ VẤN ĐỀ NẾU NHIỀU NGƯỜI CÙNG TRUY XUẤT BÁO CÁO KO NHỈ???
   IF OBJECT_ID('tempdb.dbo.#tempTCD') IS NOT NULL
