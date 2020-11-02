@@ -38,7 +38,7 @@ exports.getAll = async (req, res, next) => {
     var workbook = new _Excel.Workbook();
     // Đọc file excel
     const doc = await workbook.xlsx.readFile(
-      _Path.join(_rootPath, "public", "excel-demo.xlsx")
+      _Path.join(_rootPath, "public", "dnc.xlsx")
     );
     if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
 
@@ -77,8 +77,8 @@ exports.search = async (req, res, next) => {
  */
 function runDataEachSheet(worksheet, sheetId, query) {
   let { name, _rows } = worksheet;
-  let _headerIndex = 3; // Vị trí của header table
-  let _headerNameIndex = 4; // Vị trí của header table
+  let _headerIndex = 1; // Vị trí của header table: id, sẽ lấy trường này lưu vào db
+  let _headerNameIndex = 1; // Vị trí của header table: tiếng việt
   let _headers = worksheet.getRow(_headerIndex).values;
   let _headerNames = worksheet.getRow(_headerNameIndex).values;
   let resultData = [];
@@ -86,8 +86,9 @@ function runDataEachSheet(worksheet, sheetId, query) {
 
   if(field_required) field_required = field_required.split(",");
   else field_required = [];
-
   if(_headers.length == 0) throw new Error("Header empty");
+  let mang1k = []
+  let mangSplit = [];
   worksheet.eachRow((row, index) => {
     let rowIndex = row._number;
 
@@ -104,6 +105,11 @@ function runDataEachSheet(worksheet, sheetId, query) {
         return preValue;
       }, {});
 
+      if(mang1k.length >= 1000){
+        mangSplit.push(mang1k);
+        mang1k = [];
+      }else mang1k.push(rowData)
+
       if(field_required.length > 0) {
           let check = field_required.map(i => rowData[i] === undefined);
           
@@ -117,6 +123,7 @@ function runDataEachSheet(worksheet, sheetId, query) {
     sheetId,
     name,
     total: resultData.length,
-    data: resultData,
+    dataLength: mangSplit.length,
+    data: mangSplit,
   };
 }
