@@ -40,7 +40,7 @@ const TYPE_MISSCALL = {
     },
     Other: {
         value: 6,
-        id: "Other",
+        id: "OTHER",
     },
 };
 
