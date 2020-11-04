@@ -5,7 +5,7 @@ const ObjectID = require("mongodb").ObjectID;
 const { DB_HOST, PORT, IP_PUBLIC } = process.env;
 
 const { FIELD_AGENT } = require("../helpers/constants");
-const { checkKeyValueExists } = require("../helpers/functions");
+const { checkKeyValueExists, variableSQL } = require("../helpers/functions");
 
 /**
  * db: 
@@ -19,8 +19,10 @@ const { checkKeyValueExists } = require("../helpers/functions");
 
 exports.getAll = async (db, dbMssql, query) => {
   try {
-    let { startDate, endDate, callTypeID } = query;
-    let _query = `SET ANSI_WARNINGS OFF SET ARITHABORT OFF SET ARITHIGNORE ON SET ANSI_NULLS ON SET ANSI_PADDING ON SET CONCAT_NULL_YIELDS_NULL ON SET QUOTED_IDENTIFIER ON SET NUMERIC_ROUNDABORT OFF 
+
+    let _query = `
+    ${variableSQL(query)}
+    SET ANSI_WARNINGS OFF SET ARITHABORT OFF SET ARITHIGNORE ON SET ANSI_NULLS ON SET ANSI_PADDING ON SET CONCAT_NULL_YIELDS_NULL ON SET QUOTED_IDENTIFIER ON SET NUMERIC_ROUNDABORT OFF 
     SELECT datetime= CTSG.DateTime,
             Date		 = CONVERT(char(10),CTSG.DateTime,101),
            calltypeId= CTSG.CallTypeID,
@@ -115,9 +117,9 @@ exports.getAll = async (db, dbMssql, query) => {
            WHERE SG.SkillTargetID = Call_Type_SG_Interval.SkillGroupSkillTargetID
             AND SG.MRDomainID = Media_Routing_Domain.MRDomainID
             AND (SG.SkillTargetID NOT IN (SELECT BaseSkillTargetID FROM Skill_Group (nolock) WHERE (Priority > 0) AND (Deleted <> 'Y')))
-            AND Call_Type_SG_Interval.DateTime >= '${startDate}'
-            AND Call_Type_SG_Interval.DateTime < '${endDate}'
-            AND Call_Type_SG_Interval.CallTypeID IN (${callTypeID})
+            AND Call_Type_SG_Interval.DateTime >= @startDate
+            AND Call_Type_SG_Interval.DateTime < @endDate
+            AND Call_Type_SG_Interval.CallTypeID IN (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3, @CT_Queue1,@CT_Queue2,@CT_Queue3)
         UNION ALL
           Select Call_Type_SG_Interval.*, SGEnterpriseName = Precision_Queue.EnterpriseName, SGSkillTargetID = SG.SkillTargetID, Media = Media_Routing_Domain.EnterpriseName 
             FROM Call_Type_SG_Interval(nolock), 
@@ -140,9 +142,9 @@ exports.getAll = async (db, dbMssql, query) => {
            WHERE SG.PrecisionQueueID = Call_Type_SG_Interval.PrecisionQueueID
             AND SG.PrecisionQueueID = Precision_Queue.PrecisionQueueID
             AND SG.MRDomainID = Media_Routing_Domain.MRDomainID
-            AND Call_Type_SG_Interval.DateTime >= '${startDate}'
-            AND Call_Type_SG_Interval.DateTime < '${endDate}'
-            AND Call_Type_SG_Interval.CallTypeID IN (${callTypeID})) CTSG
+            AND Call_Type_SG_Interval.DateTime >= @startDate
+            AND Call_Type_SG_Interval.DateTime < @endDate
+            AND Call_Type_SG_Interval.CallTypeID IN (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3, @CT_Queue1,@CT_Queue2,@CT_Queue3)) CTSG
     
      Where  Call_Type.CallTypeID = CTSG.CallTypeID
     GROUP BY 

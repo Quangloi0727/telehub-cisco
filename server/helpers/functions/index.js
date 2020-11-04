@@ -4,4 +4,5 @@ module.exports = {
     ...require("./dateTime"),
     ...require("./path"),
     ...require("./string"),
+    ...require("./sqlDefine"),
 };

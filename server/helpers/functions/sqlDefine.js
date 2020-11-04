@@ -1,0 +1,53 @@
+// const { DAU_CACH } = require("../constants");
+
+/**
+ * Định nghĩa các biến theo call type dùng cho việc tổng hợp các báo cáo, query cisco
+ */
+exports.variableSQL = (variables) => {
+  let {
+    startDate,
+    endDate,
+    CT_IVR,
+    CT_ToAgentGroup1,
+    CT_ToAgentGroup2,
+    CT_ToAgentGroup3,
+    CT_Queue1,
+    CT_Queue2,
+    CT_Queue3,
+    CT_Tranfer,
+  } = variables;
+
+  return `DECLARE @CT_IVR varchar(100);
+            DECLARE @CT_ToAgentGroup1 varchar(100);
+            DECLARE @CT_ToAgentGroup2 varchar(100);
+            DECLARE @CT_ToAgentGroup3 varchar(100);
+            DECLARE @CT_Queue1 varchar(100);
+            DECLARE @CT_Queue2 varchar(100);
+            DECLARE @CT_Queue3 varchar(100);
+            DECLARE @CT_Tranfer varchar(100);
+            
+            DECLARE @startDate varchar(100);
+            DECLARE @endDate varchar(100);
+            
+            -- Định nghĩa CallType cho các chặng cuộc gọi có trong hệ thống
+            set @CT_IVR = ${CT_IVR || null}; -- Mã toAgent của skill group 1
+            set @CT_ToAgentGroup1 = ${
+                CT_ToAgentGroup1 || null
+            }; -- Mã toAgent của skill group 1
+            set @CT_ToAgentGroup2 = ${
+                CT_ToAgentGroup2 || null
+            }; -- Mã toAgent của skill group 2
+            set @CT_ToAgentGroup3 = ${
+                CT_ToAgentGroup3 || null
+            }; -- Mã toAgent của skill group 3
+            set @CT_Queue1 = ${CT_Queue1 || null}; -- Mã queue của skill group 1
+            set @CT_Queue2 = ${CT_Queue2 || null}; -- Mã queue của skill group 2
+            set @CT_Queue3 = ${CT_Queue3 || null}; -- Mã queue của skill group 3
+
+            set @CT_Tranfer = ${CT_Tranfer || null}; -- Mã CT_Tranfer
+            
+            -- Ngày bắt đầu query
+            set @startDate = '${startDate}';
+            -- Ngày kết thúc query
+            set @endDate = '${endDate}';`;
+};

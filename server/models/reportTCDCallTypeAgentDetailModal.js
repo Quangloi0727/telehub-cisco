@@ -8,6 +8,7 @@ const { FIELD_AGENT, TYPE_MISSCALL } = require("../helpers/constants");
 const {
   checkKeyValueExists,
   reasonToTelehub,
+  variableSQL,
 } = require("../helpers/functions");
 /**
  * db:
@@ -16,27 +17,29 @@ const {
  *   { startDate: '2020-10-13 00:00:00'
  *   , endDate: '2020-10-13 23:59:59'
  *   , callTypeID: '5014'
- *   , callTypeTranferID: '5015'
+ *   , CT_Tranfer: '5015'
  *    }
  */
 
 exports.getAll = async (db, dbMssql, query) => {
   try {
-    let { startDate, endDate, callTypeID, callTypeTranferID } = query;
+    let { startDate, endDate, callTypeID, CT_Tranfer } = query;
     let callTypeQuery = [callTypeID];
     let queryTranfer = "";
 
-    if (callTypeTranferID) {
-      callTypeQuery.push(callTypeTranferID);
+    if (CT_Tranfer) {
+      callTypeQuery.push(CT_Tranfer);
       queryTranfer = `SUM(CASE WHEN 
 	     SkillGroupSkillTargetID is not null 
-          and CallTypeID = ${callTypeTranferID}
+          and CallTypeID = @CT_Tranfer
           and CallDisposition in (13)
           THEN 1 ELSE 0 END) tranferIn
 	,`;
     }
 
-    let _query = `SELECT 
+    let _query = `
+    ${variableSQL(query)}
+    SELECT 
      [AgentSkillTargetID]
      ,SUM(ISNULL(TalkTime, 0)) SumsTalkTime
      ,SUM(ISNULL(HoldTime, 0)) SumsHoldTime
@@ -46,7 +49,7 @@ exports.getAll = async (db, dbMssql, query) => {
      ,Min(Duration) MinsDuration -- cuoc goi ngan nhat
      ,SUM(CASE WHEN 
 		SkillGroupSkillTargetID is not null 
-		and CallTypeID = ${callTypeID}
+		and CallTypeID in (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3)
 		THEN 1 
 		ELSE 0 
 		END
@@ -63,19 +66,18 @@ exports.getAll = async (db, dbMssql, query) => {
 		ELSE 0 
 		END
 		) missed
-     ,Max(DateTime) DateTime -- cuoc goi dai nhat
-     ,Max(AgentPeripheralNumber) AgentPeripheralNumber -- cuoc goi dai nhat
+    ,Max(DateTime) DateTime -- cuoc goi dai nhat
+    ,Max(AgentPeripheralNumber) AgentPeripheralNumber -- cuoc goi dai nhat
 
-     FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
-          --INNER JOIN Agent
-          --ON Agent.SkillTargetID = Termination_Call_Detail.AgentSkillTargetID
-     where
-        DateTime >= '${startDate}'
-        AND DateTime < '${endDate}'
-        AND CallTypeID in (${callTypeQuery.join(",")})
-        AND AgentSkillTargetID is not null -- cần đếm theo cuộc gọi nhỡ, ... thì dùng thêm dữ liệu agent ID null
-        group by AgentSkillTargetID
-        ORDER BY AgentSkillTargetID, DateTime`;
+    FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
+        --INNER JOIN Agent
+        --ON Agent.SkillTargetID = Termination_Call_Detail.AgentSkillTargetID
+    WHERE DateTime >= @startDate
+    and DateTime < @endDate
+    AND CallTypeID in (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3, @CT_Queue1,@CT_Queue2,@CT_Queue3, @CT_Tranfer)
+    AND AgentSkillTargetID is not null -- cần đếm theo cuộc gọi nhỡ, ... thì dùng thêm dữ liệu agent ID null
+    group by AgentSkillTargetID
+    ORDER BY AgentSkillTargetID, DateTime`;
 
     return await dbMssql.query(_query);
   } catch (error) {
@@ -85,15 +87,10 @@ exports.getAll = async (db, dbMssql, query) => {
 
 exports.getByHourBlock = async (db, dbMssql, query) => {
   try {
-    let { startDate, endDate, callTypeID, callTypeTranferID } = query;
-    let callTypeQuery = [callTypeID];
-    let queryTranfer = "";
 
-    if (callTypeTranferID) {
-      callTypeQuery.push(callTypeTranferID);
-    }
-
-    let _query = `SELECT
+    let _query = `
+    ${variableSQL(query)}
+    SELECT
       AgentSkillTargetID
      ,AgentPeripheralNumber
      ,DATEPART(HOUR, CallTypeReportingDateTime) HourBlock
@@ -107,10 +104,9 @@ exports.getByHourBlock = async (db, dbMssql, query) => {
      ,RouterCallKeyDay
      ,PeripheralCallKey
     FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
-      where 
-      DateTime >= '${startDate}'
-      AND DateTime < '${endDate}'
-      AND CallTypeID in (${callTypeQuery.join(",")})
+      WHERE DateTime >= @startDate
+      and DateTime < @endDate
+      AND CallTypeID in (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3, @CT_Queue1,@CT_Queue2,@CT_Queue3)
       and CallDisposition in (13, 6) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
       AND SkillGroupSkillTargetID is not null
       AND AgentSkillTargetID is not null -- sau nay 
@@ -157,10 +153,6 @@ exports.getByHourBlock = async (db, dbMssql, query) => {
 exports.getDetailAgent = async (db, dbMssql, query) => {
   try {
     let {
-      startDate,
-      endDate,
-      callTypeID,
-      callTypeTranferID,
       pages,
       rows,
       paging,
@@ -168,12 +160,9 @@ exports.getDetailAgent = async (db, dbMssql, query) => {
       wait_g,
       download,
     } = query;
-    let callTypeQuery = [callTypeID];
+
     let querySelect = "";
     let queryCondition = "";
-    if (callTypeTranferID) {
-      callTypeQuery.push(callTypeTranferID);
-    }
 
     if (paging == 1) {
       querySelect = `count(*) count`;
@@ -287,13 +276,14 @@ exports.getDetailAgent = async (db, dbMssql, query) => {
       }
     }
 
-    let _query = `SELECT
+    let _query = `
+    ${variableSQL(query)}
+    SELECT
       ${querySelect}
-      FROM [ins1_awdb].[dbo].[Termination_Call_Detail] TCD
-      where 
-        DateTime >= '${startDate}'
-        AND DateTime < '${endDate}'
-        AND CallTypeID in (${callTypeQuery.join(",")})
+      FROM [ins1_awdb].[dbo].[Termination_Call_Detail] TCD 
+      WHERE DateTime >= @startDate
+      and DateTime < @endDate
+        AND CallTypeID in (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3,@CT_Queue1,@CT_Queue2,@CT_Queue3,@CT_Tranfer)
         and CallDisposition in (13, 6) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
         AND SkillGroupSkillTargetID is not null
         AND AgentSkillTargetID is not null -- sau nay 
@@ -337,7 +327,7 @@ exports.getGroupByCallDisposition = async (db, dbMssql, query) => {
       startDate,
       endDate,
       callTypeID,
-      callTypeTranferID,
+      CT_Tranfer,
       callDisposition,
     } = query;
     let callTypeQuery = [callTypeID];
@@ -383,22 +373,13 @@ exports.getGroupByCallDisposition = async (db, dbMssql, query) => {
  *   { startDate: '2020-10-30 00:00:00'
  *   , endDate: '2020-10-30 23:59:59'
  *   , callTypeID: '5014'
- *   , callTypeTranferID: '5015'
+ *   , CT_Tranfer: '5015'
  *    }
  */
 
 exports.missCall = async (db, dbMssql, query) => {
   try {
     let {
-      startDate,
-      endDate,
-      CT_IVR,
-      CT_ToAgentGroup1,
-      CT_ToAgentGroup2,
-      CT_ToAgentGroup3,
-      CT_Queue1,
-      CT_Queue2,
-      CT_Queue3,
       pages,
       rows,
       paging,
@@ -428,36 +409,7 @@ exports.missCall = async (db, dbMssql, query) => {
     - đã test chạy được theo query nhiều ngày
   */
   
-  DECLARE @CT_IVR varchar(100);
-  DECLARE @CT_ToAgentGroup1 varchar(100);
-  DECLARE @CT_ToAgentGroup2 varchar(100);
-  DECLARE @CT_ToAgentGroup3 varchar(100);
-  DECLARE @CT_Queue1 varchar(100);
-  DECLARE @CT_Queue2 varchar(100);
-  DECLARE @CT_Queue3 varchar(100);
-  
-  DECLARE @startDate varchar(100);
-  DECLARE @endDate varchar(100);
-  
-  -- Định nghĩa CallType cho các chặng cuộc gọi có trong hệ thống
-  set @CT_IVR = ${CT_IVR}; -- Mã toAgent của skill group 1
-  set @CT_ToAgentGroup1 = ${
-    CT_ToAgentGroup1 || null
-  }; -- Mã toAgent của skill group 1
-  set @CT_ToAgentGroup2 = ${
-    CT_ToAgentGroup2 || null
-  }; -- Mã toAgent của skill group 2
-  set @CT_ToAgentGroup3 = ${
-    CT_ToAgentGroup3 || null
-  }; -- Mã toAgent của skill group 3
-  set @CT_Queue1 = ${CT_Queue1 || null}; -- Mã queue của skill group 1
-  set @CT_Queue2 = ${CT_Queue2 || null}; -- Mã queue của skill group 2
-  set @CT_Queue3 = ${CT_Queue3 || null}; -- Mã queue của skill group 3
-  
-  -- Ngày bắt đầu query
-  set @startDate = '${startDate}';
-  -- Ngày kết thúc query
-  set @endDate = '${endDate}';
+  ${variableSQL(query)}
   
 WITH t_TCD_last AS (
   SELECT  ROW_NUMBER() OVER (PARTITION BY RouterCallKey ORDER BY RecoveryKey DESC, RouterCallKeySequenceNumber DESC) AS rn
@@ -468,7 +420,7 @@ WITH t_TCD_last AS (
 	and CallTypeID in (@CT_IVR, @CT_Queue1, @CT_Queue2, @CT_Queue3)
 	-- and AgentSkillTargetID is null
 
-	-- and CallTypeTranferID =  '5015'
+	-- and CT_Tranfer =  '5015'
 	--ORDER by  RouterCallKey DESC
 	--GROUP by RouterCallKey
 )
@@ -501,7 +453,7 @@ WITH t_TCD_last AS (
  *   { startDate: '2020-10-30 00:00:00'
  *   , endDate: '2020-10-30 23:59:59'
  *   , callTypeID: '5014'
- *   , callTypeTranferID: '5015'
+ *   , CT_Tranfer: '5015'
  *    }
  */
 

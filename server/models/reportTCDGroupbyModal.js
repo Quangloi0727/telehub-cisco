@@ -14,7 +14,7 @@ const { checkKeyValueExists } = require("../helpers/functions");
  *   { startDate: '2020-10-13 00:00:00'
  *   , endDate: '2020-10-13 23:59:59'
  *   , callTypeID: '5014'
- *   , callTypeTranferID: '5015'
+ *   , CT_Tranfer: '5015'
  *    }
  *  2020/10/30: ko dùng nữa.
  */
@@ -25,7 +25,7 @@ exports.callDisposition = async (db, dbMssql, query) => {
       startDate,
       endDate,
       callTypeID,
-      callTypeTranferID,
+      CT_Tranfer,
       callDisposition,
     } = query;
     let callTypeQuery = [callTypeID];
@@ -63,7 +63,7 @@ exports.callDisposition = async (db, dbMssql, query) => {
  *   { startDate: '2020-10-30 00:00:00'
  *   , endDate: '2020-10-30 23:59:59'
  *   , callTypeID: '5014'
- *   , callTypeTranferID: '5015'
+ *   , CT_Tranfer: '5015'
  *    }
  */
 

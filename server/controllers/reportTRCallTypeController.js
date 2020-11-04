@@ -43,7 +43,10 @@ exports.getAll = async (req, res, next) => {
         if (
             !query.startDate ||
             !query.endDate ||
-            !query.callTypeID
+            !query.CT_ToAgentGroup1 ||
+            !query.CT_ToAgentGroup2 ||
+            !query.CT_ToAgentGroup3 
+
         ) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
         
         const doc = await _model.getAll(db, dbMssql, query);
