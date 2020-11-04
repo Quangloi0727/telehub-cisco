@@ -183,9 +183,12 @@ function misscallGroupbySkillGroup(data, query) {
     if(item == "IVR"){
         temp = initObjectMapping(CT_IVR, "IVR");
         temp[`type_${TYPE_MISSCALL.MissIVR.value}`] = filterIVR.length;
-        temp.totalDur = caculatorDuration(filterIVR)*1000;
-        temp.avgDur = caculatorDuration(filterIVR)*1000/filterIVR.length;
-        temp.total = filterIVR.length;
+         // temp[`type_${TYPE_MISSCALL.Other.value}`] = filterOther.length;
+        // do phía telehub fix cứng vậy -_-
+        temp[`type_other`] = filterOther.length;
+        temp.totalDur = (caculatorDuration(filterIVR) + caculatorDuration(filterOther))*1000;
+        temp.avgDur = (caculatorDuration(filterIVR) + caculatorDuration(filterOther))*1000/(filterIVR.length + filterOther.length);
+        temp.total = filterIVR.length + filterOther.length;
     }else{
         temp = initObjectMapping(item, element[0].EnterpriseName);
         let missQueueIVR = [];
@@ -198,7 +201,9 @@ function misscallGroupbySkillGroup(data, query) {
         temp[`type_${TYPE_MISSCALL.MissAgent.value}`] = filterMissAgent.length;
         temp[`type_${TYPE_MISSCALL.RejectByAgent.value}`] = filterRejectByAgent.length;
         temp[`type_${TYPE_MISSCALL.MissQueue.value}`] = filterMissQueue.length + missQueueIVR.length;
-        temp[`type_${TYPE_MISSCALL.Other.id}`] = filterOther.length;
+        // temp[`type_${TYPE_MISSCALL.Other.value}`] = filterOther.length;
+        // do phía telehub fix cứng vậy -_-
+        temp[`type_other`] = filterOther.length;
         let totalDuration = caculatorDuration(filterCustomerEndRinging) + 
         caculatorDuration(filterMissAgent) + 
         caculatorDuration(filterRejectByAgent) + 
