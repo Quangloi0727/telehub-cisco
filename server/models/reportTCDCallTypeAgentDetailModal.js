@@ -449,6 +449,7 @@ WITH t_TCD_last AS (
 
 /**
  * API lấy dữ liệu chi tiết cuộc gọi nhỡ
+ * Trang telehub: BÁO CÁO GỌI VÀO - CUỘC GỌI BỊ NHỠ THEO KHÁCH HÀNG: Tìm kiếm tổng quát
  * db:
  * dbMssql:
  * query:
@@ -670,7 +671,7 @@ function selectMissByCustomer(skillGroups) {
     if(filterIVR.length > 0 && filterSG.length > 0) {
       conditionFilter = `and CallTypeID in (@CT_IVR, @CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)`
     }else if(filterIVR.length > 0) {
-      conditionFilter = `and CallTypeID in (@CT_IVR, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+      conditionFilter = `and CallTypeID in (@CT_IVR, @CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3,@CT_Queue1, @CT_Queue2, @CT_Queue3)
                          AND AgentSkillTargetID is null`
     }else if(filterSG.length > 0) {
       conditionFilter = `and CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
