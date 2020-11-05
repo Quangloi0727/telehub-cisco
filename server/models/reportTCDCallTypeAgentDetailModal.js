@@ -671,11 +671,17 @@ function selectMissByCustomer(skillGroups) {
     if(filterIVR.length > 0 && filterSG.length > 0) {
       conditionFilter = `and CallTypeID in (@CT_IVR, @CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)`
     }else if(filterIVR.length > 0) {
-      conditionFilter = `and CallTypeID in (@CT_IVR, @CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3,@CT_Queue1, @CT_Queue2, @CT_Queue3)
+      conditionFilter = `and CallTypeID in (@CT_IVR)
                          AND AgentSkillTargetID is null`
     }else if(filterSG.length > 0) {
-      conditionFilter = `and CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
-                        AND SkillGroupSkillTargetID in (${filterSG})`
+      conditionFilter = `
+      And (CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+        and SkillGroupSkillTargetID in (${filterSG})
+        or (
+          CallTypeID not in (@CT_IVR)
+          and SkillGroupSkillTargetID is null 
+        )
+      )`
     }
   }
   return `SELECT

@@ -166,6 +166,7 @@ function misscallGroupbySkillGroup(data, query) {
     paging,
     download,
     rawData,
+    skillGroups,
   } = query;
 
   Object.keys(groupBySkillGroup).forEach((item) => {
@@ -183,39 +184,47 @@ function misscallGroupbySkillGroup(data, query) {
     if(item == "IVR"){
         temp = initObjectMapping(CT_IVR, "IVR");
         temp[`type_${TYPE_MISSCALL.MissIVR.value}`] = filterIVR.length;
-        temp[`type_${TYPE_MISSCALL.MissQueue.value}`] = filterMissQueue.length;
+        // temp[`type_${TYPE_MISSCALL.MissQueue.value}`] = filterMissQueue.length;
          // temp[`type_${TYPE_MISSCALL.Other.value}`] = filterOther.length;
         // do phía telehub fix cứng vậy -_-
-        temp[`type_other`] = filterOther.length;
+        // temp[`type_other`] = filterOther.length;
         temp.totalDur = (caculatorDuration(filterIVR)
-        + caculatorDuration(filterOther)
-        + caculatorDuration(filterMissQueue))*1000;
-        temp.total = filterIVR.length + filterOther.length + filterMissQueue.length;
-        temp.avgDur = temp.totalDur/temp.total;
+        // + caculatorDuration(filterOther)
+        // + caculatorDuration(filterMissQueue)
+        )*1000;
+        temp.total = filterIVR.length;// + filterMissQueue.length;
+        temp.avgDur = temp.total == 0 ? 0: temp.totalDur/temp.total;
+        
+        
+        if(skillGroups && skillGroups.split(",").filter(i => i.includes("CT")).length == 0 && filterIVR.length == 0) return;
     }else{
         temp = initObjectMapping(item, element[0].EnterpriseName);
-        // let missQueueIVR = [];
-        // if(groupBySkillGroup["IVR"]){
-        //     missQueueIVR = groupBySkillGroup["IVR"].filter(i => i.MissReason == reasonToTelehub(TYPE_MISSCALL.MissQueue));
-        // }
+        let missQueueIVR = [];
+        let missOrtherIVR = [];
+        if(groupBySkillGroup["IVR"]){
+            missQueueIVR = groupBySkillGroup["IVR"].filter(i => i.MissReason == reasonToTelehub(TYPE_MISSCALL.MissQueue));
+            missOrtherIVR = groupBySkillGroup["IVR"].filter(i => i.MissReason == reasonToTelehub(TYPE_MISSCALL.Other));
+        }
 
 
         temp[`type_${TYPE_MISSCALL.CustomerEndRinging.value}`] = filterCustomerEndRinging.length;
         temp[`type_${TYPE_MISSCALL.MissAgent.value}`] = filterMissAgent.length;
         temp[`type_${TYPE_MISSCALL.RejectByAgent.value}`] = filterRejectByAgent.length;
-        temp[`type_${TYPE_MISSCALL.MissQueue.value}`] = filterMissQueue.length;// + missQueueIVR.length;
+        temp[`type_${TYPE_MISSCALL.MissQueue.value}`] = filterMissQueue.length + missQueueIVR.length;
         // temp[`type_${TYPE_MISSCALL.Other.value}`] = filterOther.length;
         // do phía telehub fix cứng vậy -_-
-        temp[`type_other`] = filterOther.length;
+        temp[`type_other`] = filterOther.length + missOrtherIVR.length;
         let totalDuration = caculatorDuration(filterCustomerEndRinging) + 
         caculatorDuration(filterMissAgent) + 
         caculatorDuration(filterRejectByAgent) + 
         caculatorDuration(filterMissQueue) + 
+        caculatorDuration(missQueueIVR) + 
+        caculatorDuration(missOrtherIVR) + 
         caculatorDuration(filterOther) 
         // + caculatorDuration(missQueueIVR);
         temp.totalDur = totalDuration*1000;
-        temp.avgDur = totalDuration*1000/(element.length);
-        temp.total = element.length;// + missQueueIVR.length;
+        temp.total = element.length + missQueueIVR.length + missOrtherIVR.length;
+        temp.avgDur = totalDuration*1000/(temp.total);
 
     }
     result.push(temp);
