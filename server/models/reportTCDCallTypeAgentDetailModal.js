@@ -385,15 +385,16 @@ exports.missCall = async (db, dbMssql, query) => {
       paging,
       download,
       rawData,
+      skillGroups,
     } = query;
     let querySelect = "";
     let queryCondition = "";
 
-    querySelect = `${selectMissIVR()}
+    querySelect = `${selectMissIVR(skillGroups)}
         UNION
-        ${selectMissQueue()}
+        ${selectMissQueue(skillGroups)}
         UNION
-        ${selectMissAgent()}`;
+        ${selectMissAgent(skillGroups)}`;
 
       if (download === 0 && paging == 0) {
         queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber
@@ -445,6 +446,80 @@ WITH t_TCD_last AS (
     throw new Error(error);
   }
 };
+
+/**
+ * API lấy dữ liệu chi tiết cuộc gọi nhỡ
+ * db:
+ * dbMssql:
+ * query:
+ *   { startDate: '2020-10-30 00:00:00'
+ *   , endDate: '2020-10-30 23:59:59'
+ *   , callTypeID: '5014'
+ *   , CT_Tranfer: '5015'
+ *    }
+ */
+
+exports.missCallByCustomer = async (db, dbMssql, query) => {
+  try {
+    let {
+      pages,
+      rows,
+      paging,
+      download,
+      rawData,
+      skillGroups,
+    } = query;
+    let querySelect = "";
+    let queryCondition = "";
+
+    querySelect = `${selectMissByCustomer(skillGroups)}`;
+
+      if (download === 0 && paging == 0) {
+        queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber
+        OFFSET ${(pages - 1) * rows} ROWS FETCH NEXT ${rows} ROWS ONLY`;
+      }
+      if (rawData === true)
+        queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber`;
+
+    let _query = `/**
+      Mô tả:
+        - Start: 01/11/2020
+        - Detail: chi tiết dữ liệu cuộc gọi nhỡ theo, hiện tại chạy đúng theo từng ngày, chạy theo nhiều ngày thì phải test thêm
+        - đã test chạy được theo query nhiều ngày
+      */
+    
+      ${variableSQL(query)}
+      
+      WITH t_TCD_last AS (
+        SELECT  ROW_NUMBER() OVER (PARTITION BY RouterCallKey ORDER BY RecoveryKey DESC, RouterCallKeySequenceNumber DESC) AS rn
+        ,*
+        FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] as m
+        where DateTime >= @startDate
+        AND DateTime < @endDate
+        AND CallTypeID in (@CT_IVR, @CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+      )
+      ${querySelect}
+      ${queryCondition}`;
+
+   
+    let resultQuery = await dbMssql.query(_query);
+
+    if(resultQuery){
+      if (paging == 1) {
+        resultQuery.recordset = [
+          {count: resultQuery.recordset.length}
+        ]
+        querySelect = resultQuery;
+      } else {
+        resultQuery = resultQuery;
+      }
+    }
+    return resultQuery;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 /**
  * API lấy dữ liệu chi tiết cuộc gọi nhỡ
  * db:
@@ -583,7 +658,83 @@ exports.missCallOld = async (db, dbMssql, query) => {
   }
 };
 
-function selectMissIVR() {
+
+function selectMissByCustomer(skillGroups) {
+  // CT-5016
+  let conditionFilter = ``;
+  if(skillGroups){
+    skillGroups = skillGroups.split(",")
+    let filterIVR = skillGroups.filter(i => i.includes("CT"));
+    let filterSG = skillGroups.filter(i => !i.includes("CT"));
+
+    if(filterIVR.length > 0 && filterSG.length > 0) {
+      conditionFilter = `and CallTypeID in (@CT_IVR, @CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)`
+    }else if(filterIVR.length > 0) {
+      conditionFilter = `and CallTypeID in (@CT_IVR, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+                         AND AgentSkillTargetID is null`
+    }else if(filterSG.length > 0) {
+      conditionFilter = `and CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+                        AND SkillGroupSkillTargetID in (${filterSG})`
+    }
+  }
+  return `SELECT
+      case 
+        when 
+          CallTypeID = @CT_IVR
+          and CallDisposition	= 13
+          then '${reasonToTelehub(TYPE_MISSCALL.MissIVR)}'
+        when 
+          CallTypeID in (@CT_Queue1, @CT_Queue2, @CT_Queue3)
+          and CallDisposition	in (13)
+          AND AgentSkillTargetID is null
+          then '${reasonToTelehub(TYPE_MISSCALL.MissQueue)}'
+        when 
+          CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3)
+          and CallDisposition	in (3)
+          then '${reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)}'
+        when 
+          CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+          and CallDisposition	in (19)
+          then '${reasonToTelehub(TYPE_MISSCALL.MissAgent)}'
+        when 
+          CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+          and CallDisposition	in (60)
+          then '${reasonToTelehub(TYPE_MISSCALL.RejectByAgent)}'
+        
+      else '${reasonToTelehub(TYPE_MISSCALL.Other)}'
+      end MissReason
+      ${fieldMissCallTCD()}
+  FROM t_TCD_last 
+  left join [ins1_awdb].[dbo].[t_Skill_Group] SG
+  on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
+    WHERE rn = 1
+    ${conditionFilter}
+    AND t_TCD_last.RecoveryKey not in ( --bỏ những cuộc gọi là handle
+      Select RecoveryKey from [ins1_hds].[dbo].[t_Termination_Call_Detail] TCD
+        where TCD.DateTime >= @startDate
+              AND TCD.DateTime < @endDate
+              AND TCD.CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+              AND TCD.CallDisposition in (13)
+              AND TCD.AgentSkillTargetID is not null
+              AND TCD.TalkTime > 0
+      )`;
+}
+
+function selectMissIVR(skillGroups) {
+  let conditionFilter = ``;
+  // if(skillGroups){
+  //   let filterIVR = skillGroups.filter(i => i.includes("CT"));
+    
+  //   if(filterIVR.length > 0) {
+      
+  //   }
+  //   let filterSG = skillGroups.filter(i => !i.includes("CT"));
+    
+
+  //   if(filterSG.length > 0) {
+      
+  //   }
+  // }
   return `SELECT
     case 
       when 
@@ -619,7 +770,22 @@ on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
     and CallTypeID in (@CT_IVR)`;
 }
 
-function selectMissQueue() {
+function selectMissQueue(skillGroups) {
+  let conditionFilter = ``;
+
+  // if(skillGroups){
+  //   let filterIVR = skillGroups.filter(i => i.includes("CT"));
+    
+  //   if(filterIVR.length > 0) {
+      
+  //   }
+  //   let filterSG = skillGroups.filter(i => !i.includes("CT"));
+    
+
+  //   if(filterSG.length > 0) {
+      
+  //   }
+  // }
   return `SELECT
   case 
     when 
@@ -656,7 +822,14 @@ function selectMissQueue() {
   and CallTypeID in (@CT_Queue1, @CT_Queue2, @CT_Queue3)`;
 }
 
-function selectMissAgent() {
+function selectMissAgent(skillGroups) {
+  let conditionFilter = ``;
+
+  // if(skillGroups){
+  //   let filterSG = skillGroups.filter(i => !i.includes("CT"));
+  //   if(filterSG.length > 0) {
+  //     conditionFilter = `AND SkillGroupSkillTargetID IN (${filterSG}) `
+  //   }
   return `SELECT
   case 
       when 
@@ -700,4 +873,27 @@ function selectMissAgent() {
     and AgentSkillTargetID is not null
      and CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
      and CallDisposition in (60, 3, 19)`;
+}
+
+function fieldMissCallTCD() {
+  return `
+  ,RecoveryKey
+  ,RouterCallKeySequenceNumber
+  ,CallTypeID
+  ,RouterCallKey
+  ,AgentSkillTargetID
+  ,[DateTime]
+  ,[RingTime]
+  ,[TalkTime]
+  ,[Duration]
+  ,[DelayTime]
+  ,[TimeToAband]
+  ,[HoldTime]
+  ,[WorkTime]
+  ,CallDisposition
+  ,ANI
+  ,TimeZone
+  ,StartDateTimeUTC
+  ,SG.EnterpriseName EnterpriseName
+  ,SkillGroupSkillTargetID`
 }

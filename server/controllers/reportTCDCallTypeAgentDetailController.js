@@ -177,3 +177,35 @@ exports.missCall = async (req, res, next) => {
         next(error);
     }
 }
+
+exports.missCallByCustomer = async (req, res, next) => {
+    try {
+        let db = req.app.locals.db;
+        let dbMssql = req.app.locals.dbMssql;
+
+        let query  = req.query;
+        query.pages = Number(query.pages) || 1;
+        query.paging = query.paging ? Number(query.paging) : 0;
+        query.download = query.download ? Number(query.download) : 0;
+        query.rows = Number(query.rows) || Number(process.env.LIMIT_DOCUMENT_PAGE);
+        
+        if (
+            !query.startDate ||
+            !query.endDate ||
+            !query.CT_IVR
+        ) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+        if(query.CT_ToAgentGroup1 && !query.CT_Queue1) return next(new ResError(ERR_400.code, `${ERR_400.message_detail.missingKey} CT_Queue1`), req, res, next);
+        if(query.CT_ToAgentGroup2 && !query.CT_Queue2) return next(new ResError(ERR_400.code, `${ERR_400.message_detail.missingKey} CT_Queue2`), req, res, next);
+        if(query.CT_ToAgentGroup3 && !query.CT_Queue3) return next(new ResError(ERR_400.code, `${ERR_400.message_detail.missingKey} CT_Queue3`), req, res, next);
+
+        const doc = await _model.missCallByCustomer(db, dbMssql, query);
+
+        if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+        // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+        res.status(SUCCESS_200.code).json({ data: doc });
+
+    } catch (error) {
+        next(error);
+    }
+}

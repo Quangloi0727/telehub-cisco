@@ -22,6 +22,10 @@ router
     .route('/missCall')
     .get(_controller.missCall);
 
+router
+    .route('/missCallByCustomer')
+    .get(_controller.missCallByCustomer);
+
 module.exports = router;
 
 /**

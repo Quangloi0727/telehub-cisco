@@ -128,7 +128,7 @@ exports.skillGroupMapping = async (req, res, next) => {
         next
       );
 
-    const doc = await _callTypeModel.missCall(db, dbMssql, query);
+    const doc = await _callTypeModel.missCallByCustomer(db, dbMssql, query);
 
     if (!doc)
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
@@ -183,24 +183,27 @@ function misscallGroupbySkillGroup(data, query) {
     if(item == "IVR"){
         temp = initObjectMapping(CT_IVR, "IVR");
         temp[`type_${TYPE_MISSCALL.MissIVR.value}`] = filterIVR.length;
+        temp[`type_${TYPE_MISSCALL.MissQueue.value}`] = filterMissQueue.length;
          // temp[`type_${TYPE_MISSCALL.Other.value}`] = filterOther.length;
         // do phía telehub fix cứng vậy -_-
         temp[`type_other`] = filterOther.length;
-        temp.totalDur = (caculatorDuration(filterIVR) + caculatorDuration(filterOther))*1000;
-        temp.avgDur = (caculatorDuration(filterIVR) + caculatorDuration(filterOther))*1000/(filterIVR.length + filterOther.length);
-        temp.total = filterIVR.length + filterOther.length;
+        temp.totalDur = (caculatorDuration(filterIVR)
+        + caculatorDuration(filterOther)
+        + caculatorDuration(filterMissQueue))*1000;
+        temp.total = filterIVR.length + filterOther.length + filterMissQueue.length;
+        temp.avgDur = temp.totalDur/temp.total;
     }else{
         temp = initObjectMapping(item, element[0].EnterpriseName);
-        let missQueueIVR = [];
-        if(groupBySkillGroup["IVR"]){
-            missQueueIVR = groupBySkillGroup["IVR"].filter(i => i.MissReason == reasonToTelehub(TYPE_MISSCALL.MissQueue));
-        }
+        // let missQueueIVR = [];
+        // if(groupBySkillGroup["IVR"]){
+        //     missQueueIVR = groupBySkillGroup["IVR"].filter(i => i.MissReason == reasonToTelehub(TYPE_MISSCALL.MissQueue));
+        // }
 
 
         temp[`type_${TYPE_MISSCALL.CustomerEndRinging.value}`] = filterCustomerEndRinging.length;
         temp[`type_${TYPE_MISSCALL.MissAgent.value}`] = filterMissAgent.length;
         temp[`type_${TYPE_MISSCALL.RejectByAgent.value}`] = filterRejectByAgent.length;
-        temp[`type_${TYPE_MISSCALL.MissQueue.value}`] = filterMissQueue.length + missQueueIVR.length;
+        temp[`type_${TYPE_MISSCALL.MissQueue.value}`] = filterMissQueue.length;// + missQueueIVR.length;
         // temp[`type_${TYPE_MISSCALL.Other.value}`] = filterOther.length;
         // do phía telehub fix cứng vậy -_-
         temp[`type_other`] = filterOther.length;
@@ -208,11 +211,11 @@ function misscallGroupbySkillGroup(data, query) {
         caculatorDuration(filterMissAgent) + 
         caculatorDuration(filterRejectByAgent) + 
         caculatorDuration(filterMissQueue) + 
-        caculatorDuration(filterOther) + 
-        caculatorDuration(missQueueIVR);
+        caculatorDuration(filterOther) 
+        // + caculatorDuration(missQueueIVR);
         temp.totalDur = totalDuration*1000;
         temp.avgDur = totalDuration*1000/(element.length);
-        temp.total = element.length + missQueueIVR.length;
+        temp.total = element.length;// + missQueueIVR.length;
 
     }
     result.push(temp);
