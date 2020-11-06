@@ -413,7 +413,7 @@ exports.missCall = async (db, dbMssql, query) => {
   ${variableSQL(query)}
   
 WITH t_TCD_last AS (
-  SELECT  ROW_NUMBER() OVER (PARTITION BY RouterCallKey ORDER BY RecoveryKey DESC, RouterCallKeySequenceNumber DESC) AS rn
+  SELECT  ROW_NUMBER() OVER (PARTITION BY RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
   ,*
   FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] as m
   where DateTime >= @startDate
@@ -492,7 +492,7 @@ exports.missCallByCustomer = async (db, dbMssql, query) => {
       ${variableSQL(query)}
       
       WITH t_TCD_last AS (
-        SELECT  ROW_NUMBER() OVER (PARTITION BY RouterCallKey ORDER BY RecoveryKey DESC, RouterCallKeySequenceNumber DESC) AS rn
+        SELECT  ROW_NUMBER() OVER (PARTITION BY RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
         ,*
         FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] as m
         where DateTime >= @startDate
