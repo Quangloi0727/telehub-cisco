@@ -44,7 +44,13 @@ const TYPE_MISSCALL = {
     },
 };
 
+const TYPE_CALL_HANDLE = {
+    value: 7,
+    id: "HandleByAgent",
+};
+
 module.exports = {
     TYPE_ADS,
     TYPE_MISSCALL,
+    TYPE_CALL_HANDLE,
 };
