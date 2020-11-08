@@ -125,7 +125,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
   
   -- bảng lấy bản tin TCD của mỗi cuộc gọi
   WITH t_TCD_last AS (
-    SELECT  ROW_NUMBER() OVER (PARTITION BY RouterCallKey ORDER BY RouterCallKey, RouterCallKeySequenceNumber DESC) AS rn
+    SELECT  ROW_NUMBER() OVER (PARTITION BY  RouterCallKeyDay, RouterCallKey  ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
     ,*
     FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] as m
     where DateTime >= @startDate

@@ -14,6 +14,9 @@ exports.variableSQL = (variables) => {
     CT_Queue1,
     CT_Queue2,
     CT_Queue3,
+    SG_Voice_1,
+    SG_Voice_2,
+    SG_Voice_3,
     CT_Tranfer,
   } = variables;
 
@@ -25,6 +28,10 @@ exports.variableSQL = (variables) => {
             DECLARE @CT_Queue2 varchar(100);
             DECLARE @CT_Queue3 varchar(100);
             DECLARE @CT_Tranfer varchar(100);
+            
+            DECLARE @SG_Voice_1 varchar(100);
+            DECLARE @SG_Voice_2 varchar(100);
+            DECLARE @SG_Voice_3 varchar(100);
             
             DECLARE @startDate varchar(100);
             DECLARE @endDate varchar(100);
@@ -45,7 +52,11 @@ exports.variableSQL = (variables) => {
             set @CT_Queue3 = ${CT_Queue3 || null}; -- Mã queue của skill group 3
 
             set @CT_Tranfer = ${CT_Tranfer || null}; -- Mã CT_Tranfer
-            
+
+            set @SG_Voice_1 = ${SG_Voice_1 || null}; -- Mã queue của skill group 1
+            set @SG_Voice_2 = ${SG_Voice_2 || null}; -- Mã queue của skill group 2
+            set @SG_Voice_3 = ${SG_Voice_3 || null}; -- Mã queue của skill group 3
+
             -- Ngày bắt đầu query
             set @startDate = '${startDate}';
             -- Ngày kết thúc query

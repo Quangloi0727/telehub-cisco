@@ -39,3 +39,21 @@ exports.distinctTCD = async (db, dbMssql, query) => {
     throw new Error(error);
   }
 };
+
+exports.byIds = async (db, dbMssql, query) => {
+  try {
+    let {
+      ids
+    } = query;
+    
+    let _query = `
+    Select * FROM [ins1_awdb].[dbo].[t_Skill_Group]
+
+    where SkillTargetID in (${ids})
+    and Deleted = 'N'`;
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};

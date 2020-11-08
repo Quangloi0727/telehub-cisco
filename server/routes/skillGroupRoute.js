@@ -10,6 +10,10 @@ router
     .route('/distinctTCD')
     .get(skillGroupController.distinctTCD)
 
+router
+    .route('/byIds')
+    .get(skillGroupController.byIds)
+
 // /**
 //  * Chỉ nhận params từ a-z 0-9 và có độ dài bằng 24
 //  */

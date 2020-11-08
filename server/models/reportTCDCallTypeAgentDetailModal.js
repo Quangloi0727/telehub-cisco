@@ -413,7 +413,7 @@ exports.missCall = async (db, dbMssql, query) => {
   ${variableSQL(query)}
   
 WITH t_TCD_last AS (
-  SELECT  ROW_NUMBER() OVER (PARTITION BY RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
+  SELECT  ROW_NUMBER() OVER (PARTITION BY RouterCallKeyDay, RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
   ,*
   FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] as m
   where DateTime >= @startDate
@@ -473,7 +473,7 @@ exports.missCallByCustomer = async (db, dbMssql, query) => {
     let querySelect = "";
     let queryCondition = "";
 
-    querySelect = `${selectMissByCustomer(skillGroups)}`;
+    querySelect = `${selectMissByCustomer(query)}`;
 
       if (download === 0 && paging == 0) {
         queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber
@@ -492,7 +492,7 @@ exports.missCallByCustomer = async (db, dbMssql, query) => {
       ${variableSQL(query)}
       
       WITH t_TCD_last AS (
-        SELECT  ROW_NUMBER() OVER (PARTITION BY RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
+        SELECT  ROW_NUMBER() OVER (PARTITION BY  RouterCallKeyDay, RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
         ,*
         FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] as m
         where DateTime >= @startDate
@@ -660,25 +660,45 @@ exports.missCallOld = async (db, dbMssql, query) => {
 };
 
 
-function selectMissByCustomer(skillGroups) {
+function selectMissByCustomer(query) {
+  let {
+    CT_IVR,
+    CT_ToAgentGroup1,
+    CT_ToAgentGroup2,
+    CT_ToAgentGroup3,
+    CT_Queue1,
+    CT_Queue2,
+    CT_Queue3,
+    SG_Voice_1,
+    SG_Voice_2,
+    SG_Voice_3,
+    skillGroups,
+  } = query;
   // CT-5016
   let conditionFilter = ``;
   if(skillGroups){
     skillGroups = skillGroups.split(",")
     let filterIVR = skillGroups.filter(i => i.includes("CT"));
     let filterSG = skillGroups.filter(i => !i.includes("CT"));
-
+    let CallTypeIDFilter = []
+    if(filterSG.includes(SG_Voice_1)) CallTypeIDFilter = [ ...CallTypeIDFilter, ...[CT_ToAgentGroup1, CT_Queue1] ];
+    if(filterSG.includes(SG_Voice_2)) CallTypeIDFilter = [ ...CallTypeIDFilter, ...[CT_ToAgentGroup2, CT_Queue2] ];
+    if(filterSG.includes(SG_Voice_3)) CallTypeIDFilter = [ ...CallTypeIDFilter, ...[CT_ToAgentGroup3, CT_Queue3] ];
+    
     if(filterIVR.length > 0 && filterSG.length > 0) {
-      conditionFilter = `and CallTypeID in (@CT_IVR, @CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)`
+
+      conditionFilter = `and CallTypeID in (@CT_IVR, ${CallTypeIDFilter})`
     }else if(filterIVR.length > 0) {
       conditionFilter = `and CallTypeID in (@CT_IVR)
                          AND AgentSkillTargetID is null`
     }else if(filterSG.length > 0) {
+      
+
       conditionFilter = `
-      And (CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+      And (CallTypeID in (${CallTypeIDFilter})
         and SkillGroupSkillTargetID in (${filterSG})
         or (
-          CallTypeID not in (@CT_IVR)
+          CallTypeID in (${CallTypeIDFilter})
           and SkillGroupSkillTargetID is null 
         )
       )`
@@ -710,11 +730,25 @@ function selectMissByCustomer(skillGroups) {
         
       else '${reasonToTelehub(TYPE_MISSCALL.Other)}'
       end MissReason
+      ,case 
+        when 
+          CallTypeID = @CT_IVR
+          and CallDisposition	= 13
+          then 'IVR'
+      else 'QUEUE'
+      end CT_Type
       ${fieldMissCallTCD()}
   FROM t_TCD_last 
   left join [ins1_awdb].[dbo].[t_Skill_Group] SG
-  on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
-    WHERE rn = 1
+    on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
+      or(t_TCD_last.SkillGroupSkillTargetID is null
+      and t_TCD_last.CallTypeID in (@CT_ToAgentGroup1, @CT_Queue1) and SG.SkillTargetID = @SG_Voice_1)
+      or(t_TCD_last.SkillGroupSkillTargetID is null
+      and t_TCD_last.CallTypeID in (@CT_ToAgentGroup2, @CT_Queue2) and SG.SkillTargetID = @SG_Voice_2)
+      or(t_TCD_last.SkillGroupSkillTargetID is null
+      and t_TCD_last.CallTypeID in (@CT_ToAgentGroup3, @CT_Queue3) and SG.SkillTargetID = @SG_Voice_3)
+  WHERE rn = 1
+
     ${conditionFilter}
     AND t_TCD_last.RecoveryKey not in ( --bỏ những cuộc gọi là handle
       Select RecoveryKey from [ins1_hds].[dbo].[t_Termination_Call_Detail] TCD
@@ -750,25 +784,14 @@ function selectMissIVR(skillGroups) {
         then '${reasonToTelehub(TYPE_MISSCALL.MissIVR)}'
       else '${reasonToTelehub(TYPE_MISSCALL.Other)}'
       end MissReason
-    ,RecoveryKey
-    ,RouterCallKeySequenceNumber
-    ,CallTypeID
-    ,RouterCallKey
-    ,AgentSkillTargetID
-    ,[DateTime]
-    ,[RingTime]
-    ,[TalkTime]
-    ,[Duration]
-    ,[DelayTime]
-    ,[TimeToAband]
-    ,[HoldTime]
-    ,[WorkTime]
-    , CallDisposition
-    ,ANI
-    ,TimeZone
-    ,StartDateTimeUTC
-    ,SG.EnterpriseName EnterpriseName
-    ,SkillGroupSkillTargetID
+    ,case 
+      when 
+        CallTypeID = @CT_IVR
+        and CallDisposition	= 13
+        then 'IVR'
+    else 'QUEUE'
+    end CT_Type
+    ${fieldMissCallTCD()}
 FROM t_TCD_last 
 left join [ins1_awdb].[dbo].[t_Skill_Group] SG
 on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
@@ -802,25 +825,14 @@ function selectMissQueue(skillGroups) {
       then '${reasonToTelehub(TYPE_MISSCALL.MissQueue)}'
     else '${reasonToTelehub(TYPE_MISSCALL.Other)}'
     end MissReason
-    ,RecoveryKey
-    ,RouterCallKeySequenceNumber
-    , CallTypeID
-    , RouterCallKey
-    ,AgentSkillTargetID
-    ,[DateTime]
-      ,[RingTime]
-      ,[TalkTime]
-      ,[Duration]
-      ,[DelayTime]
-      ,[TimeToAband]
-      ,[HoldTime]
-      ,[WorkTime]
-    , CallDisposition
-    ,ANI
-    ,TimeZone
-    ,StartDateTimeUTC
-    ,SG.EnterpriseName EnterpriseName
-    ,SkillGroupSkillTargetID
+    ,case 
+      when 
+        CallTypeID = @CT_IVR
+        and CallDisposition	= 13
+        then 'IVR'
+    else 'QUEUE'
+    end CT_Type
+    ${fieldMissCallTCD()}
     FROM t_TCD_last 
     left join [ins1_awdb].[dbo].[t_Skill_Group] SG
     on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
@@ -853,25 +865,14 @@ function selectMissAgent(skillGroups) {
         then '${reasonToTelehub(TYPE_MISSCALL.RejectByAgent)}'
     else '${reasonToTelehub(TYPE_MISSCALL.Other)}'
     end MissReason
-    ,RecoveryKey
-    , CallTypeID
-    ,RouterCallKeySequenceNumber
-    , RouterCallKey
-    , AgentSkillTargetID
-    ,[DateTime]
-      ,[RingTime]
-      ,[TalkTime]
-      ,[Duration]
-      ,[DelayTime]
-      ,[TimeToAband]
-      ,[HoldTime]
-      ,[WorkTime]
-    , CallDisposition
-    ,ANI
-    ,TimeZone
-    ,StartDateTimeUTC
-    ,SG.EnterpriseName EnterpriseName
-    ,SkillGroupSkillTargetID
+    ,case 
+      when 
+        CallTypeID = @CT_IVR
+        and CallDisposition	= 13
+        then 'IVR'
+    else 'QUEUE'
+    end CT_Type
+    ${fieldMissCallTCD()}
    FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
    left join [ins1_awdb].[dbo].[t_Skill_Group] SG
     on t_TCD.SkillGroupSkillTargetID = SG.SkillTargetID
@@ -902,5 +903,16 @@ function fieldMissCallTCD() {
   ,TimeZone
   ,StartDateTimeUTC
   ,SG.EnterpriseName EnterpriseName
-  ,SkillGroupSkillTargetID`
+  ,case
+		when SkillGroupSkillTargetID is null
+			and CallTypeID in (@CT_ToAgentGroup1, @CT_Queue1)
+			then @SG_Voice_1
+		when SkillGroupSkillTargetID is null
+			and CallTypeID in (@CT_ToAgentGroup2, @CT_Queue2)
+			then @SG_Voice_2
+		when SkillGroupSkillTargetID is null
+			and CallTypeID in (@CT_ToAgentGroup3, @CT_Queue3)
+			then @SG_Voice_3
+		else SkillGroupSkillTargetID
+	end SkillGroupSkillTargetID`
 }
