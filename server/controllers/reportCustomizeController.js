@@ -293,7 +293,7 @@ function totalCallHandleGT20(data, query) {
   };
   let filterData = data.filter(
     (i) =>
-      i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE) && (i.Duration - i.TalkTime)  >= 20
+      i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE) && (i.Duration - i.TalkTime)  > 20
   );
 
   let RTCQueueHandle = totalCallQueueHandle(data, query).childs;
