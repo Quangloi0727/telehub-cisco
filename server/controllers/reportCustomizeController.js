@@ -237,10 +237,8 @@ function ratioCallQueueHandle(data, query) {
         rowData(
           i.name,
           `${RTCQueueHandle[index] ? RTCQueueHandle[index].result: ''} / ${RTCQueue[index].result}`,
-          (
-            (RTCQueueHandle[index] ? RTCQueueHandle[index].result: '' / RTCQueue[index].result) *
-            100
-          ).toFixed() + " %"
+          (RTCQueueHandle[index] ? (RTCQueueHandle[index].result/ RTCQueue[index].result)*
+            100: 0).toFixed() + " %"
         )
       );
   });
