@@ -263,7 +263,11 @@ function totalCallHandleLT20(data, query) {
 
   // Total
   result.childs.push(
-    rowData("Total", `${filterData.length} / ${RTCQueueHandle[0].result}`)
+    rowData("Total",
+    `${filterData.length} / ${RTCQueueHandle[0].result}`, 
+    (filterData.length ? (filterData.length / RTCQueueHandle[0].result) * 100 : 0).toFixed() +
+            " %"
+    )
   );
 
   // element
@@ -302,7 +306,10 @@ function totalCallHandleGT20(data, query) {
 
   // Total
   result.childs.push(
-    rowData("Total", `${filterData.length} / ${RTCQueueHandle[0].result}`)
+    rowData("Total", `${filterData.length} / ${RTCQueueHandle[0].result}`,
+    (filterData.length ? (filterData.length / RTCQueueHandle[0].result) * 100 : 0).toFixed() +
+            " %"
+    )
   );
 
   // element
