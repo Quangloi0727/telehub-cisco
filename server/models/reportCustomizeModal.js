@@ -142,8 +142,14 @@ function selectCallDetailByCustomer(query) {
           CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
           AND AgentSkillTargetID is not null
           AND TalkTime >= 0
-          AND CallDisposition	in (13,7,6)
+          AND CallDisposition	in (13)
           then '${reasonToTelehub(TYPE_CALL_HANDLE)}'
+        when 
+          CallTypeID in (@CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
+          AND AgentSkillTargetID is not null
+          AND TalkTime >= 0
+          AND CallDisposition	in (6,7)
+          then '${reasonToTelehub(TYPE_MISSCALL.MissShortCall)}'
         
       else '${reasonToTelehub(TYPE_MISSCALL.Other)}'
       end CallTypeTXT

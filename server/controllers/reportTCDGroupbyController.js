@@ -181,6 +181,7 @@ function misscallGroupbySkillGroup(data, query) {
     let filterMissAgent = element.filter(i => i.MissReason == reasonToTelehub(TYPE_MISSCALL.MissAgent));
     let filterRejectByAgent = element.filter(i => i.MissReason == reasonToTelehub(TYPE_MISSCALL.RejectByAgent));
     let filterMissQueue = element.filter(i => i.MissReason == reasonToTelehub(TYPE_MISSCALL.MissQueue));
+    let filterMissShortCall = element.filter(i => i.MissReason == reasonToTelehub(TYPE_MISSCALL.MissShortCall));
     let filterOther = element.filter(i => i.MissReason == reasonToTelehub(TYPE_MISSCALL.Other));
     let caculatorDuration = function (data) {
         return data.reduce((pre, cur) => (pre + cur.Duration), 0);
@@ -207,6 +208,7 @@ function misscallGroupbySkillGroup(data, query) {
         temp[`type_${TYPE_MISSCALL.MissAgent.value}`] = filterMissAgent.length;
         temp[`type_${TYPE_MISSCALL.RejectByAgent.value}`] = filterRejectByAgent.length;
         temp[`type_${TYPE_MISSCALL.MissQueue.value}`] = filterMissQueue.length;
+        temp[`type_${TYPE_MISSCALL.MissShortCall.value}`] = filterMissShortCall.length;
         // temp[`type_${TYPE_MISSCALL.Other.value}`] = filterOther.length;
         // do phía telehub fix cứng vậy -_-
         temp[`type_other`] = filterOther.length;
@@ -214,6 +216,7 @@ function misscallGroupbySkillGroup(data, query) {
         caculatorDuration(filterMissAgent) + 
         caculatorDuration(filterRejectByAgent) + 
         caculatorDuration(filterMissQueue) + 
+        caculatorDuration(filterMissShortCall) + 
         caculatorDuration(filterOther);
         temp.totalDur = totalDuration*1000;
         temp.total = element.length;
@@ -268,11 +271,13 @@ function initObjectMapping(id, name) {
     type_3: 0, //
     type_4: 0, //
     type_5: 0, //
+    type_8: 0, //
     type_1_dur: 0,
     type_2_dur: 0,
     type_3_dur: 0,
     type_4_dur: 0,
     type_5_dur: 0,
+    type_8_dur: 0,
     type_other: 0,
     total: 0,
     totalDur: 0,

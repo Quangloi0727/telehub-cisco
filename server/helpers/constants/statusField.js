@@ -38,6 +38,10 @@ const TYPE_MISSCALL = {
         value: 5,
         id: "MissQueue",
     },
+    MissShortCall: {
+        value: 8,
+        id: "MissShortCall", // các cuộc agent nhấc máy nhưng duration < 5s (5s ko chắc) và callDiposition = 7 | 6
+    },
     Other: {
         value: 6,
         id: "OTHER",
