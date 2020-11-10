@@ -87,7 +87,7 @@ exports.report2080 = async (req, res, next) => {
         next
       );
 
-    const doc = await _model.report2080(db, dbMssql, query);
+    const doc = await _model.lastTCDRecord(db, dbMssql, query);
 
     if (!doc)
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);

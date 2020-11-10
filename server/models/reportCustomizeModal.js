@@ -25,7 +25,7 @@ const {
  *    }
  */
 
-exports.report2080 = async (db, dbMssql, query) => {
+exports.lastTCDRecord = async (db, dbMssql, query) => {
   try {
     let {
       pages,

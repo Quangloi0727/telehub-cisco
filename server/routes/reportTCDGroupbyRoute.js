@@ -13,6 +13,9 @@ router
 router
     .route('/skillGroupMapping')
     .get(_controller.skillGroupMapping);
+router
+    .route('/byQueueMapping')
+    .get(_controller.byQueueMapping);
 
 module.exports = router;
 

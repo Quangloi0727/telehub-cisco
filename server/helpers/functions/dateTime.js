@@ -17,3 +17,19 @@ exports.formatDate = (_date, format = "HH:mm:ss") => {
         .replace("mm", minutes)
         .replace("ss", seconds);
 };
+
+exports.pad = (num) => {
+    return ("0" + num).slice(-2);
+}
+exports.hms = (secs) => {
+    if(!secs) return "--";
+
+    // floor: làm tròn xuống
+    // round: làm tròn lên từ 0.5
+    var sec = Math.floor(secs);
+    var minutes = Math.floor(sec / 60);
+    sec = sec % 60;
+    var hours = Math.floor(minutes / 60)
+    minutes = minutes % 60;
+    return hours + ":" + pad(minutes) + ":" + pad(sec);
+}

@@ -5,4 +5,5 @@ module.exports = {
     ...require("./path"),
     ...require("./string"),
     ...require("./sqlDefine"),
+    ...require("./number"),
 };
