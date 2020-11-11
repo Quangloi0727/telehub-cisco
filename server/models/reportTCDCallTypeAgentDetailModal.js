@@ -49,7 +49,7 @@ exports.getAll = async (db, dbMssql, query) => {
      ,Min(Duration) MinsDuration -- cuoc goi ngan nhat
      ,SUM(CASE WHEN 
 		SkillGroupSkillTargetID is not null 
-		and CallTypeID in (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3)
+		and CallTypeID in (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3,@CT_Queue1,@CT_Queue2,@CT_Queue3)
 		THEN 1 
 		ELSE 0 
 		END
