@@ -15,7 +15,9 @@ const {
 
 /**
  * API lấy dữ liệu chi tiết cuộc gọi nhỡ
- * Trang telehub: BÁO CÁO GỌI VÀO - CUỘC GỌI BỊ NHỠ THEO KHÁCH HÀNG: Tìm kiếm tổng quát
+ * Trang telehub:
+ *  - BÁO CÁO GỌI VÀO - báo cáo 20 80
+ *  - BÁO CÁO GỌI VÀO - báo cáo theo queue
  * db:
  * dbMssql:
  * query:
@@ -28,14 +30,6 @@ const {
 
 exports.lastTCDRecord = async (db, dbMssql, query) => {
   try {
-    let {
-      pages,
-      rows,
-      paging,
-      download,
-      rawData,
-      skillGroups,
-    } = query;
     let querySelect = "";
     let queryCondition = "";
     let CT_Dynamic = []
@@ -82,16 +76,6 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
 
 function selectCallDetailByCustomer(query) {
   let {
-    CT_IVR,
-    CT_ToAgentGroup1,
-    CT_ToAgentGroup2,
-    CT_ToAgentGroup3,
-    CT_Queue1,
-    CT_Queue2,
-    CT_Queue3,
-    SG_Voice_1,
-    SG_Voice_2,
-    SG_Voice_3,
     skillGroups,
   } = query;
   // CT-5016
@@ -236,6 +220,7 @@ function fieldCallTCD() {
   ,DATEPART(MONTH, CallTypeReportingDateTime) MonthBlock
   ,DATEPART(YEAR, CallTypeReportingDateTime) YearBlock
   ,FORMAT(CallTypeReportingDateTime, 'yyyy-MM-dd-HH') TimeBlock
+  ,FORMAT(CallTypeReportingDateTime, 'HH:mm') + '-' + FORMAT(DATEADD(mi,15,CallTypeReportingDateTime), 'HH:mm') HourMinuteBlock
   ,case
 		when SkillGroupSkillTargetID is null
 			and CallTypeID in (@CT_ToAgentGroup1, @CT_Queue1)

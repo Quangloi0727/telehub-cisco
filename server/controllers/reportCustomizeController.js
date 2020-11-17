@@ -56,36 +56,39 @@ exports.report2080 = async (req, res, next) => {
     if (!query.startDate || !query.endDate || !query.CT_IVR)
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
-    if (query.CT_ToAgentGroup1 && !query.CT_Queue1)
-      return next(
-        new ResError(
-          ERR_400.code,
-          `${ERR_400.message_detail.missingKey} CT_Queue1`
-        ),
-        req,
-        res,
-        next
-      );
-    if (query.CT_ToAgentGroup2 && !query.CT_Queue2)
-      return next(
-        new ResError(
-          ERR_400.code,
-          `${ERR_400.message_detail.missingKey} CT_Queue2`
-        ),
-        req,
-        res,
-        next
-      );
-    if (query.CT_ToAgentGroup3 && !query.CT_Queue3)
-      return next(
-        new ResError(
-          ERR_400.code,
-          `${ERR_400.message_detail.missingKey} CT_Queue3`
-        ),
-        req,
-        res,
-        next
-      );
+    Object.keys(query).forEach(item => {
+      // const element = query[item];
+      if(
+        item.includes("CT_ToAgentGroup")
+      ){
+        let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+        if(!query[`CT_Queue${groupNumber}`]){
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+
+        if(!query[`SG_Voice_${groupNumber}`]){
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+        
+      }
+    });
 
     const doc = await _model.lastTCDRecord(db, dbMssql, query);
 
@@ -98,29 +101,74 @@ exports.report2080 = async (req, res, next) => {
   }
 };
 
+/**
+ * Report 20 - 80 của GGG
+ */
+exports.reportIncomingCallTrends = async (req, res, next) => {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    let query = req.query;
+
+    if (!query.startDate || !query.endDate || !query.CT_IVR)
+      return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    /**
+     * Check việc khởi tạo các CallType
+     * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+     */
+    Object.keys(query).forEach(item => {
+      // const element = query[item];
+      if(
+        item.includes("CT_ToAgentGroup")
+      ){
+        let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+        if(!query[`CT_Queue${groupNumber}`]){
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+
+        if(!query[`SG_Voice_${groupNumber}`]){
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+        
+      }
+    });
+
+    const doc = await _model.lastTCDRecord(db, dbMssql, query);
+
+    if (!doc)
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+    // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+    res.status(SUCCESS_200.code).json({ data: mappingIncomingCallTrends(doc, query) });
+  } catch (error) {
+    next(error);
+  }
+};
+
 function mapping2080(data, query) {
   let { recordset } = data;
 
   let result = [];
 
   let {
-    startDate,
-    endDate,
-    CT_IVR,
-    CT_ToAgentGroup1,
-    CT_ToAgentGroup2,
-    CT_ToAgentGroup3,
-    CT_Queue1,
-    CT_Queue2,
-    CT_Queue3,
-    SG_Voice_1,
-    SG_Voice_2,
-    SG_Voice_3,
-    pages,
-    rows,
-    paging,
-    download,
-    rawData,
     skillGroups,
   } = query;
   if (skillGroups) skillGroups = skillGroups.split(",");
@@ -328,4 +376,36 @@ function totalCallHandleGT20(data, query) {
     });
 
   return result;
+}
+
+function mappingIncomingCallTrends(data, query) {
+  let { recordset } = data;
+
+  let groupByDateTimeBlock = _.groupBy(recordset, "HourMinuteBlock");
+
+  let result = [];
+
+  let {
+    skillGroups,
+  } = query;
+  if (skillGroups) skillGroups = skillGroups.split(",");
+  
+  Object.keys(groupByDateTimeBlock).forEach(item => {
+    let element = groupByDateTimeBlock[item];
+    let reduceTemp = element.reduce((pre, cur) => {
+      
+      if(cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)) pre.StopIVR++;
+      if(cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)) pre.ReceivedCall++;
+
+      return pre;
+    }, {
+      HourMinuteBlock: item,
+      Inbound: element.length, StopIVR: 0, ReceivedCall: 0, ServedCall: 0, MissCall: 0, AbdCall: 0, AbdIn15s: 0, AbdAfter15s: 0,
+      Efficiency: 0, atv: 0, aht: 0, MaxNumSimultaneousCall: 0, LongestWaitingTime: 0, Percent: 0
+    })
+    result.push(reduceTemp);
+  });
+
+  data.recordset = result;
+  return data;
 }

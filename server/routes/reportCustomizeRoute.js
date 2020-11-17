@@ -6,6 +6,10 @@ router
     .route('/report-20-80')
     .get(_controller.report2080);
 
+router
+    .route('/report-IncomingCallTrends')
+    .get(_controller.reportIncomingCallTrends);
+
 module.exports = router;
 
 /**
