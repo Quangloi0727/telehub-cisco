@@ -144,7 +144,7 @@ exports.skillGroupMapping = async (req, res, next) => {
 };
 
 /**
- * Report 20 - 80 của GGG
+ * BÁO CÁO GỌI VÀO - BÁO CÁO THEO QUEUE
  */
 exports.byQueueMapping = async (req, res, next) => {
   try {

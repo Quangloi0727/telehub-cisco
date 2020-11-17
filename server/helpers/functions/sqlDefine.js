@@ -62,3 +62,37 @@ exports.variableSQL = (variables) => {
             -- Ngày kết thúc query
             set @endDate = '${endDate}';`;
 };
+
+
+
+/**
+ * Định nghĩa các biến theo call type dùng cho việc tổng hợp các báo cáo, query cisco
+ */
+exports.variableSQLDynamic = (variables) => {
+  let DECLARE = [];
+  let SET_VALUE = [];
+  Object.keys(variables).forEach(item => {
+    let currentValues = variables[item];
+
+    if(
+      item.includes("startDate") ||
+      item.includes("endDate") ||
+      item.includes("SG") ||
+      item.includes("CT")
+      ){
+      DECLARE.push(`DECLARE @${item} varchar(100);`);
+
+      if(
+        item.includes("startDate") ||
+        item.includes("endDate")
+      ) {
+        SET_VALUE.push(`set @${item} = '${currentValues || null}';`);
+      } else {
+        SET_VALUE.push(`set @${item} = ${currentValues || null};`);
+      }
+    }
+  });
+
+  return `${DECLARE.join('')}
+          ${SET_VALUE.join('')}`;
+};
