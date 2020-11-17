@@ -393,16 +393,36 @@ function mappingIncomingCallTrends(data, query) {
   Object.keys(groupByDateTimeBlock).forEach(item => {
     let element = groupByDateTimeBlock[item];
     let reduceTemp = element.reduce((pre, cur) => {
-      
+      let waitingTime = cur.Duration - cur.TalkTime;
+
       if(cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)) pre.StopIVR++;
       if(cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)) pre.ReceivedCall++;
+      if(cur.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)) pre.ServedCall++;
+      if(cur.CallTypeTXT != reasonToTelehub(TYPE_CALL_HANDLE) ||
+        cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)
+      ) pre.MissCall++;
+
+      if(
+          cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue) ||
+          cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissShortCall) ||
+          cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)
+      ){
+        if(waitingTime <= 15) pre.AbdIn15s++;
+        if(waitingTime > 15) pre.AbdAfter15s++;
+      }
+
+      if(waitingTime > pre.LongestWaitingTime) pre.LongestWaitingTime = waitingTime;
 
       return pre;
     }, {
       HourMinuteBlock: item,
-      Inbound: element.length, StopIVR: 0, ReceivedCall: 0, ServedCall: 0, MissCall: 0, AbdCall: 0, AbdIn15s: 0, AbdAfter15s: 0,
-      Efficiency: 0, atv: 0, aht: 0, MaxNumSimultaneousCall: 0, LongestWaitingTime: 0, Percent: 0
-    })
+      Inbound: element.length, StopIVR: 0, ReceivedCall: 0, ServedCall: 0, MissCall: 0, AbdIn15s: 0, AbdAfter15s: 0,
+      avgTimeWaiting: 0, avgHandlingTime: 0, MaxNumSimultaneousCall: 0, LongestWaitingTime: 0
+    });
+
+    reduceTemp.AbdCall = reduceTemp.ReceivedCall - reduceTemp.ServedCall;
+    reduceTemp.Efficiency = reduceTemp.ServedCall ? reduceTemp.ServedCall/(reduceTemp.ReceivedCall - reduceTemp.AbdIn15s): 0;
+    // console.log({Efficiency: reduceTemp.Efficiency});
     result.push(reduceTemp);
   });
 
