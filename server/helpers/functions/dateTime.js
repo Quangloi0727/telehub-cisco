@@ -18,9 +18,8 @@ exports.formatDate = (_date, format = "HH:mm:ss") => {
         .replace("ss", seconds);
 };
 
-exports.pad = (num) => {
-    return ("0" + num).slice(-2);
-}
+exports.pad = pad;
+
 exports.hms = (secs) => {
     if(!secs) return "--";
 
@@ -32,4 +31,8 @@ exports.hms = (secs) => {
     var hours = Math.floor(minutes / 60)
     minutes = minutes % 60;
     return hours + ":" + pad(minutes) + ":" + pad(sec);
+}
+
+function pad (num) {
+    return ("0" + num).slice(-2);
 }

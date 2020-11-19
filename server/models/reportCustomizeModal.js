@@ -220,6 +220,7 @@ function fieldCallTCD() {
   ,DATEPART(MONTH, CallTypeReportingDateTime) MonthBlock
   ,DATEPART(YEAR, CallTypeReportingDateTime) YearBlock
   ,FORMAT(CallTypeReportingDateTime, 'yyyy-MM-dd-HH') TimeBlock
+  ,FORMAT(DATEADD(ss, -Duration, DateTime), 'yyyy-MM-dd HH:mm') MinuteTimeBlock
   ,FORMAT(CallTypeReportingDateTime, 'HH:mm') + '-' + FORMAT(DATEADD(mi,15,CallTypeReportingDateTime), 'HH:mm') HourMinuteBlock
   ,case
 		when SkillGroupSkillTargetID is null

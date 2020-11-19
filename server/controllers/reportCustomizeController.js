@@ -27,6 +27,7 @@ const {
   checkKeyValueExists,
   reasonToTelehub,
   variableSQL,
+  hms,
 } = require("../helpers/functions");
 
 /**
@@ -56,14 +57,12 @@ exports.report2080 = async (req, res, next) => {
     if (!query.startDate || !query.endDate || !query.CT_IVR)
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
-    Object.keys(query).forEach(item => {
+    Object.keys(query).forEach((item) => {
       // const element = query[item];
-      if(
-        item.includes("CT_ToAgentGroup")
-      ){
+      if (item.includes("CT_ToAgentGroup")) {
         let groupNumber = item.replace("CT_ToAgentGroup", "");
 
-        if(!query[`CT_Queue${groupNumber}`]){
+        if (!query[`CT_Queue${groupNumber}`]) {
           return next(
             new ResError(
               ERR_400.code,
@@ -75,7 +74,7 @@ exports.report2080 = async (req, res, next) => {
           );
         }
 
-        if(!query[`SG_Voice_${groupNumber}`]){
+        if (!query[`SG_Voice_${groupNumber}`]) {
           return next(
             new ResError(
               ERR_400.code,
@@ -86,7 +85,6 @@ exports.report2080 = async (req, res, next) => {
             next
           );
         }
-        
       }
     });
 
@@ -118,14 +116,12 @@ exports.reportIncomingCallTrends = async (req, res, next) => {
      * Check việc khởi tạo các CallType
      * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
      */
-    Object.keys(query).forEach(item => {
+    Object.keys(query).forEach((item) => {
       // const element = query[item];
-      if(
-        item.includes("CT_ToAgentGroup")
-      ){
+      if (item.includes("CT_ToAgentGroup")) {
         let groupNumber = item.replace("CT_ToAgentGroup", "");
 
-        if(!query[`CT_Queue${groupNumber}`]){
+        if (!query[`CT_Queue${groupNumber}`]) {
           return next(
             new ResError(
               ERR_400.code,
@@ -137,7 +133,7 @@ exports.reportIncomingCallTrends = async (req, res, next) => {
           );
         }
 
-        if(!query[`SG_Voice_${groupNumber}`]){
+        if (!query[`SG_Voice_${groupNumber}`]) {
           return next(
             new ResError(
               ERR_400.code,
@@ -148,7 +144,6 @@ exports.reportIncomingCallTrends = async (req, res, next) => {
             next
           );
         }
-        
       }
     });
 
@@ -157,7 +152,9 @@ exports.reportIncomingCallTrends = async (req, res, next) => {
     if (!doc)
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
-    res.status(SUCCESS_200.code).json({ data: mappingIncomingCallTrends(doc, query) });
+    res
+      .status(SUCCESS_200.code)
+      .json({ data: mappingIncomingCallTrends(doc, query) });
   } catch (error) {
     next(error);
   }
@@ -168,9 +165,7 @@ function mapping2080(data, query) {
 
   let result = [];
 
-  let {
-    skillGroups,
-  } = query;
+  let { skillGroups } = query;
   if (skillGroups) skillGroups = skillGroups.split(",");
 
   // dòng "Tổng các cuộc gọi vào hệ thống"
@@ -221,7 +216,7 @@ function totalCallQueue(data, query) {
     (i) => i.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)
   );
   let countBySG = _.countBy(filterData, "EnterpriseName");
-//   console.log(countBySG);
+  //   console.log(countBySG);
 
   // Total
   result.childs.push(rowData("Total", filterData.length));
@@ -245,7 +240,7 @@ function totalCallQueueHandle(data, query) {
     (i) => i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)
   );
   let countBySG = _.countBy(filterData, "EnterpriseName");
-//   console.log(countBySG);
+  //   console.log(countBySG);
 
   // Total
   result.childs.push(rowData("Total", filterData.length));
@@ -276,17 +271,23 @@ function ratioCallQueueHandle(data, query) {
         rowData(
           "Total",
           `${RTCQueueHandle[0].result} / ${RTCQueue[0].result}`,
-          (RTCQueueHandle[0].result ? (RTCQueueHandle[0].result / RTCQueue[0].result) * 100 : 0).toFixed() +
-            " %"
+          (RTCQueueHandle[0].result
+            ? (RTCQueueHandle[0].result / RTCQueue[0].result) * 100
+            : 0
+          ).toFixed() + " %"
         )
       );
     else
       result.childs.push(
         rowData(
           i.name,
-          `${RTCQueueHandle[index] ? RTCQueueHandle[index].result: ''} / ${RTCQueue[index].result}`,
-          (RTCQueueHandle[index] ? (RTCQueueHandle[index].result/ RTCQueue[index].result)*
-            100: 0).toFixed() + " %"
+          `${RTCQueueHandle[index] ? RTCQueueHandle[index].result : ""} / ${
+            RTCQueue[index].result
+          }`,
+          (RTCQueueHandle[index]
+            ? (RTCQueueHandle[index].result / RTCQueue[index].result) * 100
+            : 0
+          ).toFixed() + " %"
         )
       );
   });
@@ -303,7 +304,8 @@ function totalCallHandleLT20(data, query) {
   };
   let filterData = data.filter(
     (i) =>
-      i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE) && (i.Duration - i.TalkTime) <= 20
+      i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE) &&
+      i.Duration - i.TalkTime <= 20
   );
   let RTCQueueHandle = totalCallQueueHandle(data, query).childs;
 
@@ -311,10 +313,13 @@ function totalCallHandleLT20(data, query) {
 
   // Total
   result.childs.push(
-    rowData("Total",
-    `${filterData.length} / ${RTCQueueHandle[0].result}`, 
-    (filterData.length ? (filterData.length / RTCQueueHandle[0].result) * 100 : 0).toFixed() +
-            " %"
+    rowData(
+      "Total",
+      `${filterData.length} / ${RTCQueueHandle[0].result}`,
+      (filterData.length
+        ? (filterData.length / RTCQueueHandle[0].result) * 100
+        : 0
+      ).toFixed() + " %"
     )
   );
 
@@ -345,7 +350,8 @@ function totalCallHandleGT20(data, query) {
   };
   let filterData = data.filter(
     (i) =>
-      i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE) && (i.Duration - i.TalkTime)  > 20
+      i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE) &&
+      i.Duration - i.TalkTime > 20
   );
 
   let RTCQueueHandle = totalCallQueueHandle(data, query).childs;
@@ -354,9 +360,13 @@ function totalCallHandleGT20(data, query) {
 
   // Total
   result.childs.push(
-    rowData("Total", `${filterData.length} / ${RTCQueueHandle[0].result}`,
-    (filterData.length ? (filterData.length / RTCQueueHandle[0].result) * 100 : 0).toFixed() +
-            " %"
+    rowData(
+      "Total",
+      `${filterData.length} / ${RTCQueueHandle[0].result}`,
+      (filterData.length
+        ? (filterData.length / RTCQueueHandle[0].result) * 100
+        : 0
+      ).toFixed() + " %"
     )
   );
 
@@ -383,49 +393,104 @@ function mappingIncomingCallTrends(data, query) {
 
   let groupByDateTimeBlock = _.groupBy(recordset, "HourMinuteBlock");
 
+  // data vẽ table
   let result = [];
 
-  let {
-    skillGroups,
-  } = query;
+  // giá trị dòng SUMMARY
+  let rowTotal = initDataRow("SUMMARY", 0);
+
+  let { skillGroups } = query;
   if (skillGroups) skillGroups = skillGroups.split(",");
-  
-  Object.keys(groupByDateTimeBlock).forEach(item => {
-    let element = groupByDateTimeBlock[item];
-    let reduceTemp = element.reduce((pre, cur) => {
-      let waitingTime = cur.Duration - cur.TalkTime;
 
-      if(cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)) pre.StopIVR++;
-      if(cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)) pre.ReceivedCall++;
-      if(cur.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)) pre.ServedCall++;
-      if(cur.CallTypeTXT != reasonToTelehub(TYPE_CALL_HANDLE) ||
-        cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)
-      ) pre.MissCall++;
+  Object.keys(groupByDateTimeBlock)
+    .sort()
+    .forEach((item) => {
+      let element = groupByDateTimeBlock[item];
 
-      if(
-          cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue) ||
-          cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissShortCall) ||
-          cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)
-      ){
-        if(waitingTime <= 15) pre.AbdIn15s++;
-        if(waitingTime > 15) pre.AbdAfter15s++;
-      }
+      let reduceTemp = element.reduce(
+        handleReduceFunc,
+        initDataRow(item, element.length)
+      );
+      // end reduce
 
-      if(waitingTime > pre.LongestWaitingTime) pre.LongestWaitingTime = waitingTime;
+      reduceTemp.AbdCall = reduceTemp.ReceivedCall - reduceTemp.ServedCall;
+      reduceTemp.avgTimeWaiting = hms(0); // chờ confirm để tính
+      reduceTemp.avgHandlingTime = hms(
+        reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
+      );
+      reduceTemp.Efficiency = reduceTemp.ServedCall
+        ? reduceTemp.ServedCall /
+          (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+        : 0;
+      
+      let countByMinuteTime = _.countBy(element, "MinuteTimeBlock"); 
+      let maxInMinuteTime = _.max(Object.keys(countByMinuteTime).map(i => countByMinuteTime[i]));
+      reduceTemp.MaxNumSimultaneousCall = maxInMinuteTime;
+      result.push(reduceTemp);
 
-      return pre;
-    }, {
-      HourMinuteBlock: item,
-      Inbound: element.length, StopIVR: 0, ReceivedCall: 0, ServedCall: 0, MissCall: 0, AbdIn15s: 0, AbdAfter15s: 0,
-      avgTimeWaiting: 0, avgHandlingTime: 0, MaxNumSimultaneousCall: 0, LongestWaitingTime: 0
+      rowTotal.Inbound += reduceTemp.Inbound;
+      rowTotal.StopIVR += reduceTemp.StopIVR;
+      rowTotal.ReceivedCall += reduceTemp.ReceivedCall;
+      rowTotal.ServedCall += reduceTemp.ServedCall;
+      rowTotal.MissCall += reduceTemp.MissCall;
+      rowTotal.AbdCall += reduceTemp.AbdCall;
+      rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
+      rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
     });
 
-    reduceTemp.AbdCall = reduceTemp.ReceivedCall - reduceTemp.ServedCall;
-    reduceTemp.Efficiency = reduceTemp.ServedCall ? reduceTemp.ServedCall/(reduceTemp.ReceivedCall - reduceTemp.AbdIn15s): 0;
-    // console.log({Efficiency: reduceTemp.Efficiency});
-    result.push(reduceTemp);
-  });
-
   data.recordset = result;
+  data.rowTotal = rowTotal;
+
   return data;
+}
+
+function handleReduceFunc(pre, cur) {
+  let waitingTime = cur.Duration - cur.TalkTime;
+  if (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)) pre.StopIVR++;
+  if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR))
+    pre.ReceivedCall++;
+
+  if (cur.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)) {
+    pre.ServedCall++;
+    pre.totalDuarationHandling += cur.TalkTime + cur.HoldTime;
+  }
+
+  if (
+    cur.CallTypeTXT != reasonToTelehub(TYPE_CALL_HANDLE) &&
+    cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)
+  )
+    pre.MissCall++;
+
+  if (
+    cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue) ||
+    cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissShortCall) ||
+    cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)
+  ) {
+    if (waitingTime <= 15) pre.AbdIn15s++;
+    if (waitingTime > 15) {
+      pre.AbdAfter15s++;
+    }
+
+    if (waitingTime > pre.LongestWaitingTime)
+      pre.LongestWaitingTime = waitingTime;
+  }
+
+  return pre;
+}
+
+function initDataRow(HourMinuteBlock, Inbound) {
+  return {
+    HourMinuteBlock,
+    Inbound,
+    StopIVR: 0,
+    ReceivedCall: 0,
+    ServedCall: 0,
+    MissCall: 0,
+    AbdCall: 0,
+    AbdIn15s: 0,
+    AbdAfter15s: 0,
+    totalDuarationHandling: 0,
+    MaxNumSimultaneousCall: 0,
+    LongestWaitingTime: 0,
+  };
 }
