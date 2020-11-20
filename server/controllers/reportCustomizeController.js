@@ -414,7 +414,20 @@ function mappingIncomingCallTrends(data, query) {
       // end reduce
 
       reduceTemp.AbdCall = reduceTemp.ReceivedCall - reduceTemp.ServedCall;
-      reduceTemp.avgTimeWaiting = hms(0); // chờ confirm để tính
+      /**
+       * chờ confirm để tính
+       * 20/11/2020:
+       * AVERAGE TIME OF WAITING:
+        Trung bình thời gian chờ
+        Công thức tính:
+        Thời gian chờ trung bình = [Tổng thời gian chờ]/ Tổng cuộc gọi  vào ACD
+
+       * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
+       */
+      reduceTemp.avgTimeWaiting = hms((
+        reduceTemp.totalWaitTimeQueue/reduceTemp.ReceivedCall
+      )); 
+
       reduceTemp.avgHandlingTime = hms(
         reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
       );
@@ -445,7 +458,12 @@ function mappingIncomingCallTrends(data, query) {
 }
 
 function handleReduceFunc(pre, cur) {
-  let waitingTime = cur.Duration - cur.TalkTime;
+  // Thời gian chờ: abandon waiting time trong queue;
+  // let waitTimeQueue = cur.Duration - cur.TalkTime;
+  let {
+    waitTimeQueue, waitTimeAnwser
+  } = cur;
+  
   if (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)) pre.StopIVR++;
   if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR))
     pre.ReceivedCall++;
@@ -453,6 +471,9 @@ function handleReduceFunc(pre, cur) {
   if (cur.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)) {
     pre.ServedCall++;
     pre.totalDuarationHandling += cur.TalkTime + cur.HoldTime;
+
+    if (waitTimeAnwser > pre.LongestWaitingTime)
+      pre.LongestWaitingTime = waitTimeAnwser;
   }
 
   if (
@@ -466,14 +487,13 @@ function handleReduceFunc(pre, cur) {
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissShortCall) ||
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)
   ) {
-    if (waitingTime <= 15) pre.AbdIn15s++;
-    if (waitingTime > 15) {
+    if (waitTimeQueue <= 15) pre.AbdIn15s++;
+    if (waitTimeQueue > 15) {
       pre.AbdAfter15s++;
     }
-
-    if (waitingTime > pre.LongestWaitingTime)
-      pre.LongestWaitingTime = waitingTime;
   }
+
+  pre.totalWaitTimeQueue += waitTimeQueue
 
   return pre;
 }
@@ -492,5 +512,6 @@ function initDataRow(HourMinuteBlock, Inbound) {
     totalDuarationHandling: 0,
     MaxNumSimultaneousCall: 0,
     LongestWaitingTime: 0,
+    totalWaitTimeQueue: 0, // tổng thời gian chờ trong queue
   };
 }

@@ -80,15 +80,18 @@ exports.variableSQLDynamic = (variables) => {
       item.includes("SG") ||
       item.includes("CT")
       ){
-      DECLARE.push(`DECLARE @${item} varchar(100);`);
+      DECLARE.push(`DECLARE @${item} varchar(100);
+      `);
 
       if(
         item.includes("startDate") ||
         item.includes("endDate")
       ) {
-        SET_VALUE.push(`set @${item} = '${currentValues || null}';`);
+        SET_VALUE.push(`set @${item} = '${currentValues || null}';
+        `);
       } else {
-        SET_VALUE.push(`set @${item} = ${currentValues || null};`);
+        SET_VALUE.push(`set @${item} = ${currentValues || null};
+        `);
       }
     }
   });

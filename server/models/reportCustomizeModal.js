@@ -33,8 +33,10 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
     let querySelect = "";
     let queryCondition = "";
     let CT_Dynamic = [];
+    const nameTableTCDLast = `t_TCD_last`;
+    const nameTableTCDDetail = `TCD_Detail`; // để lấy thông tin của bản tin TCD 
 
-    querySelect = `${selectCallDetailByCustomer(query)}`;
+    querySelect = `${selectCallDetailByCustomer(query, nameTableTCDLast, nameTableTCDDetail)}`;
     queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber`;
     Object.keys(query).forEach(item => {
       const element = query[item];
@@ -50,12 +52,14 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
         - Start: 01/11/2020
         - Detail: chi tiết dữ liệu cuộc gọi nhỡ theo, hiện tại chạy đúng theo từng ngày, chạy theo nhiều ngày thì phải test thêm
         - đã test chạy được theo query nhiều ngày
+        
+        Log 1: 20/11/2020 cần tính thêm nên thay đổi.
       */
     
       ${variableSQLDynamic(query)}
       
-      WITH t_TCD_last AS (
-        SELECT  ROW_NUMBER() OVER (PARTITION BY  RouterCallKeyDay, RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
+      WITH ${nameTableTCDLast} AS (
+        SELECT ROW_NUMBER() OVER (PARTITION BY  RouterCallKeyDay, RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
         ,*
         FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] as m
         where DateTime >= @startDate
@@ -65,7 +69,7 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
       ${querySelect}
       ${queryCondition}`;
 
-   
+    _logger.log('info', `lastTCDRecord ${_query}`);
     let resultQuery = await dbMssql.query(_query);
 
     return resultQuery;
@@ -74,7 +78,7 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
   }
 };
 
-function selectCallDetailByCustomer(query) {
+function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
   let {
     skillGroups,
   } = query;
@@ -100,19 +104,19 @@ function selectCallDetailByCustomer(query) {
 
     if(filterIVR.length > 0 && filterSG.length > 0) {
 
-      conditionFilter = `and CallTypeID in (@CT_IVR, ${CallTypeIDFilter})`
+      conditionFilter = `and ${nameTable}.CallTypeID in (@CT_IVR, ${CallTypeIDFilter})`
     }else if(filterIVR.length > 0) {
-      conditionFilter = `and CallTypeID in (@CT_IVR)
-                         AND AgentSkillTargetID is null`
+      conditionFilter = `and ${nameTable}.CallTypeID in (@CT_IVR)
+                         AND ${nameTable}.AgentSkillTargetID is null`
     }else if(filterSG.length > 0) {
       
 
       conditionFilter = `
-      And (CallTypeID in (${CallTypeIDFilter})
-        and SkillGroupSkillTargetID in (${filterSG})
+      And (${nameTable}.CallTypeID in (${CallTypeIDFilter})
+        and ${nameTable}.SkillGroupSkillTargetID in (${filterSG})
         or (
-          CallTypeID in (${CallTypeIDFilter})
-          and SkillGroupSkillTargetID is null 
+          ${nameTable}.CallTypeID in (${CallTypeIDFilter})
+          and ${nameTable}.SkillGroupSkillTargetID is null 
         )
       )`
     }
@@ -139,8 +143,8 @@ function selectCallDetailByCustomer(query) {
       // console.log({groupNumber});
 
       JOIN_Dynamic.push(`
-        or(t_TCD_last.SkillGroupSkillTargetID is null
-        and t_TCD_last.CallTypeID in (@CT_ToAgentGroup${groupNumber}, @CT_Queue${groupNumber}) and SG.SkillTargetID = @SG_Voice_${groupNumber})
+        or(${nameTable}.SkillGroupSkillTargetID is null
+        and ${nameTable}.CallTypeID in (@CT_ToAgentGroup${groupNumber}, @CT_Queue${groupNumber}) and SG.SkillTargetID = @SG_Voice_${groupNumber})
         `);
     }
   });
@@ -148,90 +152,143 @@ function selectCallDetailByCustomer(query) {
   return `SELECT
       case 
         when 
-          CallTypeID = @CT_IVR
-          and CallDisposition	= 13
+          ${nameTable}.CallTypeID = @CT_IVR
+          and ${nameTable}.CallDisposition	= 13
           then '${reasonToTelehub(TYPE_MISSCALL.MissIVR)}'
         when 
-          CallTypeID in (${CT_Queue_Dynamic.join(",")})
-          and CallDisposition	in (13)
-          AND AgentSkillTargetID is null
+          ${nameTable}.CallTypeID in (${CT_Queue_Dynamic.join(",")})
+          and ${nameTable}.CallDisposition	in (13)
+          AND ${nameTable}.AgentSkillTargetID is null
           then '${reasonToTelehub(TYPE_MISSCALL.MissQueue)}'
         when 
-          CallTypeID in (${CT_ToAgent_Dynamic.join(",")})
-          and CallDisposition	in (3)
+          ${nameTable}.CallTypeID in (${CT_ToAgent_Dynamic.join(",")})
+          and ${nameTable}.CallDisposition	in (3)
           then '${reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)}'
         when 
-          CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
-          and CallDisposition	in (19)
+          ${nameTable}.CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
+          and ${nameTable}.CallDisposition	in (19)
           then '${reasonToTelehub(TYPE_MISSCALL.MissAgent)}'
         when 
-          CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
-          and CallDisposition	in (60)
+          ${nameTable}.CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
+          and ${nameTable}.CallDisposition	in (60)
           then '${reasonToTelehub(TYPE_MISSCALL.RejectByAgent)}'
         when 
-          CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
-          AND AgentSkillTargetID is not null
-          AND TalkTime >= 0
-          AND CallDisposition	in (13)
+          ${nameTable}.CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
+          AND ${nameTable}.AgentSkillTargetID is not null
+          AND ${nameTable}.TalkTime >= 0
+          AND ${nameTable}.CallDisposition	in (13)
           then '${reasonToTelehub(TYPE_CALL_HANDLE)}'
         when 
-          CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
-          AND AgentSkillTargetID is not null
-          AND TalkTime >= 0
-          AND CallDisposition	in (6,7)
+          ${nameTable}.CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
+          AND ${nameTable}.AgentSkillTargetID is not null
+          AND ${nameTable}.TalkTime >= 0
+          AND ${nameTable}.CallDisposition	in (6,7)
           then '${reasonToTelehub(TYPE_MISSCALL.MissShortCall)}'
         
       else '${reasonToTelehub(TYPE_MISSCALL.Other)}'
       end CallTypeTXT
-      ${fieldCallTCD()}
-  FROM t_TCD_last 
+      ${fieldCallTCD(query, nameTable, nameTCDDetail)}
+  FROM ${nameTable}
+
+  LEFT join [ins1_hds].[dbo].[t_Termination_Call_Detail] ${nameTCDDetail}
+  on ${nameTCDDetail}.RouterCallKey = ${nameTable}.RouterCallKey
+	and ${nameTCDDetail}.RouterCallKeyDay = ${nameTable}.RouterCallKeyDay
+	and (
+		${nameTCDDetail}.RouterCallKeySequenceNumber = 1
+		-- and ${nameTable}.RouterCallKeySequenceNumber NOT IN (1)
+		-- or(
+		--	${nameTCDDetail}.RouterCallKeySequenceNumber = 0
+		--	and ${nameTable}.RouterCallKeySequenceNumber IN (1)
+		-- )
+  )
+  
   left join [ins1_awdb].[dbo].[t_Skill_Group] SG
-    on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
+    on ${nameTable}.SkillGroupSkillTargetID = SG.SkillTargetID
       ${JOIN_Dynamic.join("")}
   WHERE rn = 1
     ${conditionFilter}
     `;
 }
 
-function fieldCallTCD() {
+/**
+ * 
+ * @param {String} query tham số truyền từ req.query
+ * @param {String} nameTable tên table TCD_last
+ * @param {String} nameTCDDetail tên table TCD_Detail: để lấy thông tin bản tin TCD thỏa mãn RouterCallKeySequenceNumber = 1
+ */
+
+function fieldCallTCD(query, nameTable = `t_TCD_last`, nameTCDDetail = `TCD_Detail`) {
+  let whenDynamic = [];
+  let CT_QUEUE_Dynamic = [];
+
+  Object.keys(query).forEach(item => {
+    const element = query[item];
+  
+    if(
+      item.includes("SG_Voice_")
+    ){
+      let groupNumber = item.replace("SG_Voice_", "");
+
+      whenDynamic.push(`
+          when ${nameTable}.SkillGroupSkillTargetID is null
+            and ${nameTable}.CallTypeID in (@CT_ToAgentGroup${groupNumber}, @CT_Queue${groupNumber})
+          then @SG_Voice_${groupNumber}
+        `);
+    }
+
+    if(item.includes("CT_Queue")){
+
+      CT_QUEUE_Dynamic.push(`@${item}`);
+    }
+  });
+
   return `
-  ,RecoveryKey
-  ,RouterCallKeySequenceNumber
-  ,CallTypeID
-  ,RouterCallKey
-  ,AgentSkillTargetID
-  ,[DateTime]
-  ,[RingTime]
-  ,[TalkTime]
-  ,[Duration]
-  ,[DelayTime]
-  ,[TimeToAband]
-  ,[HoldTime]
-  ,[WorkTime]
-  ,CallDisposition
-  ,ANI
-  ,TimeZone
-  ,StartDateTimeUTC
+  ,${nameTable}.RecoveryKey
+  ,${nameTable}.RouterCallKeySequenceNumber
+  ,${nameTable}.CallTypeID
+  ,${nameTable}.RouterCallKey
+  ,${nameTable}.AgentSkillTargetID
+  ,${nameTable}.[DateTime]
+  ,case 
+    when 
+      ${nameTable}.CallTypeID in (${CT_QUEUE_Dynamic.join(",")})
+      and ${nameTable}.CallDisposition	in (13)
+      AND ${nameTable}.AgentSkillTargetID is null
+      then DATEDIFF(SECOND, TRY_CONVERT(datetime, FORMAT(${nameTCDDetail}.DateTime, 'yyyy-MM') + '-' + ${nameTCDDetail}.Variable4, 102), ${nameTable}.DateTime)
+	else DATEDIFF(SECOND, ${nameTCDDetail}.DateTime, ${nameTable}.DateTime)
+  end waitTimeQueue
+  ,case 
+    when 
+      t_TCD_last.CallTypeID in (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3,@CT_Queue1,@CT_Queue2,@CT_Queue3)
+          AND t_TCD_last.AgentSkillTargetID is not null
+          AND t_TCD_last.TalkTime >= 0
+          AND t_TCD_last.CallDisposition	in (13)
+      then t_TCD_last.Duration - t_TCD_last.TalkTime
+	else null
+  end waitTimeAnwser
+  ,${nameTable}.[RingTime]
+  ,${nameTable}.[TalkTime]
+  ,${nameTable}.[Duration]
+  ,${nameTable}.[DelayTime]
+  ,${nameTable}.[TimeToAband]
+  ,${nameTable}.[HoldTime]
+  ,${nameTable}.[WorkTime]
+  ,${nameTable}.CallDisposition
+  ,${nameTable}.ANI
+  ,${nameTable}.TimeZone
+  ,${nameTable}.StartDateTimeUTC
   ,SG.EnterpriseName EnterpriseName
-  ,CallTypeReportingDateTime
-  ,DATEPART(MINUTE, CallTypeReportingDateTime) MinuteBlock
-  ,DATEPART(HOUR, CallTypeReportingDateTime) HourBlock
-  ,DATEPART(DAY, CallTypeReportingDateTime) DayBlock
-  ,DATEPART(MONTH, CallTypeReportingDateTime) MonthBlock
-  ,DATEPART(YEAR, CallTypeReportingDateTime) YearBlock
-  ,FORMAT(CallTypeReportingDateTime, 'yyyy-MM-dd-HH') TimeBlock
-  ,FORMAT(DATEADD(ss, -Duration, DateTime), 'yyyy-MM-dd HH:mm') MinuteTimeBlock
-  ,FORMAT(CallTypeReportingDateTime, 'HH:mm') + '-' + FORMAT(DATEADD(mi,15,CallTypeReportingDateTime), 'HH:mm') HourMinuteBlock
+  ,${nameTable}.CallTypeReportingDateTime
+  ,DATEPART(MINUTE, ${nameTable}.CallTypeReportingDateTime) MinuteBlock
+  ,DATEPART(HOUR, ${nameTable}.CallTypeReportingDateTime) HourBlock
+  ,DATEPART(DAY, ${nameTable}.CallTypeReportingDateTime) DayBlock
+  ,DATEPART(MONTH, ${nameTable}.CallTypeReportingDateTime) MonthBlock
+  ,DATEPART(YEAR, ${nameTable}.CallTypeReportingDateTime) YearBlock
+  ,FORMAT(${nameTable}.CallTypeReportingDateTime, 'yyyy-MM-dd-HH') TimeBlock
+  ,FORMAT(DATEADD(ss, -${nameTable}.Duration, ${nameTable}.DateTime), 'yyyy-MM-dd HH:mm') MinuteTimeBlock
+  ,FORMAT(${nameTable}.CallTypeReportingDateTime, 'HH:mm') + '-' + FORMAT(DATEADD(mi,15,${nameTable}.CallTypeReportingDateTime), 'HH:mm') HourMinuteBlock
   ,case
-		when SkillGroupSkillTargetID is null
-			and CallTypeID in (@CT_ToAgentGroup1, @CT_Queue1)
-			then @SG_Voice_1
-		when SkillGroupSkillTargetID is null
-			and CallTypeID in (@CT_ToAgentGroup2, @CT_Queue2)
-			then @SG_Voice_2
-		when SkillGroupSkillTargetID is null
-			and CallTypeID in (@CT_ToAgentGroup3, @CT_Queue3)
-			then @SG_Voice_3
-		else SkillGroupSkillTargetID
+		${whenDynamic.join('')}
+		else ${nameTable}.SkillGroupSkillTargetID
 	end SkillGroupSkillTargetID`
 }
