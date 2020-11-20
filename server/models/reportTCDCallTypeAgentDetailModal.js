@@ -391,11 +391,11 @@ exports.missCall = async (db, dbMssql, query) => {
     let querySelect = "";
     let queryCondition = "";
 
-    querySelect = `${selectMissIVR(skillGroups)}
+    querySelect = `${selectMissIVR(query)}
         UNION
-        ${selectMissQueue(skillGroups)}
+        ${selectMissQueue(query)}
         UNION
-        ${selectMissAgent(skillGroups)}`;
+        ${selectMissAgent(query)}`;
 
       if (download === 0 && paging == 0) {
         queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber
@@ -799,7 +799,7 @@ function selectMissByCustomer(query) {
       )`;
 }
 
-function selectMissIVR(skillGroups) {
+function selectMissIVR(query) {
   let conditionFilter = ``;
   // if(skillGroups){
   //   let filterIVR = skillGroups.filter(i => i.includes("CT"));
@@ -829,7 +829,7 @@ function selectMissIVR(skillGroups) {
         then 'IVR'
     else 'QUEUE'
     end CT_Type
-    ${fieldMissCallTCD()}
+    ${fieldMissCallTCD(query)}
 FROM t_TCD_last 
 left join [ins1_awdb].[dbo].[t_Skill_Group] SG
 on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
@@ -838,7 +838,7 @@ on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
     and CallTypeID in (@CT_IVR)`;
 }
 
-function selectMissQueue(skillGroups) {
+function selectMissQueue(query) {
   let conditionFilter = ``;
 
   // if(skillGroups){
@@ -870,7 +870,7 @@ function selectMissQueue(skillGroups) {
         then 'IVR'
     else 'QUEUE'
     end CT_Type
-    ${fieldMissCallTCD()}
+    ${fieldMissCallTCD(query)}
     FROM t_TCD_last 
     left join [ins1_awdb].[dbo].[t_Skill_Group] SG
     on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
@@ -879,7 +879,7 @@ function selectMissQueue(skillGroups) {
   and CallTypeID in (@CT_Queue1, @CT_Queue2, @CT_Queue3)`;
 }
 
-function selectMissAgent(skillGroups) {
+function selectMissAgent(query) {
   let conditionFilter = ``;
 
   // if(skillGroups){
@@ -910,7 +910,7 @@ function selectMissAgent(skillGroups) {
         then 'IVR'
     else 'QUEUE'
     end CT_Type
-    ${fieldMissCallTCD()}
+    ${fieldMissCallTCD(query)}
    FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
    left join [ins1_awdb].[dbo].[t_Skill_Group] SG
     on t_TCD.SkillGroupSkillTargetID = SG.SkillTargetID

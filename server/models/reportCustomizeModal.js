@@ -32,7 +32,7 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
   try {
     let querySelect = "";
     let queryCondition = "";
-    let CT_Dynamic = []
+    let CT_Dynamic = [];
 
     querySelect = `${selectCallDetailByCustomer(query)}`;
     queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber`;
@@ -41,7 +41,7 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
       if(
         item.includes("CT")
       ){
-        CT_Dynamic.push(element);
+        CT_Dynamic.push(`@${item}`);
       }
     });
 
@@ -123,13 +123,13 @@ function selectCallDetailByCustomer(query) {
     if(
       item.includes("CT_ToAgentGroup")
     ){
-      CT_ToAgent_Dynamic.push(element);
+      CT_ToAgent_Dynamic.push(`@${item}`);
     }
     
     if(
       item.includes("CT_Queue")
     ){
-      CT_Queue_Dynamic.push(element);
+      CT_Queue_Dynamic.push(`@${item}`);
     }
 
     if(
