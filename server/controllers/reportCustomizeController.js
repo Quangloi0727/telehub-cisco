@@ -100,7 +100,7 @@ exports.report2080 = async (req, res, next) => {
 };
 
 /**
- * Report 20 - 80 của GGG
+ * Report IncomingCallTrends của Kplus
  */
 exports.reportIncomingCallTrends = async (req, res, next) => {
   try {
@@ -155,6 +155,67 @@ exports.reportIncomingCallTrends = async (req, res, next) => {
     res
       .status(SUCCESS_200.code)
       .json({ data: mappingIncomingCallTrends(doc, query) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Report acd summary
+ */
+exports.reportACDSummary = async (req, res, next) => {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    let query = req.query;
+
+    if (!query.startDate || !query.endDate || !query.CT_IVR)
+      return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    /**
+     * Check việc khởi tạo các CallType
+     * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+     */
+    Object.keys(query).forEach((item) => {
+      // const element = query[item];
+      if (item.includes("CT_ToAgentGroup")) {
+        let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+        if (!query[`CT_Queue${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+
+        if (!query[`SG_Voice_${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+      }
+    });
+
+    const doc = await _model.lastTCDRecord(db, dbMssql, query);
+
+    if (!doc)
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+    // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+    res
+      .status(SUCCESS_200.code)
+      .json({ data: mappingACDSummary(doc, query) });
   } catch (error) {
     next(error);
   }
@@ -391,7 +452,7 @@ function totalCallHandleGT20(data, query) {
 function mappingIncomingCallTrends(data, query) {
   let { recordset } = data;
 
-  let groupByDateTimeBlock = _.groupBy(recordset, "HourMinuteBlock");
+  let groupByDayMonthBlock = _.groupBy(recordset, "HourMinuteBlock");
 
   // data vẽ table
   let result = [];
@@ -402,10 +463,10 @@ function mappingIncomingCallTrends(data, query) {
   let { skillGroups } = query;
   if (skillGroups) skillGroups = skillGroups.split(",");
 
-  Object.keys(groupByDateTimeBlock)
+  Object.keys(groupByDayMonthBlock)
     .sort()
     .forEach((item) => {
-      let element = groupByDateTimeBlock[item];
+      let element = groupByDayMonthBlock[item];
 
       let reduceTemp = element.reduce(
         handleReduceFunc,
@@ -436,6 +497,8 @@ function mappingIncomingCallTrends(data, query) {
           (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
         : 0;
       
+      reduceTemp.LongestWaitingTime = hms(reduceTemp.LongestWaitingTime);
+
       let countByMinuteTime = _.countBy(element, "MinuteTimeBlock"); 
       let maxInMinuteTime = _.max(Object.keys(countByMinuteTime).map(i => countByMinuteTime[i]));
       reduceTemp.MaxNumSimultaneousCall = maxInMinuteTime;
@@ -493,14 +556,14 @@ function handleReduceFunc(pre, cur) {
     }
   }
 
-  pre.totalWaitTimeQueue += waitTimeQueue
+  pre.totalWaitTimeQueue += waitTimeQueue || 0;
 
   return pre;
 }
 
-function initDataRow(HourMinuteBlock, Inbound) {
+function initDataRow(name, Inbound) {
   return {
-    HourMinuteBlock,
+    name,
     Inbound,
     StopIVR: 0,
     ReceivedCall: 0,
@@ -514,4 +577,74 @@ function initDataRow(HourMinuteBlock, Inbound) {
     LongestWaitingTime: 0,
     totalWaitTimeQueue: 0, // tổng thời gian chờ trong queue
   };
+}
+
+function mappingACDSummary(data, query) {
+  let { recordset } = data;
+
+  let groupByDayMonthBlock = _.groupBy(recordset, "DayMonthBlock");
+
+  // data vẽ table
+  let result = [];
+
+  // giá trị dòng SUMMARY
+  let rowTotal = initDataRow("SUMMARY", 0);
+
+  let { skillGroups } = query;
+  if (skillGroups) skillGroups = skillGroups.split(",");
+
+  Object.keys(groupByDayMonthBlock)
+    .sort()
+    .forEach((item) => {
+      let element = groupByDayMonthBlock[item];
+
+      let reduceTemp = element.reduce(
+        handleReduceFunc,
+        initDataRow(item, element.length)
+      );
+      // end reduce
+
+      reduceTemp.AbdCall = reduceTemp.ReceivedCall - reduceTemp.ServedCall;
+      /**
+       * chờ confirm để tính
+       * 20/11/2020:
+       * AVERAGE TIME OF WAITING:
+        Trung bình thời gian chờ
+        Công thức tính:
+        Thời gian chờ trung bình = [Tổng thời gian chờ]/ Tổng cuộc gọi  vào ACD
+
+       * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
+       */
+      reduceTemp.avgTimeWaiting = hms((
+        reduceTemp.totalWaitTimeQueue/reduceTemp.ReceivedCall
+      )); 
+
+      reduceTemp.avgHandlingTime = hms(
+        reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
+      );
+      reduceTemp.Efficiency = reduceTemp.ServedCall
+        ? reduceTemp.ServedCall /
+          (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+        : 0;
+      
+      reduceTemp.LongestWaitingTime = hms(reduceTemp.LongestWaitingTime);
+      let countByMinuteTime = _.countBy(element, "MinuteTimeBlock"); 
+      let maxInMinuteTime = _.max(Object.keys(countByMinuteTime).map(i => countByMinuteTime[i]));
+      reduceTemp.MaxNumSimultaneousCall = maxInMinuteTime;
+      result.push(reduceTemp);
+
+      rowTotal.Inbound += reduceTemp.Inbound;
+      rowTotal.StopIVR += reduceTemp.StopIVR;
+      rowTotal.ReceivedCall += reduceTemp.ReceivedCall;
+      rowTotal.ServedCall += reduceTemp.ServedCall;
+      rowTotal.MissCall += reduceTemp.MissCall;
+      rowTotal.AbdCall += reduceTemp.AbdCall;
+      rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
+      rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
+    });
+
+  data.recordset = result;
+  data.rowTotal = rowTotal;
+
+  return data;
 }

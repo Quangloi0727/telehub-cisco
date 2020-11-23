@@ -10,6 +10,10 @@ router
     .route('/report-IncomingCallTrends')
     .get(_controller.reportIncomingCallTrends);
 
+router
+    .route('/report-ACD-summary')
+    .get(_controller.reportACDSummary);
+
 module.exports = router;
 
 /**

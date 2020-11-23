@@ -285,6 +285,7 @@ function fieldCallTCD(query, nameTable = `t_TCD_last`, nameTCDDetail = `TCD_Deta
   ,DATEPART(MONTH, ${nameTable}.CallTypeReportingDateTime) MonthBlock
   ,DATEPART(YEAR, ${nameTable}.CallTypeReportingDateTime) YearBlock
   ,FORMAT(${nameTable}.CallTypeReportingDateTime, 'yyyy-MM-dd-HH') TimeBlock
+  ,FORMAT(${nameTable}.CallTypeReportingDateTime, 'dd/MM') DayMonthBlock
   ,FORMAT(DATEADD(ss, -${nameTable}.Duration, ${nameTable}.DateTime), 'yyyy-MM-dd HH:mm') MinuteTimeBlock
   ,FORMAT(${nameTable}.CallTypeReportingDateTime, 'HH:mm') + '-' + FORMAT(DATEADD(mi,15,${nameTable}.CallTypeReportingDateTime), 'HH:mm') HourMinuteBlock
   ,case
