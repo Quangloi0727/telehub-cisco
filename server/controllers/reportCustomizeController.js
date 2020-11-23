@@ -644,6 +644,12 @@ function mappingACDSummary(data, query) {
     });
 
   data.recordset = result;
+
+  rowTotal.Efficiency = rowTotal.ServedCall
+    ? rowTotal.ServedCall /
+      (rowTotal.ReceivedCall - rowTotal.AbdIn15s)
+    : 0;
+
   data.rowTotal = rowTotal;
 
   return data;
