@@ -268,14 +268,29 @@ exports.reportIVRMonth2Date = async (req, res, next) => {
         }
       }
     });
+
+    // Lấy thông tin các cuộc bị nhỡ trên IVR để gửi làm báo cáo
+    const docTCD = await _model.lastTCDRecord(db, dbMssql, query);
+
+    if (!docTCD)
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+
+    let TCDIVR = docTCD.recordset
+      .filter((i) => i.CallTypeTXT === reasonToTelehub(TYPE_MISSCALL.MissIVR))
+      .map((i) => ({dateMonth: i.DayMonthBlock, code: 'IVR', PhoneNumber: i.ANI}));
+
+    let TCDACD = docTCD.recordset
+      .filter((i) => i.CallTypeTXT !== reasonToTelehub(TYPE_MISSCALL.MissIVR))
+      .map((i) => ({dateMonth: i.DayMonthBlock, code: 'ACD', PhoneNumber: i.ANI}));
+
     let { url, pathReportMonth2Date, token } = _config["cisco-gateway"];
 
     const options = {
-      method: "GET",
-      // body: soapXMLCustomerCode(phoneNumber),
-      headers: { 
+      method: "post",
+      body: JSON.stringify({TCDIVR: _.countBy(TCDIVR, 'dateMonth'), TCDACD: _.countBy(TCDACD, 'dateMonth')}),
+      headers: {
         "Content-Type": "application/json",
-        'x-access-token': token
+        "x-access-token": token,
       },
     };
     let _q = [];
