@@ -1,3 +1,5 @@
+const fetch = require("node-fetch");
+
 /**
  * require Model
  */
@@ -213,9 +215,85 @@ exports.reportACDSummary = async (req, res, next) => {
     if (!doc)
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
-    res
-      .status(SUCCESS_200.code)
-      .json({ data: mappingACDSummary(doc, query) });
+    res.status(SUCCESS_200.code).json({ data: mappingACDSummary(doc, query) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Report acd reportIVRMonth2Date
+ */
+exports.reportIVRMonth2Date = async (req, res, next) => {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    let query = req.query;
+
+    if (!query.startDate || !query.endDate || !query.CT_IVR)
+      return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    /**
+     * Check việc khởi tạo các CallType
+     * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+     */
+    Object.keys(query).forEach((item) => {
+      // const element = query[item];
+      if (item.includes("CT_ToAgentGroup")) {
+        let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+        if (!query[`CT_Queue${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+
+        if (!query[`SG_Voice_${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+      }
+    });
+    let { url, pathReportMonth2Date, token } = _config["cisco-gateway"];
+
+    const options = {
+      method: "GET",
+      // body: soapXMLCustomerCode(phoneNumber),
+      headers: { 
+        "Content-Type": "application/json",
+        'x-access-token': token
+      },
+    };
+    let _q = [];
+    _q.push(`startDate=${query.startDate}`);
+    _q.push(`endDate=${query.endDate}`);
+    _q.push(`ternalID=${query.IVR_Code}`);
+    console.log(url + pathReportMonth2Date + `?${_q.join("&")}`);
+    const doc = await fetch(
+      url + pathReportMonth2Date + `?${_q.join("&")}`,
+      options
+    ).then((res) => {
+      return res.json();
+    });
+
+    if (!doc)
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+    // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+    res.status(SUCCESS_200.code).json(doc);
   } catch (error) {
     next(error);
   }
@@ -485,9 +563,9 @@ function mappingIncomingCallTrends(data, query) {
 
        * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
        */
-      reduceTemp.avgTimeWaiting = hms((
-        reduceTemp.totalWaitTimeQueue/reduceTemp.ReceivedCall
-      )); 
+      reduceTemp.avgTimeWaiting = hms(
+        reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
+      );
 
       reduceTemp.avgHandlingTime = hms(
         reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
@@ -496,11 +574,13 @@ function mappingIncomingCallTrends(data, query) {
         ? reduceTemp.ServedCall /
           (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
         : 0;
-      
+
       reduceTemp.LongestWaitingTime = hms(reduceTemp.LongestWaitingTime);
 
-      let countByMinuteTime = _.countBy(element, "MinuteTimeBlock"); 
-      let maxInMinuteTime = _.max(Object.keys(countByMinuteTime).map(i => countByMinuteTime[i]));
+      let countByMinuteTime = _.countBy(element, "MinuteTimeBlock");
+      let maxInMinuteTime = _.max(
+        Object.keys(countByMinuteTime).map((i) => countByMinuteTime[i])
+      );
       reduceTemp.MaxNumSimultaneousCall = maxInMinuteTime;
       result.push(reduceTemp);
 
@@ -523,10 +603,8 @@ function mappingIncomingCallTrends(data, query) {
 function handleReduceFunc(pre, cur) {
   // Thời gian chờ: abandon waiting time trong queue;
   // let waitTimeQueue = cur.Duration - cur.TalkTime;
-  let {
-    waitTimeQueue, waitTimeAnwser
-  } = cur;
-  
+  let { waitTimeQueue, waitTimeAnwser } = cur;
+
   if (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)) pre.StopIVR++;
   if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR))
     pre.ReceivedCall++;
@@ -615,9 +693,9 @@ function mappingACDSummary(data, query) {
 
        * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
        */
-      reduceTemp.avgTimeWaiting = hms((
-        reduceTemp.totalWaitTimeQueue/reduceTemp.ReceivedCall
-      )); 
+      reduceTemp.avgTimeWaiting = hms(
+        reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
+      );
 
       reduceTemp.avgHandlingTime = hms(
         reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
@@ -626,10 +704,12 @@ function mappingACDSummary(data, query) {
         ? reduceTemp.ServedCall /
           (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
         : 0;
-      
+
       reduceTemp.LongestWaitingTime = hms(reduceTemp.LongestWaitingTime);
-      let countByMinuteTime = _.countBy(element, "MinuteTimeBlock"); 
-      let maxInMinuteTime = _.max(Object.keys(countByMinuteTime).map(i => countByMinuteTime[i]));
+      let countByMinuteTime = _.countBy(element, "MinuteTimeBlock");
+      let maxInMinuteTime = _.max(
+        Object.keys(countByMinuteTime).map((i) => countByMinuteTime[i])
+      );
       reduceTemp.MaxNumSimultaneousCall = maxInMinuteTime;
       result.push(reduceTemp);
 
@@ -646,8 +726,7 @@ function mappingACDSummary(data, query) {
   data.recordset = result;
 
   rowTotal.Efficiency = rowTotal.ServedCall
-    ? rowTotal.ServedCall /
-      (rowTotal.ReceivedCall - rowTotal.AbdIn15s)
+    ? rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s)
     : 0;
 
   data.rowTotal = rowTotal;

@@ -14,6 +14,10 @@ router
     .route('/report-ACD-summary')
     .get(_controller.reportACDSummary);
 
+router
+    .route('/report-ivr-month-2-date')
+    .get(_controller.reportIVRMonth2Date);
+
 module.exports = router;
 
 /**
