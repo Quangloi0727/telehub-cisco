@@ -30,6 +30,7 @@ const {
   reasonToTelehub,
   variableSQL,
   hms,
+  percentFormat,
 } = require("../helpers/functions");
 
 /**
@@ -277,17 +278,28 @@ exports.reportIVRMonth2Date = async (req, res, next) => {
 
     let TCDIVR = docTCD.recordset
       .filter((i) => i.CallTypeTXT === reasonToTelehub(TYPE_MISSCALL.MissIVR))
-      .map((i) => ({dateMonth: i.DayMonthBlock, code: 'IVR', PhoneNumber: i.ANI}));
+      .map((i) => ({
+        dateMonth: i.DayMonthBlock,
+        code: "IVR",
+        PhoneNumber: i.ANI,
+      }));
 
     let TCDACD = docTCD.recordset
       .filter((i) => i.CallTypeTXT !== reasonToTelehub(TYPE_MISSCALL.MissIVR))
-      .map((i) => ({dateMonth: i.DayMonthBlock, code: 'ACD', PhoneNumber: i.ANI}));
+      .map((i) => ({
+        dateMonth: i.DayMonthBlock,
+        code: "ACD",
+        PhoneNumber: i.ANI,
+      }));
 
     let { url, pathReportMonth2Date, token } = _config["cisco-gateway"];
 
     const options = {
       method: "post",
-      body: JSON.stringify({TCDIVR: _.countBy(TCDIVR, 'dateMonth'), TCDACD: _.countBy(TCDACD, 'dateMonth')}),
+      body: JSON.stringify({
+        TCDIVR: _.countBy(TCDIVR, "dateMonth"),
+        TCDACD: _.countBy(TCDACD, "dateMonth"),
+      }),
       headers: {
         "Content-Type": "application/json",
         "x-access-token": token,
@@ -309,6 +321,206 @@ exports.reportIVRMonth2Date = async (req, res, next) => {
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
     res.status(SUCCESS_200.code).json(doc);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.reportStatistic = async (req, res, next) => {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    let query = req.query;
+    /**
+     * callType: CallType MN 1900
+     * callTypeMB: CallType MB 1900
+     * callType1800: CallType MN 1800
+     * callTypeMB1800: CallType MB 1800
+     */
+    let { callType, callTypeMB, callType1800, callTypeMB1800 } = req.body;
+
+    if (!query.startDate || !query.endDate || !query.CT_IVR)
+      return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    if (callType) {
+      callType.startDate = query.startDate;
+      callType.endDate = query.endDate;
+      /**
+       * Check việc khởi tạo các CallType
+       * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+       */
+      Object.keys(callType).forEach((item) => {
+        // const element = callType[item];
+        if (item.includes("CT_ToAgentGroup")) {
+          let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+          if (!callType[`CT_Queue${groupNumber}`]) {
+            return next(
+              new ResError(
+                ERR_400.code,
+                `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+              ),
+              req,
+              res,
+              next
+            );
+          }
+
+          if (!callType[`SG_Voice_${groupNumber}`]) {
+            return next(
+              new ResError(
+                ERR_400.code,
+                `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+              ),
+              req,
+              res,
+              next
+            );
+          }
+        }
+      });
+    }
+    if (callTypeMB) {
+      callTypeMB.startDate = query.startDate;
+      callTypeMB.endDate = query.endDate;
+      /**
+       * Check việc khởi tạo các CallType
+       * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+       */
+      Object.keys(callTypeMB).forEach((item) => {
+        // const element = callTypeMB[item];
+        if (item.includes("CT_ToAgentGroup")) {
+          let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+          if (!callTypeMB[`CT_Queue${groupNumber}`]) {
+            return next(
+              new ResError(
+                ERR_400.code,
+                `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+              ),
+              req,
+              res,
+              next
+            );
+          }
+
+          if (!callTypeMB[`SG_Voice_${groupNumber}`]) {
+            return next(
+              new ResError(
+                ERR_400.code,
+                `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+              ),
+              req,
+              res,
+              next
+            );
+          }
+        }
+      });
+    }
+    if (callType1800) {
+      callType1800.startDate = query.startDate;
+      callType1800.endDate = query.endDate;
+      /**
+       * Check việc khởi tạo các CallType
+       * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+       */
+      Object.keys(callType1800).forEach((item) => {
+        // const element = callType1800[item];
+        if (item.includes("CT_ToAgentGroup")) {
+          let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+          if (!callType1800[`CT_Queue${groupNumber}`]) {
+            return next(
+              new ResError(
+                ERR_400.code,
+                `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+              ),
+              req,
+              res,
+              next
+            );
+          }
+
+          if (!callType1800[`SG_Voice_${groupNumber}`]) {
+            return next(
+              new ResError(
+                ERR_400.code,
+                `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+              ),
+              req,
+              res,
+              next
+            );
+          }
+        }
+      });
+    }
+    if (callTypeMB1800) {
+      callTypeMB1800.startDate = query.startDate;
+      callTypeMB1800.endDate = query.endDate;
+      /**
+       * Check việc khởi tạo các CallType
+       * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+       */
+      Object.keys(callTypeMB1800).forEach((item) => {
+        // const element = callTypeMB1800[item];
+        if (item.includes("CT_ToAgentGroup")) {
+          let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+          if (!callTypeMB1800[`CT_Queue${groupNumber}`]) {
+            return next(
+              new ResError(
+                ERR_400.code,
+                `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+              ),
+              req,
+              res,
+              next
+            );
+          }
+
+          if (!callTypeMB1800[`SG_Voice_${groupNumber}`]) {
+            return next(
+              new ResError(
+                ERR_400.code,
+                `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+              ),
+              req,
+              res,
+              next
+            );
+          }
+        }
+      });
+    }
+
+    // 1. báo cáo 1900 mien nam
+    const doc1900 = await _model.lastTCDRecord(db, dbMssql, callType);
+    // 2. báo cáo 1900 mien bac
+    // 3. báo cáo 1800 mien nam
+    // 4. báo cáo 1800 mien bac
+
+    if (!doc1900)
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+    // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+    res.status(SUCCESS_200.code).json({
+      data: mappingStatistic(
+        {
+          doc1900: doc1900.recordset,
+          doc1800: [],
+          docMB1900: [],
+          docMB1800: [],
+        },
+        {
+          callType,
+          callTypeMB,
+          callType1800,
+          callTypeMB1800,
+        }
+      ),
+    });
   } catch (error) {
     next(error);
   }
@@ -747,4 +959,162 @@ function mappingACDSummary(data, query) {
   data.rowTotal = rowTotal;
 
   return data;
+}
+
+/**
+  {
+    name: '01/11',
+    1900: {
+      total: 100,
+      north_call: 60,
+      south_call: 40,
+      
+      north_percent: '60 %',
+      south_percent: '40 %',
+    },
+    1800: {
+      total: 100,
+      north_call: 60,
+      south_call: 40,
+      
+      north_percent: '60 %',
+      south_percent: '40 %',
+    }
+  }
+  
+  */
+function mappingStatistic(
+  { doc1900, doc1800, docMB1900, docMB1800 },
+  { callType, callTypeMB, callType1800, callTypeMB1800 }
+) {
+  // tạo dòng MTD (month to date) mặc định
+  let rowMTD = {
+    name: "MTD",
+    1900: {
+      total: 0,
+      north_call: 0,
+      south_call: 0,
+
+      north_percent: "",
+      south_percent: "",
+    },
+  };
+  let result = [];
+
+  let result1900 = getDataStatistic(doc1900, docMB1900);
+  let result1800 = getDataStatistic(doc1800, docMB1800);
+
+  let allDays = _.union(
+    _.pluck(result1900, "name"),
+    _.pluck(docMB1900, "name"),
+    _.pluck(result1800, "name"),
+    _.pluck(docMB1800, "name")
+  );
+
+  // item = 01/11
+  allDays.forEach((item) => {
+    let temp = {
+      name: item,
+    };
+    let _1900Found = result1900.find((i) => i.name === item);
+    let _1800Found = result1800.find((i) => i.name === item);
+
+    if (_1900Found) {
+      temp["1900"] = Object.assign({}, _1900Found);
+      Object.keys(_1900Found).forEach((i) => {
+        let element = _1900Found[i];
+        if (!["name", "north_percent", "south_percent"].includes(i)) {
+          // Tính tổng các ngày vào Month To Date
+          rowMTD["1900"][i] += element;
+        }
+      });
+      rowMTD["1900"]["north_percent"] = percentFormat(
+        rowMTD["1900"]["north_call"],
+        rowMTD["1900"]["total"]
+      );
+      rowMTD["1900"]["south_percent"] = percentFormat(
+        rowMTD["1900"]["south_call"],
+        rowMTD["1900"]["total"]
+      );
+
+      delete temp["1900"].name;
+    }
+
+    if (_1800Found) {
+      rowMTD["1800"] = {
+        total: 0,
+        north_call: 0,
+        south_call: 0,
+
+        north_percent: "",
+        south_percent: "",
+      };
+      
+      temp["1800"] = Object.assign({}, _1800Found);
+
+      Object.keys(_1800Found).forEach((i) => {
+        let element = _1800Found[i];
+        if (!["name", "north_percent", "south_percent"].includes(i)) {
+          // Tính tổng các ngày vào Month To Date
+          rowMTD["1800"][i] += element;
+        }
+      });
+
+      rowMTD["1800"]["north_percent"] = percentFormat(
+        rowMTD["1800"]["north_call"],
+        rowMTD["1800"]["total"]
+      );
+      rowMTD["1800"]["south_percent"] = percentFormat(
+        rowMTD["1800"]["south_call"],
+        rowMTD["1800"]["total"]
+      );
+
+      delete temp["1800"].name;
+    }
+
+    result.push(temp);
+  });
+
+  return [rowMTD, ...result];
+}
+
+/**
+ * Lấy dữ liệu của miền bắc & miền nam group theo ngày
+ * @param {Object} dataMN dữ liệu miền nam
+ * @param {Object} dataMB dữ liệu miền bắc
+ */
+function getDataStatistic(dataMN, dataMB) {
+  let countByMN = _.countBy(dataMN, "DayMonthBlock");
+  let countByMB = _.countBy(dataMB, "DayMonthBlock");
+  let allDay = [...Object.keys(countByMN), ...Object.keys(countByMB)];
+  let result = [];
+
+  allDay.sort().forEach((i, index) => {
+    let temp = {
+      name: i,
+      total: 0,
+      north_call: 0,
+      south_call: 0,
+
+      north_percent: "",
+      south_percent: "",
+    };
+
+    if (countByMN[i]) {
+      temp.total += countByMN[i];
+      temp.north_call += countByMN[i];
+    }
+
+    if (countByMB[i]) {
+      temp.total += countByMB[i];
+      temp.south_call += countByMB[i];
+    }
+
+    temp.north_percent = percentFormat(temp.north_call, temp.total);
+    temp.south_percent = percentFormat(temp.south_call, temp.total);
+
+    result.push(temp);
+  });
+
+  return result;
 }

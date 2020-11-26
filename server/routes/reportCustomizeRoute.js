@@ -18,6 +18,10 @@ router
     .route('/report-ivr-month-2-date')
     .get(_controller.reportIVRMonth2Date);
 
+router
+    .route('/report-statistic')
+    .post(_controller.reportStatistic);
+
 module.exports = router;
 
 /**
