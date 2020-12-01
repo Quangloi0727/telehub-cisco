@@ -197,14 +197,32 @@ exports.byQueueMapping = async (req, res, next) => {
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
     res
       .status(SUCCESS_200.code)
-      .json({ data: mappingReportByQueue(doc, query) });
+      .json({ data: getDataGroupBy(doc, query, query.groupBy) });
   } catch (error) {
     next(error);
   }
 };
 
-function mappingReportByQueue(data, query) {
+function getDataGroupBy(doc, query, groupBy = "skillGroup") {
+  let data = [];
+  switch (groupBy) {
+    case "month":
+      data = mappingReportByQueueByMonth(doc, query);
+      break;
+    case "day":
+      data = mappingReportByQueueByDay(doc, query);
+      break;
+    case "skillGroup":
+    default:
+      data = mappingReportByQueue(doc, query);
+      break;
+  }
+  return data;
+}
+
+function mappingReportByQueueByMonth(data, query) {
   let { recordset } = data;
+  console.log("groupby skillGroup");
 
   // bỏ các bản tin Miss IVR
   recordset = recordset.filter((i) => i.SkillGroupSkillTargetID !== null);
@@ -213,35 +231,151 @@ function mappingReportByQueue(data, query) {
 
   let result = [];
 
-  let {
-    skillGroups,
-  } = query;
+  let { skillGroups } = query;
   if (skillGroups) skillGroups = skillGroups.split(",");
 
-  Object.keys(groupBySkillGroup).sort().forEach((item) => {
-    let element = groupBySkillGroup[item];
-    let temp = {};
-    let filterIVR = element.filter(
-      (i) => i.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)
-    );
+  Object.keys(groupBySkillGroup)
+    .sort()
+    .forEach((item) => {
+      let element = groupBySkillGroup[item];
+      let groupByKey = _.groupBy(groupBySkillGroup[item], "MonthBlock");
 
-    let filterCallHandled = element.filter(
-      (i) => i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)
-    );
 
-    let totalDuration =
-      sumByKey(element, "Duration") - sumByKey(filterIVR, "Duration");
+      Object.keys(groupByKey)
+      .sort()
+      .forEach((itemKey) => {
+        let eleKey = groupByKey[itemKey];
 
-    // handle data mapping for report telehub
-    temp._id = element[0].SkillGroupSkillTargetID;
-    temp.EnterpriseName = item;
-    temp.totalCall = element.length - filterIVR.length;
-    temp.connected = filterCallHandled.length;
-    // element.missed = element.routerCallsAbandQ;
-    temp.callDuration = totalDuration * 1000;
+        let temp = {};
+        let filterIVR = eleKey.filter(
+          (i) => i.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)
+        );
 
-    result.push(temp);
-  });
+        let filterCallHandled = eleKey.filter(
+          (i) => i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)
+        );
+
+        let totalDuration =
+          sumByKey(eleKey, "Duration") - sumByKey(filterIVR, "Duration");
+
+        // handle data mapping for report telehub
+        temp._id = {
+          name: element[0].SkillGroupSkillTargetID,
+          month: eleKey[0].MonthBlock,
+          year: eleKey[0].YearBlock,
+        };
+        temp.EnterpriseName = item;
+        temp.totalCall = eleKey.length - filterIVR.length;
+        temp.connected = filterCallHandled.length;
+        // element.missed = element.routerCallsAbandQ;
+        temp.callDuration = totalDuration * 1000;
+
+        result.push(temp);
+
+      });
+    });
+  data.recordset = result;
+  return data;
+}
+
+function mappingReportByQueueByDay(data, query) {
+  let { recordset } = data;
+  console.log("groupby mappingReportByQueueByDay");
+
+  // bỏ các bản tin Miss IVR
+  recordset = recordset.filter((i) => i.SkillGroupSkillTargetID !== null);
+
+  let groupBySkillGroup = _.groupBy(recordset, "EnterpriseName");
+
+  let result = [];
+
+  let { skillGroups } = query;
+  if (skillGroups) skillGroups = skillGroups.split(",");
+
+  Object.keys(groupBySkillGroup)
+    .sort()
+    .forEach((item) => {
+      let element = groupBySkillGroup[item];
+      let groupByKey = _.groupBy(groupBySkillGroup[item], "DayMonthBlock");
+
+
+      Object.keys(groupByKey)
+      .sort()
+      .forEach((itemKey) => {
+        let eleKey = groupByKey[itemKey];
+
+        let temp = {};
+        let filterIVR = eleKey.filter(
+          (i) => i.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)
+        );
+
+        let filterCallHandled = eleKey.filter(
+          (i) => i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)
+        );
+
+        let totalDuration =
+          sumByKey(eleKey, "Duration") - sumByKey(filterIVR, "Duration");
+
+        // handle data mapping for report telehub
+        temp._id = {
+          name: element[0].SkillGroupSkillTargetID,
+          day: eleKey[0].DayBlock,
+          month: eleKey[0].MonthBlock,
+          year: eleKey[0].YearBlock,
+        };
+        temp.EnterpriseName = item;
+        temp.totalCall = eleKey.length - filterIVR.length;
+        temp.connected = filterCallHandled.length;
+        // element.missed = element.routerCallsAbandQ;
+        temp.callDuration = totalDuration * 1000;
+
+        result.push(temp);
+
+      });
+    });
+  data.recordset = result;
+  return data;
+}
+
+function mappingReportByQueue(data, query) {
+  let { recordset } = data;
+  console.log("groupby month");
+  // bỏ các bản tin Miss IVR
+  recordset = recordset.filter((i) => i.SkillGroupSkillTargetID !== null);
+
+  let groupBySkillGroup = _.groupBy(recordset, "EnterpriseName");
+
+  let result = [];
+
+  let { skillGroups } = query;
+  if (skillGroups) skillGroups = skillGroups.split(",");
+
+  Object.keys(groupBySkillGroup)
+    .sort()
+    .forEach((item) => {
+      let element = groupBySkillGroup[item];
+      let temp = {};
+      let filterIVR = element.filter(
+        (i) => i.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)
+      );
+
+      let filterCallHandled = element.filter(
+        (i) => i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)
+      );
+
+      let totalDuration =
+        sumByKey(element, "Duration") - sumByKey(filterIVR, "Duration");
+
+      // handle data mapping for report telehub
+      temp._id = element[0].SkillGroupSkillTargetID;
+      temp.EnterpriseName = item;
+      temp.totalCall = element.length - filterIVR.length;
+      temp.connected = filterCallHandled.length;
+      // element.missed = element.routerCallsAbandQ;
+      temp.callDuration = totalDuration * 1000;
+
+      result.push(temp);
+    });
   data.recordset = result;
   return data;
 }
@@ -256,10 +390,7 @@ function misscallGroupbySkillGroup(data, query) {
 
   let result = [];
 
-  let {
-    CT_IVR,
-    skillGroups,
-  } = query;
+  let { CT_IVR, skillGroups } = query;
   if (skillGroups) skillGroups = skillGroups.split(",");
 
   Object.keys(groupBySkillGroup).forEach((item) => {
@@ -339,7 +470,6 @@ function misscallGroupbySkillGroup(data, query) {
   data.recordset = result;
   return data;
 }
-
 
 function initObjectMapping(id, name) {
   return {
