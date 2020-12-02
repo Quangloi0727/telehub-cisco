@@ -176,7 +176,7 @@ exports.getDetailAgent = async (db, dbMssql, query) => {
 
       if (wait_g) {
         wait_g.forEach((item) => {
-          querySelect += createChartConditions(item, "TalkTime");
+          querySelect += createChartConditions(item, "Duration - TCD.TalkTime");
         });
       }
     } else {
