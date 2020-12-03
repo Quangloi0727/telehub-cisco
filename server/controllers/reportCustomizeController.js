@@ -177,10 +177,6 @@ exports.reportACDSummary = async (req, res, next) => {
     if (!query.startDate || !query.endDate || !query.CT_IVR)
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
-    let { startDate, endDate } = query;
-    startDate = moment(startDate, "YYYY-MM-DD HH:mm:ss", true).unix();
-    endDate = moment(endDate, "YYYY-MM-DD HH:mm:ss", true).unix();
-
     /**
      * Check việc khởi tạo các CallType
      * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
@@ -221,7 +217,7 @@ exports.reportACDSummary = async (req, res, next) => {
     if (!doc)
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
-    res.status(SUCCESS_200.code).json({ data: mappingACDSummary(startDate, endDate, doc, query) });
+    res.status(SUCCESS_200.code).json({ data: mappingACDSummary(doc, query) });
   } catch (error) {
     next(error);
   }
@@ -888,13 +884,14 @@ function initDataRow(name, Inbound) {
   };
 }
 
-function mappingACDSummary(startDate, endDate, data, query) {
+function mappingACDSummary(data, query) {
   let { recordset } = data;
 
-  let startDay = moment(startDate * 1000);
-  let endDay = moment(endDate * 1000);
+  let { startDate, endDate } = query;
+  startDate = moment(startDate, "YYYY-MM-DD HH:mm:ss", true);
+  endDate = moment(endDate, "YYYY-MM-DD HH:mm:ss", true);
 
-  let days = genDays(startDay, endDay);
+  let days = genDays(startDate, endDate);
 
   let groupByDayMonthBlock = _.groupBy(recordset, "DayMonthBlock");
 
