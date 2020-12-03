@@ -60,7 +60,8 @@ exports.report2080 = async (req, res, next) => {
     if (!query.startDate || !query.endDate || !query.CT_IVR)
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
-    Object.keys(query).forEach((item) => {
+    for (let i = 0; i < Object.keys(query).length; i++) {
+      const item = Object.keys(query)[i];
       // const element = query[item];
       if (item.includes("CT_ToAgentGroup")) {
         let groupNumber = item.replace("CT_ToAgentGroup", "");
@@ -89,7 +90,7 @@ exports.report2080 = async (req, res, next) => {
           );
         }
       }
-    });
+    };
 
     const doc = await _model.lastTCDRecord(db, dbMssql, query);
 
@@ -119,7 +120,8 @@ exports.reportIncomingCallTrends = async (req, res, next) => {
      * Check việc khởi tạo các CallType
      * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
      */
-    Object.keys(query).forEach((item) => {
+    for (let i = 0; i < Object.keys(query).length; i++) {
+      const item = Object.keys(query)[i];
       // const element = query[item];
       if (item.includes("CT_ToAgentGroup")) {
         let groupNumber = item.replace("CT_ToAgentGroup", "");
@@ -148,7 +150,7 @@ exports.reportIncomingCallTrends = async (req, res, next) => {
           );
         }
       }
-    });
+    };
 
     const doc = await _model.lastTCDRecord(db, dbMssql, query);
 
@@ -180,7 +182,8 @@ exports.reportACDSummary = async (req, res, next) => {
      * Check việc khởi tạo các CallType
      * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
      */
-    Object.keys(query).forEach((item) => {
+    for (let i = 0; i < Object.keys(query).length; i++) {
+      const item = Object.keys(query)[i];
       // const element = query[item];
       if (item.includes("CT_ToAgentGroup")) {
         let groupNumber = item.replace("CT_ToAgentGroup", "");
@@ -209,7 +212,7 @@ exports.reportACDSummary = async (req, res, next) => {
           );
         }
       }
-    });
+    };
 
     const doc = await _model.lastTCDRecord(db, dbMssql, query);
 
@@ -239,7 +242,8 @@ exports.reportIVRMonth2Date = async (req, res, next) => {
      * Check việc khởi tạo các CallType
      * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
      */
-    Object.keys(query).forEach((item) => {
+    for (let i = 0; i < Object.keys(query).length; i++) {
+      const item = Object.keys(query)[i];
       // const element = query[item];
       if (item.includes("CT_ToAgentGroup")) {
         let groupNumber = item.replace("CT_ToAgentGroup", "");
@@ -268,7 +272,7 @@ exports.reportIVRMonth2Date = async (req, res, next) => {
           );
         }
       }
-    });
+    };
 
     // Lấy thông tin các cuộc bị nhỡ trên IVR để gửi làm báo cáo
     const docTCD = await _model.lastTCDRecord(db, dbMssql, query);

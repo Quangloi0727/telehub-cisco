@@ -6,6 +6,10 @@ router
     .route('/')
     .get(reportTRCallTypeController.getAll);
 
+router
+    .route('/lastTCDRecord')
+    .get(reportTRCallTypeController.lastTCDRecord);
+
 
 module.exports = router;
 

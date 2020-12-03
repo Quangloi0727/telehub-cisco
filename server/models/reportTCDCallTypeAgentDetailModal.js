@@ -924,7 +924,8 @@ function selectMissAgent(query) {
 function fieldMissCallTCD(query) {
   let when_dynamic = [];
 
-  Object.keys(query).forEach((item) => {
+  for (let i = 0; i < Object.keys(query).length; i++) {
+      const item = Object.keys(query)[i];
     // let element = query[item];
     if(item.includes("SG_Voice_")){
       let groupNumber = item.replace("SG_Voice_", "");
@@ -936,7 +937,7 @@ function fieldMissCallTCD(query) {
       then @SG_Voice_${groupNumber}
       `)
     }
-  });
+  };
 
   return `
   ,RecoveryKey

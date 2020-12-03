@@ -99,36 +99,41 @@ exports.skillGroupMapping = async (req, res, next) => {
     if (!query.startDate || !query.endDate || !query.CT_IVR)
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
-    if (query.CT_ToAgentGroup1 && !query.CT_Queue1)
-      return next(
-        new ResError(
-          ERR_400.code,
-          `${ERR_400.message_detail.missingKey} CT_Queue1`
-        ),
-        req,
-        res,
-        next
-      );
-    if (query.CT_ToAgentGroup2 && !query.CT_Queue2)
-      return next(
-        new ResError(
-          ERR_400.code,
-          `${ERR_400.message_detail.missingKey} CT_Queue2`
-        ),
-        req,
-        res,
-        next
-      );
-    if (query.CT_ToAgentGroup3 && !query.CT_Queue3)
-      return next(
-        new ResError(
-          ERR_400.code,
-          `${ERR_400.message_detail.missingKey} CT_Queue3`
-        ),
-        req,
-        res,
-        next
-      );
+     /**
+     * Check việc khởi tạo các CallType
+     * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+     */
+    for (let i = 0; i < Object.keys(query).length; i++) {
+      const item = Object.keys(query)[i];
+      if (item.includes("CT_ToAgentGroup")) {
+        let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+        if (!query[`CT_Queue${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+
+        if (!query[`SG_Voice_${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+      }
+      
+    }
 
     const doc = await _callTypeModel.missCallByCustomer(db, dbMssql, query);
 
