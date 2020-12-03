@@ -1,4 +1,5 @@
 const fetch = require("node-fetch");
+const moment = require("moment")
 
 /**
  * require Model
@@ -176,6 +177,10 @@ exports.reportACDSummary = async (req, res, next) => {
     if (!query.startDate || !query.endDate || !query.CT_IVR)
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
+    let { startDate, endDate } = query;
+    startDate = moment(startDate, "YYYY-MM-DD HH:mm:ss", true).unix();
+    endDate = moment(endDate, "YYYY-MM-DD HH:mm:ss", true).unix();
+
     /**
      * Check việc khởi tạo các CallType
      * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
@@ -216,7 +221,7 @@ exports.reportACDSummary = async (req, res, next) => {
     if (!doc)
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
-    res.status(SUCCESS_200.code).json({ data: mappingACDSummary(doc, query) });
+    res.status(SUCCESS_200.code).json({ data: mappingACDSummary(startDate, endDate, doc, query) });
   } catch (error) {
     next(error);
   }
@@ -647,8 +652,7 @@ function ratioCallQueueHandle(data, query) {
       result.childs.push(
         rowData(
           i.name,
-          `${RTCQueueHandle[index] ? RTCQueueHandle[index].result : ""} / ${
-            RTCQueue[index].result
+          `${RTCQueueHandle[index] ? RTCQueueHandle[index].result : ""} / ${RTCQueue[index].result
           }`,
           (RTCQueueHandle[index]
             ? (RTCQueueHandle[index].result / RTCQueue[index].result) * 100
@@ -799,7 +803,7 @@ function mappingIncomingCallTrends(data, query) {
       );
       reduceTemp.Efficiency = reduceTemp.ServedCall
         ? reduceTemp.ServedCall /
-          (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+        (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
         : 0;
 
       reduceTemp.LongestWaitingTime = hms(reduceTemp.LongestWaitingTime);
@@ -884,8 +888,13 @@ function initDataRow(name, Inbound) {
   };
 }
 
-function mappingACDSummary(data, query) {
+function mappingACDSummary(startDate, endDate, data, query) {
   let { recordset } = data;
+
+  let startDay = moment(startDate * 1000);
+  let endDay = moment(endDate * 1000);
+
+  let days = genDays(startDay, endDay);
 
   let groupByDayMonthBlock = _.groupBy(recordset, "DayMonthBlock");
 
@@ -898,57 +907,59 @@ function mappingACDSummary(data, query) {
   let { skillGroups } = query;
   if (skillGroups) skillGroups = skillGroups.split(",");
 
-  Object.keys(groupByDayMonthBlock)
-    .sort()
-    .forEach((item) => {
-      let element = groupByDayMonthBlock[item];
+  days.forEach((item) => {
 
-      let reduceTemp = element.reduce(
-        handleReduceFunc,
-        initDataRow(item, element.length)
-      );
-      // end reduce
+    let dataFound = Object.keys(groupByDayMonthBlock).find(i => item == i);
 
-      reduceTemp.AbdCall = reduceTemp.ReceivedCall - reduceTemp.ServedCall;
-      /**
-       * chờ confirm để tính
-       * 20/11/2020:
-       * AVERAGE TIME OF WAITING:
-        Trung bình thời gian chờ
-        Công thức tính:
-        Thời gian chờ trung bình = [Tổng thời gian chờ]/ Tổng cuộc gọi  vào ACD
+    let element = dataFound ? groupByDayMonthBlock[dataFound] : [];
 
-       * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
-       */
-      reduceTemp.avgTimeWaiting = hms(
-        reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
-      );
+    let reduceTemp = element.reduce(
+      handleReduceFunc,
+      initDataRow(item, element.length)
+    );
+    // end reduce
 
-      reduceTemp.avgHandlingTime = hms(
-        reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
-      );
-      reduceTemp.Efficiency = reduceTemp.ServedCall
-        ? reduceTemp.ServedCall /
-          (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
-        : 0;
+    reduceTemp.AbdCall = reduceTemp.ReceivedCall - reduceTemp.ServedCall;
+    /**
+     * chờ confirm để tính
+     * 20/11/2020:
+     * AVERAGE TIME OF WAITING:
+      Trung bình thời gian chờ
+      Công thức tính:
+      Thời gian chờ trung bình = [Tổng thời gian chờ]/ Tổng cuộc gọi  vào ACD
 
-      reduceTemp.LongestWaitingTime = hms(reduceTemp.LongestWaitingTime);
-      let countByMinuteTime = _.countBy(element, "MinuteTimeBlock");
-      let maxInMinuteTime = _.max(
-        Object.keys(countByMinuteTime).map((i) => countByMinuteTime[i])
-      );
-      reduceTemp.MaxNumSimultaneousCall = maxInMinuteTime;
-      result.push(reduceTemp);
+     * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
+     */
+    reduceTemp.avgTimeWaiting = hms(
+      reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
+    );
 
-      rowTotal.Inbound += reduceTemp.Inbound;
-      rowTotal.StopIVR += reduceTemp.StopIVR;
-      rowTotal.ReceivedCall += reduceTemp.ReceivedCall;
-      rowTotal.ServedCall += reduceTemp.ServedCall;
-      rowTotal.MissCall += reduceTemp.MissCall;
-      rowTotal.AbdCall += reduceTemp.AbdCall;
-      rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
-      rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
-    });
+    reduceTemp.avgHandlingTime = hms(
+      reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
+    );
+    reduceTemp.Efficiency = reduceTemp.ServedCall
+      ? reduceTemp.ServedCall /
+      (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+      : 0;
+
+    reduceTemp.LongestWaitingTime = hms(reduceTemp.LongestWaitingTime);
+    let countByMinuteTime = _.countBy(element, "MinuteTimeBlock");
+    let maxInMinuteTime = _.max(
+      Object.keys(countByMinuteTime).map((i) => countByMinuteTime[i])
+    );
+    reduceTemp.MaxNumSimultaneousCall = maxInMinuteTime;
+    result.push(reduceTemp);
+
+    rowTotal.Inbound += reduceTemp.Inbound;
+    rowTotal.StopIVR += reduceTemp.StopIVR;
+    rowTotal.ReceivedCall += reduceTemp.ReceivedCall;
+    rowTotal.ServedCall += reduceTemp.ServedCall;
+    rowTotal.MissCall += reduceTemp.MissCall;
+    rowTotal.AbdCall += reduceTemp.AbdCall;
+    rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
+    rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
+  });
+
 
   data.recordset = result;
 
@@ -1049,7 +1060,7 @@ function mappingStatistic(
         north_percent: "",
         south_percent: "",
       };
-      
+
       temp["1800"] = Object.assign({}, _1800Found);
 
       Object.keys(_1800Found).forEach((i) => {
@@ -1117,4 +1128,13 @@ function getDataStatistic(dataMN, dataMB) {
   });
 
   return result;
+}
+
+function genDays(startDate, endDate) {
+  const days = [];
+  while (endDate >= startDate) {
+    days.push(startDate.format("DD/MM"));
+    startDate.add(1, "days");
+  }
+  return days;
 }
