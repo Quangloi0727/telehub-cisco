@@ -5,7 +5,7 @@ const fetch = require("node-fetch");
  */
 const _model = require("../models/reportCustomizeModal");
 const _baseModel = require("../models/baseModel");
-
+var moment = require("moment");
 /**
  * require Controller
  */
@@ -652,7 +652,7 @@ function ratioCallQueueHandle(data, query) {
         rowData(
           i.name,
           `${RTCQueueHandle[index] ? RTCQueueHandle[index].result : ""} / ${
-            RTCQueue[index].result
+          RTCQueue[index].result
           }`,
           (RTCQueueHandle[index]
             ? (RTCQueueHandle[index].result / RTCQueue[index].result) * 100
@@ -803,7 +803,7 @@ function mappingIncomingCallTrends(data, query) {
       );
       reduceTemp.Efficiency = reduceTemp.ServedCall
         ? reduceTemp.ServedCall /
-          (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+        (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
         : 0;
 
       reduceTemp.LongestWaitingTime = hms(reduceTemp.LongestWaitingTime);
@@ -824,12 +824,35 @@ function mappingIncomingCallTrends(data, query) {
       rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
       rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
     });
+    
+  let resultName = _.pluck(result, 'name')
+  let startTime = moment(query.startDate, 'YYYY-MM-DD HH:mm:ss', true)
+  let endTime = moment(query.endDate, 'YYYY-MM-DD HH:mm:ss', true)
+  let hourQuery = genHour(startTime, endTime)
 
-  data.recordset = result;
+  let diffCheck = _.difference(hourQuery, resultName)
+  diffCheck.forEach(function (item) {
+    result.push(initDataRow(item, 0))
+  })
+
+  data.recordset = _.sortBy(result, 'name');
   data.rowTotal = rowTotal;
-
   return data;
 }
+/**
+ * Lấy tất cả các khoảng thời gian theo query
+ * @param {Thời gian bắt đầu} startTime 
+ * @param {*Thời gian kết thúc} endTime 
+ */
+function genHour(startTime, endTime) {
+  var hour = []
+  while (endTime >= startTime) {
+    hour.push(`${startTime.format("HH:mm")}-${startTime.add(15, "m").format('HH:mm')}`);
+  }
+  return _.uniq(hour);
+
+}
+
 
 function handleReduceFunc(pre, cur) {
   // Thời gian chờ: abandon waiting time trong queue;
@@ -881,6 +904,7 @@ function initDataRow(name, Inbound) {
     AbdCall: 0,
     AbdIn15s: 0,
     AbdAfter15s: 0,
+    Efficiency: 0,
     totalDuarationHandling: 0,
     MaxNumSimultaneousCall: 0,
     LongestWaitingTime: 0,
@@ -933,7 +957,7 @@ function mappingACDSummary(data, query) {
       );
       reduceTemp.Efficiency = reduceTemp.ServedCall
         ? reduceTemp.ServedCall /
-          (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+        (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
         : 0;
 
       reduceTemp.LongestWaitingTime = hms(reduceTemp.LongestWaitingTime);
@@ -1053,7 +1077,7 @@ function mappingStatistic(
         north_percent: "",
         south_percent: "",
       };
-      
+
       temp["1800"] = Object.assign({}, _1800Found);
 
       Object.keys(_1800Found).forEach((i) => {
