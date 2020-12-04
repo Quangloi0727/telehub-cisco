@@ -1,11 +1,11 @@
 const fetch = require("node-fetch");
+const moment = require("moment")
 
 /**
  * require Model
  */
 const _model = require("../models/reportCustomizeModal");
 const _baseModel = require("../models/baseModel");
-var moment = require("moment");
 /**
  * require Controller
  */
@@ -915,6 +915,12 @@ function initDataRow(name, Inbound) {
 function mappingACDSummary(data, query) {
   let { recordset } = data;
 
+  let { startDate, endDate } = query;
+  startDate = moment(startDate, "YYYY-MM-DD HH:mm:ss", true);
+  endDate = moment(endDate, "YYYY-MM-DD HH:mm:ss", true);
+
+  let days = genDays(startDate, endDate);
+
   let groupByDayMonthBlock = _.groupBy(recordset, "DayMonthBlock");
 
   // data vẽ table
@@ -926,57 +932,59 @@ function mappingACDSummary(data, query) {
   let { skillGroups } = query;
   if (skillGroups) skillGroups = skillGroups.split(",");
 
-  Object.keys(groupByDayMonthBlock)
-    .sort()
-    .forEach((item) => {
-      let element = groupByDayMonthBlock[item];
+  days.forEach((item) => {
 
-      let reduceTemp = element.reduce(
-        handleReduceFunc,
-        initDataRow(item, element.length)
-      );
-      // end reduce
+    let dataFound = Object.keys(groupByDayMonthBlock).find(i => item == i);
 
-      reduceTemp.AbdCall = reduceTemp.ReceivedCall - reduceTemp.ServedCall;
-      /**
-       * chờ confirm để tính
-       * 20/11/2020:
-       * AVERAGE TIME OF WAITING:
-        Trung bình thời gian chờ
-        Công thức tính:
-        Thời gian chờ trung bình = [Tổng thời gian chờ]/ Tổng cuộc gọi  vào ACD
+    let element = dataFound ? groupByDayMonthBlock[dataFound] : [];
 
-       * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
-       */
-      reduceTemp.avgTimeWaiting = hms(
-        reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
-      );
+    let reduceTemp = element.reduce(
+      handleReduceFunc,
+      initDataRow(item, element.length)
+    );
+    // end reduce
 
-      reduceTemp.avgHandlingTime = hms(
-        reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
-      );
-      reduceTemp.Efficiency = reduceTemp.ServedCall
-        ? reduceTemp.ServedCall /
-        (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
-        : 0;
+    reduceTemp.AbdCall = reduceTemp.ReceivedCall - reduceTemp.ServedCall;
+    /**
+     * chờ confirm để tính
+     * 20/11/2020:
+     * AVERAGE TIME OF WAITING:
+      Trung bình thời gian chờ
+      Công thức tính:
+      Thời gian chờ trung bình = [Tổng thời gian chờ]/ Tổng cuộc gọi  vào ACD
 
-      reduceTemp.LongestWaitingTime = hms(reduceTemp.LongestWaitingTime);
-      let countByMinuteTime = _.countBy(element, "MinuteTimeBlock");
-      let maxInMinuteTime = _.max(
-        Object.keys(countByMinuteTime).map((i) => countByMinuteTime[i])
-      );
-      reduceTemp.MaxNumSimultaneousCall = maxInMinuteTime;
-      result.push(reduceTemp);
+     * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
+     */
+    reduceTemp.avgTimeWaiting = hms(
+      reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
+    );
 
-      rowTotal.Inbound += reduceTemp.Inbound;
-      rowTotal.StopIVR += reduceTemp.StopIVR;
-      rowTotal.ReceivedCall += reduceTemp.ReceivedCall;
-      rowTotal.ServedCall += reduceTemp.ServedCall;
-      rowTotal.MissCall += reduceTemp.MissCall;
-      rowTotal.AbdCall += reduceTemp.AbdCall;
-      rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
-      rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
-    });
+    reduceTemp.avgHandlingTime = hms(
+      reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
+    );
+    reduceTemp.Efficiency = reduceTemp.ServedCall
+      ? reduceTemp.ServedCall /
+      (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+      : 0;
+
+    reduceTemp.LongestWaitingTime = hms(reduceTemp.LongestWaitingTime);
+    let countByMinuteTime = _.countBy(element, "MinuteTimeBlock");
+    let maxInMinuteTime = _.max(
+      Object.keys(countByMinuteTime).map((i) => countByMinuteTime[i])
+    );
+    reduceTemp.MaxNumSimultaneousCall = maxInMinuteTime;
+    result.push(reduceTemp);
+
+    rowTotal.Inbound += reduceTemp.Inbound;
+    rowTotal.StopIVR += reduceTemp.StopIVR;
+    rowTotal.ReceivedCall += reduceTemp.ReceivedCall;
+    rowTotal.ServedCall += reduceTemp.ServedCall;
+    rowTotal.MissCall += reduceTemp.MissCall;
+    rowTotal.AbdCall += reduceTemp.AbdCall;
+    rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
+    rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
+  });
+
 
   data.recordset = result;
 
@@ -1145,4 +1153,13 @@ function getDataStatistic(dataMN, dataMB) {
   });
 
   return result;
+}
+
+function genDays(startDate, endDate) {
+  const days = [];
+  while (endDate >= startDate) {
+    days.push(startDate.format("DD/MM"));
+    startDate.add(1, "days");
+  }
+  return days;
 }
