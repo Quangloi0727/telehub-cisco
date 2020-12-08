@@ -220,6 +220,7 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
 function fieldCallTCD(query, nameTable = `t_TCD_last`, nameTCDDetail = `TCD_Detail`) {
   let whenDynamic = [];
   let CT_QUEUE_Dynamic = [];
+  let CT_ToAgent_Dynamic = [];
 
   Object.keys(query).forEach(item => {
     const element = query[item];
@@ -240,6 +241,10 @@ function fieldCallTCD(query, nameTable = `t_TCD_last`, nameTCDDetail = `TCD_Deta
 
       CT_QUEUE_Dynamic.push(`@${item}`);
     }
+    if(item.includes("CT_ToAgentGroup")){
+
+      CT_ToAgent_Dynamic.push(`@${item}`);
+    }
   });
 
   return `
@@ -259,7 +264,7 @@ function fieldCallTCD(query, nameTable = `t_TCD_last`, nameTCDDetail = `TCD_Deta
   end waitTimeQueue
   ,case 
     when 
-      t_TCD_last.CallTypeID in (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3,@CT_Queue1,@CT_Queue2,@CT_Queue3)
+      t_TCD_last.CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_QUEUE_Dynamic].join(",")})
           AND t_TCD_last.AgentSkillTargetID is not null
           AND t_TCD_last.TalkTime >= 0
           AND t_TCD_last.CallDisposition	in (13)
