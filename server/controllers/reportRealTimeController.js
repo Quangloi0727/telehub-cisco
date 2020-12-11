@@ -84,7 +84,6 @@ exports.agentTeam = async (req, res, next) => {
         next
       );
     }
-
     const doc = await _model.agentTeam(db, dbMssql, query);
 
     if (!doc)
@@ -108,12 +107,21 @@ exports.agentTeam = async (req, res, next) => {
 function groupAgentState(data) {
   let { recordset } = data;
   console.log("groupby groupAgentState", recordset);
-  let result = {};
+  let result = initRowStateAgent();
 
   let countByReasonTextTelehub = _.countBy(recordset, "ReasonTextTelehub");
   console.log(countByReasonTextTelehub);
+  
+  Object.keys(countByReasonTextTelehub).forEach(i => {
+    result[i] = countByReasonTextTelehub[i];
+  });
+  
+  // fake data de test :D 
+  // data.recordset = { Ready: 11, 'Not Ready': 6, 'At Lunch': 5, "Meeting": 11, "Talking": 98 };
+  data.recordset = result;
+  return data;
+}
 
-  result = countByReasonTextTelehub
-
-  return result;
+function initRowStateAgent() {
+  return { Ready: 0, 'Not Ready': 0, 'At Lunch': 0, "Meeting": 0, "Talking": 0 };
 }
