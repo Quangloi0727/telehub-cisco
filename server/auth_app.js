@@ -82,6 +82,7 @@ function initServer(db, dbMssql) {
     app.use("/api/v1/reportTCDCallTypeAgentDetail", require("./routes/reportTCDCallTypeAgentDetailRoute"));
     app.use("/api/v1/reportTCDGroupby", require("./routes/reportTCDGroupbyRoute"));
     app.use("/api/v1/reportCustomize", require("./routes/reportCustomizeRoute"));
+    app.use("/api/v1/reportRealTime", require("./routes/reportRealTimeRoute"));
 
     app.use("/api/v1/exceldemo", require("./routes/excelDemoRoute"));
 
