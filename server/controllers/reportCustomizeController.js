@@ -30,6 +30,7 @@ const {
   reasonToTelehub,
   variableSQL,
   hms,
+  hmsToNumber,
   percentFormat,
 } = require("../helpers/functions");
 
@@ -794,14 +795,14 @@ function mappingIncomingCallTrends(data, query) {
 
        * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
        */
-      reduceTemp.avgTimeWaiting = hms(
+      reduceTemp.avgTimeWaiting =reduceTemp.ReceivedCall ? hms(
         reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
-      );
+      ) : 0 ;
 
-      reduceTemp.avgHandlingTime = hms(
+      reduceTemp.avgHandlingTime = reduceTemp.ServedCall ?  hms(
         reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
-      );
-      reduceTemp.Efficiency = reduceTemp.ServedCall
+      ) : 0;
+      reduceTemp.Efficiency = (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
         ? reduceTemp.ServedCall /
         (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
         : 0;
@@ -823,8 +824,11 @@ function mappingIncomingCallTrends(data, query) {
       rowTotal.AbdCall += reduceTemp.AbdCall;
       rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
       rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
+      rowTotal.totalWaitTimeQueue += reduceTemp.totalWaitTimeQueue
+      rowTotal.totalDuarationHandling += reduceTemp.totalDuarationHandling
+      // rowTotal.MaxNumSimultaneousCall = 
     });
-    
+
   let resultName = _.pluck(result, 'name')
   let startTime = moment(query.startDate, 'YYYY-MM-DD HH:mm:ss', true)
   let endTime = moment(query.endDate, 'YYYY-MM-DD HH:mm:ss', true)
@@ -836,6 +840,14 @@ function mappingIncomingCallTrends(data, query) {
   })
 
   data.recordset = _.sortBy(result, 'name');
+
+  rowTotal.Efficiency = (rowTotal.ReceivedCall - rowTotal.AbdIn15s)
+    ? parseFloat(rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s) * 100).toFixed(2)
+    : 0;
+  rowTotal.totalWaitTimeQueue = rowTotal.ReceivedCall ? hms(rowTotal.totalWaitTimeQueue / rowTotal.ReceivedCall) : 0
+  rowTotal.totalDuarationHandling = rowTotal.ServedCall ? hms(rowTotal.totalDuarationHandling / rowTotal.ServedCall) : 0
+  rowTotal.MaxNumSimultaneousCall = result ? _.max(result, function (result) { return result.MaxNumSimultaneousCall; }).MaxNumSimultaneousCall : 0
+  rowTotal.LongestWaitingTime = result ? _.max(result, function (result) { return hmsToNumber(result.LongestWaitingTime); }).LongestWaitingTime : 0
   data.rowTotal = rowTotal;
   return data;
 }
@@ -901,6 +913,7 @@ function initDataRow(name, Inbound) {
     ReceivedCall: 0,
     ServedCall: 0,
     MissCall: 0,
+    Aband: 0,
     AbdCall: 0,
     AbdIn15s: 0,
     AbdAfter15s: 0,
@@ -955,14 +968,16 @@ function mappingACDSummary(data, query) {
 
      * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
      */
-    reduceTemp.avgTimeWaiting = hms(
+    reduceTemp.avgTimeWaiting = reduceTemp.ReceivedCall ?
+     hms(
       reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
-    );
+    ) : 0;
 
-    reduceTemp.avgHandlingTime = hms(
+    reduceTemp.avgHandlingTime = reduceTemp.ServedCall ?
+     hms(
       reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
-    );
-    reduceTemp.Efficiency = reduceTemp.ServedCall
+    ) : 0;
+    reduceTemp.Efficiency = (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
       ? reduceTemp.ServedCall /
       (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
       : 0;
@@ -983,13 +998,21 @@ function mappingACDSummary(data, query) {
     rowTotal.AbdCall += reduceTemp.AbdCall;
     rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
     rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
+    rowTotal.totalWaitTimeQueue += reduceTemp.totalWaitTimeQueue
+    rowTotal.totalDuarationHandling += reduceTemp.totalDuarationHandling
   });
 
 
   data.recordset = result;
+  rowTotal.Aband = rowTotal.ReceivedCall ?
+    rowTotal.AbdCall / rowTotal.ReceivedCall * 100 : 0
 
-  rowTotal.Efficiency = rowTotal.ServedCall
-    ? rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s)
+  rowTotal.totalWaitTimeQueue = rowTotal.ReceivedCall ? hms(rowTotal.totalWaitTimeQueue / rowTotal.ReceivedCall) : 0
+  rowTotal.totalDuarationHandling = rowTotal.ServedCall ? hms(rowTotal.totalDuarationHandling / rowTotal.ServedCall) : 0
+  rowTotal.LongestWaitingTime = result ? _.max(result, function (result) { return hmsToNumber(result.LongestWaitingTime); }).LongestWaitingTime : 0
+
+  rowTotal.Efficiency = (rowTotal.ReceivedCall - rowTotal.AbdIn15s)
+    ? rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s) * 100
     : 0;
 
   data.rowTotal = rowTotal;
