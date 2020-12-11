@@ -21,7 +21,7 @@ exports.formatDate = (_date, format = "HH:mm:ss") => {
 exports.pad = pad;
 
 exports.hms = (secs) => {
-    if(!secs) return "--";
+    if (!secs) return "--";
 
     // floor: làm tròn xuống
     // round: làm tròn lên từ 0.5
@@ -32,7 +32,15 @@ exports.hms = (secs) => {
     minutes = minutes % 60;
     return hours + ":" + pad(minutes) + ":" + pad(sec);
 }
+exports.hmsToNumber = (value) => {
+    if(value === '--' || value === 0) return 0;
+    var time = value.split(':'); // split it at the colons
 
-function pad (num) {
+    // minutes are worth 60 seconds. Hours are worth 60 minutes.
+    var seconds = (+time[0]) * 60 * 60 + (+time[1]) * 60 + (+time[2]);
+    return seconds;
+}
+
+function pad(num) {
     return ("0" + num).slice(-2);
 }
