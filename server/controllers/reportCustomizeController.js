@@ -1003,14 +1003,14 @@ function mappingACDSummary(data, query) {
 
   data.recordset = result;
   rowTotal.Aband = rowTotal.ReceivedCall ?
-    `${parseFloat(rowTotal.AbdCall / rowTotal.ReceivedCall * 100).toFixed(2)} %` : 0
+    rowTotal.AbdCall / rowTotal.ReceivedCall * 100 : 0
 
   rowTotal.totalWaitTimeQueue = rowTotal.ReceivedCall ? hms(rowTotal.totalWaitTimeQueue / rowTotal.ReceivedCall) : 0
   rowTotal.totalDuarationHandling = rowTotal.totalDuarationHandling ? hms(rowTotal.totalDuarationHandling / rowTotal.ServedCall) : 0
   rowTotal.LongestWaitingTime = result ? _.max(result, function (result) { return hmsToNumber(result.LongestWaitingTime); }).LongestWaitingTime : 0
 
   rowTotal.Efficiency = (rowTotal.ReceivedCall - rowTotal.AbdIn15s)
-    ? `${(rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s) * 100).toFixed(2)} %`
+    ? rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s) * 100
     : 0;
 
   data.rowTotal = rowTotal;
