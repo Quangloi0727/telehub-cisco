@@ -78,6 +78,30 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
   }
 };
 
+/**
+ * *** Mô tả comment *********************************
+ * *** Ngày: 2020-12-12
+ * *** Dev: hainv
+ * *** Lý do:
+ * Do thêm field waitTimeQueue nên cần join dòng có RouterCallKeySequenceNumber = 1 
+ * trong các bản tin TCD trả về để lấy thông tin thời gian chờ phục vụ cho báo cáo mới của kplus
+ * Nhưng do dùng LEFT JOIN sẽ bị trùng 1 số kết quả (duplicated dòng miss IVR) nên số liệu báo cáo bị sai
+ * *** Cách khắc phục duplicated:
+ * Không dùng LEFT JOIN mà dùng OUTER APPLY, chi tiết xem trong function fieldCallTCD
+ * Reference: https://stackoverflow.com/questions/22769641/left-join-without-duplicate-rows-from-left-table
+ * 
+ * *** Mô tả comment *********************************
+ * *** Ngày comment: 2020-12-12
+ * *** Dev comment: hainv
+ * *** Lý do comment:
+ * ...
+ * *** Cách khắc phục duplicated:
+ * ...
+ * 
+ * @param {object} query 
+ * @param {string} nameTable 
+ * @param {string} nameTCDDetail 
+ */
 function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
   let {
     skillGroups,
@@ -189,19 +213,22 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
       end CallTypeTXT
       ${fieldCallTCD(query, nameTable, nameTCDDetail)}
   FROM ${nameTable}
+  OUTER APPLY
+  (
+    SELECT TOP 1 *
+    FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] ${nameTCDDetail}
+    WHERE ${nameTCDDetail}.RouterCallKey =  ${nameTable}.RouterCallKey
+   and ${nameTCDDetail}.RouterCallKeyDay =  ${nameTable}.RouterCallKeyDay
+   and (
+     ${nameTCDDetail}.RouterCallKeySequenceNumber = 1
+     -- and  ${nameTable}.RouterCallKeySequenceNumber NOT IN (1)
+     -- or(
+     --	${nameTCDDetail}.RouterCallKeySequenceNumber = 0
+     --	and  ${nameTable}.RouterCallKeySequenceNumber IN (1)
+     -- )
+   )
+  ) ${nameTCDDetail}
 
-  LEFT join [ins1_hds].[dbo].[t_Termination_Call_Detail] ${nameTCDDetail}
-  on ${nameTCDDetail}.RouterCallKey = ${nameTable}.RouterCallKey
-	and ${nameTCDDetail}.RouterCallKeyDay = ${nameTable}.RouterCallKeyDay
-	and (
-		${nameTCDDetail}.RouterCallKeySequenceNumber = 1
-		-- and ${nameTable}.RouterCallKeySequenceNumber NOT IN (1)
-		-- or(
-		--	${nameTCDDetail}.RouterCallKeySequenceNumber = 0
-		--	and ${nameTable}.RouterCallKeySequenceNumber IN (1)
-		-- )
-  )
-  
   left join [ins1_awdb].[dbo].[t_Skill_Group] SG
     on ${nameTable}.SkillGroupSkillTargetID = SG.SkillTargetID
       ${JOIN_Dynamic.join("")}
