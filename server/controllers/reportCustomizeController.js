@@ -835,7 +835,7 @@ function mappingIncomingCallTrends(data, query) {
   let resultName = _.pluck(result, 'name')
   let startTime = moment(query.startDate, 'YYYY-MM-DD HH:mm:ss', true)
   let endTime = moment(query.endDate, 'YYYY-MM-DD HH:mm:ss', true)
-  let hourQuery = genHour(startTime, endTime)
+  let hourQuery = genHourMinuteBlock(startTime, endTime)
 
   let diffCheck = _.difference(hourQuery, resultName)
   diffCheck.forEach(function (item) {
@@ -856,10 +856,11 @@ function mappingIncomingCallTrends(data, query) {
 }
 /**
  * Lấy tất cả các khoảng thời gian theo query
- * @param {Thời gian bắt đầu} startTime 
- * @param {*Thời gian kết thúc} endTime 
+ * @param {string} startTime Thời gian bắt đầu
+ * @param {string} endTime Thời gian kết thúc
  */
-function genHour(startTime, endTime) {
+
+function genHourMinuteBlock(startTime, endTime) {
   var hour = []
   while (endTime >= startTime) {
     hour.push(`${startTime.format("HH:mm")}-${startTime.add(15, "m").format('HH:mm')}`);

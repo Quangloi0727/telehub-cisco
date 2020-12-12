@@ -10,3 +10,14 @@ DB_PORT=27017
 DB_USER=#
 DB_PASS=#
 IP_PUBLIC=localhost
+
+# Format comment function
+```javascript
+ * *** Mô tả comment *********************************
+ * *** Ngày: 2020-12-12
+ * *** Dev: hainv
+ * *** Lý do:
+ * ...
+ * *** Cách khắc phục duplicated:
+ * ...
+```

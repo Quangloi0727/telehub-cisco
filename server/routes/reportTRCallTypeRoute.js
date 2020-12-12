@@ -9,6 +9,9 @@ router
 router
     .route('/lastTCDRecord')
     .get(reportTRCallTypeController.lastTCDRecord);
+router
+    .route('/statisticInHourByDay')
+    .get(reportTRCallTypeController.statisticInHourByDay);
 
 
 module.exports = router;
