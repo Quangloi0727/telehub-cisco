@@ -324,6 +324,9 @@ exports.reportIVRMonth2Date = async (req, res, next) => {
 
     if (!doc)
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+
+    if (doc && doc.statusCode && doc.statusCode !== 200)
+      return next(new ResError(doc.statusCode, doc.message), req, res, next);
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
     res.status(SUCCESS_200.code).json(doc);
   } catch (error) {
