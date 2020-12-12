@@ -281,7 +281,6 @@ function handleReduceFunc(pre, cur) {
       // pre.AbdAfter15s++;
     }
   }
-  pre.AbdIn15s = 33
-
+  
   return pre;
 }
