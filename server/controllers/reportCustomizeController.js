@@ -1165,12 +1165,12 @@ function getDataStatistic(dataMN, dataMB) {
 
     if (countByMN[i]) {
       temp.total += countByMN[i];
-      temp.north_call += countByMN[i];
+      temp.south_call += countByMN[i];
     }
 
     if (countByMB[i]) {
       temp.total += countByMB[i];
-      temp.south_call += countByMB[i];
+      temp.north_call += countByMB[i];
     }
 
     temp.north_percent = percentFormat(temp.north_call, temp.total);
