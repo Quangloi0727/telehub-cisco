@@ -898,9 +898,14 @@ function handleReduceFunc(pre, cur) {
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissShortCall) ||
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)
   ) {
-    if (waitTimeQueue <= 15) pre.AbdIn15s++;
+    if (waitTimeQueue <= 15) {
+      pre.AbdIn15s++;
+      console.log({AbdIn15s: pre});
+    }
     if (waitTimeQueue > 15) {
       pre.AbdAfter15s++;
+      console.log({AbdAfter15s: pre});
+
     }
   }
 
