@@ -900,11 +900,11 @@ function handleReduceFunc(pre, cur) {
   ) {
     if (waitTimeQueue <= 15) {
       pre.AbdIn15s++;
-      console.log({AbdIn15s: pre});
+      console.log({AbdIn15s: cur});
     }
     if (waitTimeQueue > 15) {
       pre.AbdAfter15s++;
-      console.log({AbdAfter15s: pre});
+      console.log({AbdAfter15s: cur});
 
     }
   }
