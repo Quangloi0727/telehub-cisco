@@ -281,14 +281,21 @@ function fieldCallTCD(query, nameTable = `t_TCD_last`, nameTCDDetail = `TCD_Deta
   ,${nameTable}.RouterCallKey
   ,${nameTable}.AgentSkillTargetID
   ,${nameTable}.[DateTime]
-  ,case 
-    when 
-      ${nameTable}.CallTypeID in (${CT_QUEUE_Dynamic.join(",")})
-      and ${nameTable}.CallDisposition	in (13)
-      AND ${nameTable}.AgentSkillTargetID is null
-      then DATEDIFF(SECOND, TRY_CONVERT(datetime, FORMAT(${nameTCDDetail}.DateTime, 'yyyy-MM') + '-' + ${nameTCDDetail}.Variable4, 102), ${nameTable}.DateTime)
-	else DATEDIFF(SECOND, ${nameTCDDetail}.DateTime, ${nameTable}.DateTime)
-  end waitTimeQueue
+  --,case 
+  --  when 
+  --    ${nameTable}.CallTypeID in (${CT_QUEUE_Dynamic.join(",")})
+  --    and ${nameTable}.CallDisposition	in (13)
+  --    AND ${nameTable}.AgentSkillTargetID is null
+  --    then DATEDIFF(SECOND, TRY_CONVERT(datetime, FORMAT(${nameTCDDetail}.DateTime, 'yyyy-MM') + '-' + ${nameTCDDetail}.Variable4, 102), ${nameTable}.DateTime)
+	--else DATEDIFF(SECOND, ${nameTCDDetail}.DateTime, ${nameTable}.DateTime)
+  --end waitTimeQueue
+  ,ABS(DATEDIFF(SECOND, DATEADD(SS, -t_TCD_last.Duration, t_TCD_last.DateTime),
+	TRY_CONVERT(
+		datetime,
+		FORMAT(TCD_Detail.DateTime, 'yyyy-MM') + '-' + t_TCD_last.Variable4,
+		102
+	  )
+	)) waitTimeQueue
   ,case 
     when 
       t_TCD_last.CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_QUEUE_Dynamic].join(",")})

@@ -797,6 +797,7 @@ function mappingIncomingCallTrends(data, query) {
         Thời gian chờ trung bình = [Tổng thời gian chờ]/ Tổng cuộc gọi  vào ACD
 
        * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
+       
        */
       reduceTemp.avgTimeWaiting =reduceTemp.ReceivedCall ? hms(
         reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
@@ -862,7 +863,7 @@ function mappingIncomingCallTrends(data, query) {
 
 function genHourMinuteBlock(startTime, endTime) {
   var hour = []
-  while (endTime >= startTime) {
+  while (endTime > startTime) {
     hour.push(`${startTime.format("HH:mm")}-${startTime.add(15, "m").format('HH:mm')}`);
   }
   return _.uniq(hour);
@@ -876,15 +877,20 @@ function handleReduceFunc(pre, cur) {
   let { waitTimeQueue, waitTimeAnwser } = cur;
 
   if (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)) pre.StopIVR++;
-  if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR))
+
+  if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)){
     pre.ReceivedCall++;
+    pre.totalWaitTimeQueue += waitTimeQueue || 0;
+
+    if (waitTimeQueue > pre.LongestWaitingTime)
+      pre.LongestWaitingTime = waitTimeQueue;
+  }
 
   if (cur.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)) {
     pre.ServedCall++;
     pre.totalDuarationHandling += cur.TalkTime + cur.HoldTime;
 
-    if (waitTimeAnwser > pre.LongestWaitingTime)
-      pre.LongestWaitingTime = waitTimeAnwser;
+    
   }
 
   if (
@@ -896,7 +902,8 @@ function handleReduceFunc(pre, cur) {
   if (
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue) ||
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissShortCall) ||
-    cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)
+    cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging) 
+    || (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other) && cur.CallDisposition == 1) // =1 Lỗi mạng
   ) {
     if (waitTimeQueue <= 15) {
       pre.AbdIn15s++;
@@ -909,7 +916,6 @@ function handleReduceFunc(pre, cur) {
     }
   }
 
-  pre.totalWaitTimeQueue += waitTimeQueue || 0;
 
   return pre;
 }
