@@ -30,8 +30,9 @@ exports.hms = (secs) => {
   sec = sec % 60;
   var hours = Math.floor(minutes / 60);
   minutes = minutes % 60;
-  return hours + ":" + pad(minutes) + ":" + pad(sec);
+  return pad(hours) + ":" + pad(minutes) + ":" + pad(sec);
 };
+
 exports.hmsToNumber = (value) => {
   if (value === "--" || value === 0 || !value) return 0;
   var time = value.split(":"); // split it at the colons
