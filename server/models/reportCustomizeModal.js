@@ -105,12 +105,19 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
 function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
   let {
     skillGroups,
+    startDateFilter,
+    endDateFilter,
   } = query;
   // CT-5016
   let conditionFilter = ``;
   let CT_ToAgent_Dynamic = [];
   let CT_Queue_Dynamic = [];
   let JOIN_Dynamic = [];
+
+  if(startDateFilter && endDateFilter){
+    conditionFilter = `AND ${nameTable}.DateTime >= '${startDateFilter}'
+    AND ${nameTable}.DateTime <= '${endDateFilter}'`
+  }
 
   if(skillGroups){
     skillGroups = skillGroups.split(",")
@@ -128,14 +135,14 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
 
     if(filterIVR.length > 0 && filterSG.length > 0) {
 
-      conditionFilter = `and ${nameTable}.CallTypeID in (@CT_IVR, ${CallTypeIDFilter})`
+      conditionFilter += `and ${nameTable}.CallTypeID in (@CT_IVR, ${CallTypeIDFilter})`
     }else if(filterIVR.length > 0) {
-      conditionFilter = `and ${nameTable}.CallTypeID in (@CT_IVR)
+      conditionFilter += `and ${nameTable}.CallTypeID in (@CT_IVR)
                          AND ${nameTable}.AgentSkillTargetID is null`
     }else if(filterSG.length > 0) {
       
 
-      conditionFilter = `
+      conditionFilter += `
       And (${nameTable}.CallTypeID in (${CallTypeIDFilter})
         and ${nameTable}.SkillGroupSkillTargetID in (${filterSG})
         or (

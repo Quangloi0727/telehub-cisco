@@ -834,8 +834,8 @@ function mappingIncomingCallTrends(data, query) {
     });
 
   let resultName = _.pluck(result, 'name')
-  let startTime = moment(query.startDate, 'YYYY-MM-DD HH:mm:ss', true)
-  let endTime = moment(query.endDate, 'YYYY-MM-DD HH:mm:ss', true)
+  let startTime = moment(query.startDateFilter || query.startDate, 'YYYY-MM-DD HH:mm:ss', true)
+  let endTime = moment(query.endDateFilter || query.endDate, 'YYYY-MM-DD HH:mm:ss', true)
   let hourQuery = genHourMinuteBlock(startTime, endTime)
 
   let diffCheck = _.difference(hourQuery, resultName)

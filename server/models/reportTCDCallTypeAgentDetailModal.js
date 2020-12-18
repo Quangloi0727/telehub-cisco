@@ -515,6 +515,8 @@ exports.missCallByCustomer = async (db, dbMssql, query) => {
    
     let resultQuery = await dbMssql.query(_query);
 
+    _logger.log('info', `missCallByCustomer ${_query}`);
+
     if(resultQuery){
       if (paging == 1) {
         resultQuery.recordset = [
