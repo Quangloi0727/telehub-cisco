@@ -27,6 +27,8 @@ exports.getAll = async (db, dbMssql, query) => {
     let { startDate, endDate, callTypeID, CT_Tranfer } = query;
     let callTypeQuery = [callTypeID];
     let queryTranfer = "";
+    let CT_ToAgent_Dynamic = [];
+    let CT_Queue_Dynamic = [];
 
     if (CT_Tranfer) {
       callTypeQuery.push(CT_Tranfer);
@@ -38,8 +40,24 @@ exports.getAll = async (db, dbMssql, query) => {
 	,`;
     }
 
+    Object.keys(query).forEach(item => {
+      const element = query[item];
+      if(
+        item.includes("CT_ToAgentGroup")
+      ){
+        CT_ToAgent_Dynamic.push(`@${item}`);
+      }
+      
+      if(
+        item.includes("CT_Queue")
+      ){
+        CT_Queue_Dynamic.push(`@${item}`);
+      }
+
+    });
+
     let _query = `
-    ${variableSQL(query)}
+    ${variableSQLDynamic(query)}
     SELECT 
      [AgentSkillTargetID]
      ,SUM(ISNULL(TalkTime, 0)) SumsTalkTime
@@ -50,7 +68,7 @@ exports.getAll = async (db, dbMssql, query) => {
      ,Min(Duration) MinsDuration -- cuoc goi ngan nhat
      ,SUM(CASE WHEN 
 		SkillGroupSkillTargetID is not null 
-		and CallTypeID in (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3,@CT_Queue1,@CT_Queue2,@CT_Queue3)
+		and CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
 		THEN 1 
 		ELSE 0 
 		END
@@ -75,11 +93,12 @@ exports.getAll = async (db, dbMssql, query) => {
         --ON Agent.SkillTargetID = Termination_Call_Detail.AgentSkillTargetID
     WHERE DateTime >= @startDate
     and DateTime < @endDate
-    AND CallTypeID in (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3, @CT_Queue1,@CT_Queue2,@CT_Queue3, @CT_Tranfer)
+    AND CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")}, @CT_Tranfer)
     AND AgentSkillTargetID is not null -- cần đếm theo cuộc gọi nhỡ, ... thì dùng thêm dữ liệu agent ID null
     group by AgentSkillTargetID
     ORDER BY AgentSkillTargetID, DateTime`;
 
+    _logger.log('info', `getAll ${_query}`);
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);
@@ -88,7 +107,6 @@ exports.getAll = async (db, dbMssql, query) => {
 
 exports.getByHourBlock = async (db, dbMssql, query) => {
   try {
-
     let _query = `
     ${variableSQL(query)}
     SELECT
@@ -153,14 +171,7 @@ exports.getByHourBlock = async (db, dbMssql, query) => {
 
 exports.getDetailAgent = async (db, dbMssql, query) => {
   try {
-    let {
-      pages,
-      rows,
-      paging,
-      duration_g,
-      wait_g,
-      download,
-    } = query;
+    let { pages, rows, paging, duration_g, wait_g, download } = query;
 
     let querySelect = "";
     let queryCondition = "";
@@ -324,13 +335,7 @@ function createChartConditions(item, field) {
 
 exports.getGroupByCallDisposition = async (db, dbMssql, query) => {
   try {
-    let {
-      startDate,
-      endDate,
-      callTypeID,
-      CT_Tranfer,
-      callDisposition,
-    } = query;
+    let { startDate, endDate, callTypeID, CT_Tranfer, callDisposition } = query;
     let callTypeQuery = [callTypeID];
     let queryCallDisposition = "";
 
@@ -380,14 +385,7 @@ exports.getGroupByCallDisposition = async (db, dbMssql, query) => {
 
 exports.missCall = async (db, dbMssql, query) => {
   try {
-    let {
-      pages,
-      rows,
-      paging,
-      download,
-      rawData,
-      skillGroups,
-    } = query;
+    let { pages, rows, paging, download, rawData, skillGroups } = query;
     let querySelect = "";
     let queryCondition = "";
 
@@ -397,12 +395,12 @@ exports.missCall = async (db, dbMssql, query) => {
         UNION
         ${selectMissAgent(query)}`;
 
-      if (download === 0 && paging == 0) {
-        queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber
+    if (download === 0 && paging == 0) {
+      queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber
         OFFSET ${(pages - 1) * rows} ROWS FETCH NEXT ${rows} ROWS ONLY`;
-      }
-      if (rawData === true)
-        queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber`;
+    }
+    if (rawData === true)
+      queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber`;
 
     let _query = `/**
     Mô tả:
@@ -429,14 +427,11 @@ WITH t_TCD_last AS (
     ${querySelect}
     ${queryCondition}`;
 
-   
     let resultQuery = await dbMssql.query(_query);
 
-    if(resultQuery){
+    if (resultQuery) {
       if (paging == 1) {
-        resultQuery.recordset = [
-          {count: resultQuery.recordset.length}
-        ]
+        resultQuery.recordset = [{ count: resultQuery.recordset.length }];
         querySelect = resultQuery;
       } else {
         resultQuery = resultQuery;
@@ -463,17 +458,10 @@ WITH t_TCD_last AS (
 
 exports.missCallByCustomer = async (db, dbMssql, query) => {
   try {
-    let {
-      pages,
-      rows,
-      paging,
-      download,
-      rawData,
-      skillGroups,
-    } = query;
-    let querySelect = '';
-    let queryCondition = '';
-    let CT_Dynamic = []
+    let { pages, rows, paging, download, rawData, skillGroups } = query;
+    let querySelect = "";
+    let queryCondition = "";
+    let CT_Dynamic = [];
 
     querySelect = `${selectMissByCustomer(query)}`;
     if (download === 0 && paging == 0) {
@@ -483,11 +471,9 @@ exports.missCallByCustomer = async (db, dbMssql, query) => {
     if (rawData === true)
       queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber`;
 
-    Object.keys(query).forEach(item => {
+    Object.keys(query).forEach((item) => {
       const element = query[item];
-      if(
-        item.includes("CT")
-      ){
+      if (item.includes("CT")) {
         CT_Dynamic.push(element);
       }
     });
@@ -512,16 +498,13 @@ exports.missCallByCustomer = async (db, dbMssql, query) => {
       ${querySelect}
       ${queryCondition}`;
 
-   
     let resultQuery = await dbMssql.query(_query);
 
-    _logger.log('info', `missCallByCustomer ${_query}`);
+    _logger.log("info", `missCallByCustomer ${_query}`);
 
-    if(resultQuery){
+    if (resultQuery) {
       if (paging == 1) {
-        resultQuery.recordset = [
-          {count: resultQuery.recordset.length}
-        ]
+        resultQuery.recordset = [{ count: resultQuery.recordset.length }];
         querySelect = resultQuery;
       } else {
         resultQuery = resultQuery;
@@ -671,40 +654,38 @@ exports.missCallOld = async (db, dbMssql, query) => {
   }
 };
 
-
 function selectMissByCustomer(query) {
-  let {
-    skillGroups,
-  } = query;
+  let { skillGroups } = query;
   // CT-5016
   let conditionFilter = ``;
   let CT_ToAgent_Dynamic = [];
   let CT_Queue_Dynamic = [];
   let JOIN_Dynamic = [];
 
-  if(skillGroups){
-    skillGroups = skillGroups.split(",")
-    let filterIVR = skillGroups.filter(i => i.includes("CT"));
-    let filterSG = skillGroups.filter(i => !i.includes("CT"));
+  if (skillGroups) {
+    skillGroups = skillGroups.split(",");
+    let filterIVR = skillGroups.filter((i) => i.includes("CT"));
+    let filterSG = skillGroups.filter((i) => !i.includes("CT"));
     let CallTypeIDFilter = [];
 
-    filterSG.forEach(item => {
-      let SG_FOUND = Object.keys(query).find(i => query[i] === item);
-      if(SG_FOUND){
+    filterSG.forEach((item) => {
+      let SG_FOUND = Object.keys(query).find((i) => query[i] === item);
+      if (SG_FOUND) {
         let groupNumber = SG_FOUND.replace("SG_Voice_", "");
-        CallTypeIDFilter = [ ...CallTypeIDFilter, query[`CT_ToAgentGroup${groupNumber}`], query[`CT_Queue${groupNumber}`] ];
+        CallTypeIDFilter = [
+          ...CallTypeIDFilter,
+          query[`CT_ToAgentGroup${groupNumber}`],
+          query[`CT_Queue${groupNumber}`],
+        ];
       }
-    }); 
-    
-    if(filterIVR.length > 0 && filterSG.length > 0) {
+    });
 
-      conditionFilter = `and CallTypeID in (@CT_IVR, ${CallTypeIDFilter})`
-    }else if(filterIVR.length > 0) {
+    if (filterIVR.length > 0 && filterSG.length > 0) {
+      conditionFilter = `and CallTypeID in (@CT_IVR, ${CallTypeIDFilter})`;
+    } else if (filterIVR.length > 0) {
       conditionFilter = `and CallTypeID in (@CT_IVR)
-                         AND AgentSkillTargetID is null`
-    }else if(filterSG.length > 0) {
-      
-
+                         AND AgentSkillTargetID is null`;
+    } else if (filterSG.length > 0) {
       conditionFilter = `
       And (CallTypeID in (${CallTypeIDFilter})
         and SkillGroupSkillTargetID in (${filterSG})
@@ -712,27 +693,21 @@ function selectMissByCustomer(query) {
           CallTypeID in (${CallTypeIDFilter})
           and SkillGroupSkillTargetID is null 
         )
-      )`
+      )`;
     }
   }
-  
-  Object.keys(query).forEach(item => {
+
+  Object.keys(query).forEach((item) => {
     const element = query[item];
-    if(
-      item.includes("CT_ToAgentGroup")
-    ){
+    if (item.includes("CT_ToAgentGroup")) {
       CT_ToAgent_Dynamic.push(element);
     }
-    
-    if(
-      item.includes("CT_Queue")
-    ){
+
+    if (item.includes("CT_Queue")) {
       CT_Queue_Dynamic.push(element);
     }
 
-    if(
-      item.includes("SG_Voice_")
-    ){
+    if (item.includes("SG_Voice_")) {
       let groupNumber = item.replace("SG_Voice_", "");
       // console.log({groupNumber});
 
@@ -759,15 +734,21 @@ function selectMissByCustomer(query) {
           and CallDisposition	in (3)
           then '${reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)}'
         when 
-        CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
+        CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(
+          ","
+        )})
           and CallDisposition	in (19)
           then '${reasonToTelehub(TYPE_MISSCALL.MissAgent)}'
         when 
-          CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
+          CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(
+            ","
+          )})
           and CallDisposition	in (60)
           then '${reasonToTelehub(TYPE_MISSCALL.RejectByAgent)}'
         when 
-          CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
+          CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(
+            ","
+          )})
           AND AgentSkillTargetID is not null
           AND TalkTime >= 0
           AND CallDisposition	in (6,7)
@@ -794,7 +775,10 @@ function selectMissByCustomer(query) {
       Select RecoveryKey from [ins1_hds].[dbo].[t_Termination_Call_Detail] TCD
         where TCD.DateTime >= @startDate
               AND TCD.DateTime < @endDate
-              AND TCD.CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
+              AND TCD.CallTypeID in (${[
+                ...CT_ToAgent_Dynamic,
+                ...CT_Queue_Dynamic,
+              ].join(",")})
               AND TCD.CallDisposition in (13)
               AND TCD.AgentSkillTargetID is not null
               AND TCD.TalkTime > 0
@@ -805,15 +789,14 @@ function selectMissIVR(query) {
   let conditionFilter = ``;
   // if(skillGroups){
   //   let filterIVR = skillGroups.filter(i => i.includes("CT"));
-    
+
   //   if(filterIVR.length > 0) {
-      
+
   //   }
   //   let filterSG = skillGroups.filter(i => !i.includes("CT"));
-    
 
   //   if(filterSG.length > 0) {
-      
+
   //   }
   // }
   return `SELECT
@@ -845,15 +828,14 @@ function selectMissQueue(query) {
 
   // if(skillGroups){
   //   let filterIVR = skillGroups.filter(i => i.includes("CT"));
-    
+
   //   if(filterIVR.length > 0) {
-      
+
   //   }
   //   let filterSG = skillGroups.filter(i => !i.includes("CT"));
-    
 
   //   if(filterSG.length > 0) {
-      
+
   //   }
   // }
   return `SELECT
@@ -927,9 +909,9 @@ function fieldMissCallTCD(query) {
   let when_dynamic = [];
 
   for (let i = 0; i < Object.keys(query).length; i++) {
-      const item = Object.keys(query)[i];
+    const item = Object.keys(query)[i];
     // let element = query[item];
-    if(item.includes("SG_Voice_")){
+    if (item.includes("SG_Voice_")) {
       let groupNumber = item.replace("SG_Voice_", "");
       // console.log({groupNumber});
 
@@ -937,9 +919,9 @@ function fieldMissCallTCD(query) {
       when SkillGroupSkillTargetID is null
 			and CallTypeID in (@CT_ToAgentGroup${groupNumber}, @CT_Queue${groupNumber})
       then @SG_Voice_${groupNumber}
-      `)
+      `);
     }
-  };
+  }
 
   return `
   ,RecoveryKey
@@ -963,5 +945,5 @@ function fieldMissCallTCD(query) {
   ,case
     ${when_dynamic.join("")}
 		else SkillGroupSkillTargetID
-	end SkillGroupSkillTargetID`
+	end SkillGroupSkillTargetID`;
 }

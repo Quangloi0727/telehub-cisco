@@ -870,7 +870,19 @@ function genHourMinuteBlock(startTime, endTime) {
 
 }
 
-
+/**
+ * 
+ * *** Mô tả comment *********************************
+ * *** Ngày: 2020-12-18
+ * *** Dev: hainv
+ * *** Lý do:
+ * request change: a DũngNĐ - BHS muốn các cuộc có: cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other) thì vào ABD, sẽ tính < 15s hoặc > 15s tùy thuộc vào waitTimeQueue
+ * 
+ * *** Cách khắc phục duplicated:
+ * 
+ * @param {object} pre 
+ * @param {object} cur 
+ */
 function handleReduceFunc(pre, cur) {
   // Thời gian chờ: abandon waiting time trong queue;
   // let waitTimeQueue = cur.Duration - cur.TalkTime;
@@ -903,20 +915,20 @@ function handleReduceFunc(pre, cur) {
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue) ||
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissShortCall) ||
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging) 
-    || (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other) && cur.CallDisposition == 1) // =1 Lỗi mạng
+    || (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other)) // && cur.CallDisposition == 1 =1 Lỗi mạng
   ) {
     if (waitTimeQueue <= 15) {
       pre.AbdIn15s++;
-      console.log({AbdIn15s: cur});
     }
     if (waitTimeQueue > 15) {
       pre.AbdAfter15s++;
-      console.log({AbdAfter15s: cur});
 
     }
   }
 
-
+  if(cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other)){
+    console.log("CallTypeTXT Other, cur.CallDisposition", cur.CallDisposition, `waitTimeQueue=${waitTimeQueue}`);
+  }
   return pre;
 }
 
