@@ -107,8 +107,28 @@ exports.getAll = async (db, dbMssql, query) => {
 
 exports.getByHourBlock = async (db, dbMssql, query) => {
   try {
+    let CT_ToAgent_Dynamic = [];
+    let CT_Queue_Dynamic = [];
+
+    Object.keys(query).forEach(item => {
+      const element = query[item];
+      if(
+        item.includes("CT_ToAgentGroup")
+      ){
+        CT_ToAgent_Dynamic.push(`@${item}`);
+      }
+      
+      if(
+        item.includes("CT_Queue")
+      ){
+        CT_Queue_Dynamic.push(`@${item}`);
+      }
+
+    });
+
+
     let _query = `
-    ${variableSQL(query)}
+    ${variableSQLDynamic(query)}
     SELECT
       AgentSkillTargetID
      ,AgentPeripheralNumber
@@ -125,7 +145,7 @@ exports.getByHourBlock = async (db, dbMssql, query) => {
     FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
       WHERE DateTime >= @startDate
       and DateTime < @endDate
-      AND CallTypeID in (@CT_ToAgentGroup1,@CT_ToAgentGroup2,@CT_ToAgentGroup3, @CT_Queue1,@CT_Queue2,@CT_Queue3)
+      AND CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
       and CallDisposition in (13, 6) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
       AND SkillGroupSkillTargetID is not null
       AND AgentSkillTargetID is not null -- sau nay 

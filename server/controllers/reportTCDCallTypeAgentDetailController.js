@@ -88,14 +88,40 @@ exports.getByHourBlock = async (req, res, next) => {
 
     let query = req.query;
 
-    if (
-      !query.startDate ||
-      !query.endDate ||
-      !query.CT_ToAgentGroup1 ||
-      !query.CT_ToAgentGroup2 ||
-      !query.CT_ToAgentGroup3
-    )
+    if (!query.startDate || !query.endDate || !query.CT_IVR)
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    for (let i = 0; i < Object.keys(query).length; i++) {
+      const item = Object.keys(query)[i];
+      // const element = query[item];
+      if (item.includes("CT_ToAgentGroup")) {
+        let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+        if (!query[`CT_Queue${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+
+        if (!query[`SG_Voice_${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+      }
+    }
 
     const doc = await _model.getByHourBlock(db, dbMssql, query);
 
