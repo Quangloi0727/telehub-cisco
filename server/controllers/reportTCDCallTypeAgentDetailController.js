@@ -35,7 +35,7 @@ exports.getAll = async (req, res, next) => {
 
     let query = req.query;
 
-    if (!query.startDate || !query.endDate || !query.CT_IVR)
+    if (!query.startDate || !query.endDate)
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
     for (let i = 0; i < Object.keys(query).length; i++) {
@@ -88,7 +88,7 @@ exports.getByHourBlock = async (req, res, next) => {
 
     let query = req.query;
 
-    if (!query.startDate || !query.endDate || !query.CT_IVR)
+    if (!query.startDate || !query.endDate)
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
     for (let i = 0; i < Object.keys(query).length; i++) {
@@ -148,15 +148,46 @@ exports.getDetailAgent = async (req, res, next) => {
     if (query.wait_g) query.wait_g = query.wait_g.split(",");
 
     if (
-      !query.startDate ||
-      !query.endDate ||
-      !query.CT_ToAgentGroup1 ||
-      !query.CT_ToAgentGroup2 ||
-      !query.CT_ToAgentGroup3 ||
       query.pages <= 0 ||
       query.rows <= 0
     )
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    if (!query.startDate || !query.endDate)
+    return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    for (let i = 0; i < Object.keys(query).length; i++) {
+      const item = Object.keys(query)[i];
+      // const element = query[item];
+      if (item.includes("CT_ToAgentGroup")) {
+        let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+        if (!query[`CT_Queue${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+
+        // do ko dùng tới SG_Voice_
+        // if (!query[`SG_Voice_${groupNumber}`]) {
+        //   return next(
+        //     new ResError(
+        //       ERR_400.code,
+        //       `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+        //     ),
+        //     req,
+        //     res,
+        //     next
+        //   );
+        // }
+      }
+    }
 
     const doc = await _model.getDetailAgent(db, dbMssql, query);
 
