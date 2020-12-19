@@ -25,13 +25,13 @@ const {
 exports.getAll = async (db, dbMssql, query) => {
   try {
     let { startDate, endDate, callTypeID, CT_Tranfer } = query;
-    let callTypeQuery = [callTypeID];
+    // let callTypeQuery = [callTypeID];
     let queryTranfer = "";
     let CT_ToAgent_Dynamic = [];
     let CT_Queue_Dynamic = [];
 
     if (CT_Tranfer) {
-      callTypeQuery.push(CT_Tranfer);
+      // callTypeQuery.push(CT_Tranfer);
       queryTranfer = `SUM(CASE WHEN 
 	     SkillGroupSkillTargetID is not null 
           and CallTypeID = @CT_Tranfer
