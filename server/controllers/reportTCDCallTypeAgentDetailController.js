@@ -110,17 +110,17 @@ exports.getByHourBlock = async (req, res, next) => {
           );
         }
 
-        if (!query[`SG_Voice_${groupNumber}`]) {
-          return next(
-            new ResError(
-              ERR_400.code,
-              `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
-            ),
-            req,
-            res,
-            next
-          );
-        }
+        // if (!query[`SG_Voice_${groupNumber}`]) {
+        //   return next(
+        //     new ResError(
+        //       ERR_400.code,
+        //       `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+        //     ),
+        //     req,
+        //     res,
+        //     next
+        //   );
+        // }
       }
     }
 
