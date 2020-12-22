@@ -17,3 +17,14 @@ exports.percentFormat = function(_number1, _number2) {
     let _number = _number1/_number2;
     return `${_number ? parseFloat((_number * 100).toFixed(2)) : _number} %`;
 }
+
+/**
+ * Làm tròn số avagate: làm tròn lên
+ * ví dụ: number = 2.4
+ * result = 2
+ * ví dụ: number = 2.51
+ * result = 3
+ */
+exports.roundAvg = function(number) {
+    return Math.round(number);
+}
