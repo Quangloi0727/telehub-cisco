@@ -207,13 +207,26 @@ exports.statisticInHourByDay = async (req, res, next) => {
  * @param {Number} Inbound số cuộc gọi vào hệ thống
  *
  * connect: các cuộc gọi handle có talk time > 0
+ * 
+ * *** Mô tả comment *********************************
+ * *** Ngày: 2020-12-24
+ * *** Dev: hainv
+ * *** Lý do: chỉnh sửa theo nghiệp vụ
+ * ...
+ * *** Cách khắc phục duplicated:
+ * ...
+ *
+  VOLUME
+  Phục vụ
+  ABD < 15
  */
 function initDataRow(name, Inbound) {
   return {
     block: name,
-    total: Inbound,
-    AbdIn15s: 0,
-    connect: 0,
+    total: 0, // VOLUME
+    AbdIn15s: 0,  // ABD < 15,
+    AbdAfter15s: 0,  // ABD > 15
+    connect: 0, // Phục vụ
   };
 }
 
@@ -251,6 +264,7 @@ function mappingStatisticInHourToday(data, query) {
     rowTotal.total += reduceTemp.total;
     rowTotal.connect += reduceTemp.connect;
     rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
+    rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
 
     if (index === hourQuery.length - 1) {
       result.push(rowTotal);
@@ -267,6 +281,11 @@ function handleReduceFunc(pre, cur) {
 
   let { waitTimeQueue, waitTimeAnwser } = cur;
 
+  if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)){
+    pre.total++;
+  }
+
+
   if (cur.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)) {
     pre.connect++;
   }
@@ -275,10 +294,11 @@ function handleReduceFunc(pre, cur) {
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue) ||
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissShortCall) ||
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)
+    || (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other)) // && cur.CallDisposition == 1 =1 Lỗi mạng
   ) {
     if (waitTimeQueue <= 15) pre.AbdIn15s++;
     if (waitTimeQueue > 15) {
-      // pre.AbdAfter15s++;
+      pre.AbdAfter15s++;
     }
   }
   
