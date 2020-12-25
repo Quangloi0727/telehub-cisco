@@ -26,6 +26,7 @@ const {
   FIELD_AGENT,
   TYPE_MISSCALL,
   TYPE_CALL_HANDLE,
+  TYPE_CALLTYPE
 } = require("../helpers/constants");
 const {
   genHour,
@@ -39,6 +40,13 @@ const {
  */
 const ResError = require("../utils/resError");
 const APIFeatures = require("../utils/apiFeatures");
+
+
+/**
+ * Lấy dữ liệu trong bảng [ins1_awdb].[dbo].[t_Call_Type_Real_Time]
+ * - dữ liệu real time theo call type 
+ */
+exports.statisticRealtime = statisticRealtime;
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -303,4 +311,112 @@ function handleReduceFunc(pre, cur) {
   }
   
   return pre;
+}
+
+async function statisticRealtime(req, res, next) {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    let query = req.query;
+
+    // if (!query.startDate || !query.endDate || !query.CT_IVR)
+    //   return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    /**
+     * Check việc khởi tạo các CallType
+     * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+     */
+    for (let i = 0; i < Object.keys(query).length; i++) {
+      const item = Object.keys(query)[i];
+      // const element = query[item];
+      if (item.includes("CT_ToAgentGroup")) {
+        let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+        if (!query[`CT_Queue${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+
+        // if (!query[`SG_Voice_${groupNumber}`]) {
+        //   return next(
+        //     new ResError(
+        //       ERR_400.code,
+        //       `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+        //     ),
+        //     req,
+        //     res,
+        //     next
+        //   );
+        // }
+
+      }
+    }
+
+    const doc = await _model.realtime(
+      db,
+      dbMssql,
+      query
+    );
+
+    if (!doc)
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+    // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+    res.status(SUCCESS_200.code).json({ data: mappingStatisticRealtime(doc) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+function mappingStatisticRealtime(data, query) {
+  let { recordset } = data;
+  let result = {
+    RouterCallsQNow: 0, // Số CG chờ trong Queue, Là những cuộc khách hàng bấm phím để vào Queue (đang trong lúc chờ gặp Agent) (bắt realtime)
+    RouterCallsQNowTime: 0, // Thời gian chờ
+    Call_Queue: 0, // Số CG chờ với CallType là queue
+    Call_QueueTime: 0, // Số CG chờ với CallType là queue
+    Call_ToAgent: 0, // Số CG chờ với CallType là ToAgent
+    Call_ToAgentTime: 0, // Số CG chờ với CallType là ToAgent
+  };
+
+
+
+  Object.keys(recordset).forEach((item, index) => {
+    let element = recordset[item];
+
+    switch (element.CallTypeDefined) {
+      case TYPE_CALLTYPE.CT_Queue:
+        if(element.RouterCallsQNow > 0)
+          result.Call_Queue += element.RouterCallsQNow;
+          result.Call_QueueTime += element.RouterCallsQNowTime;
+        break;
+      case TYPE_CALLTYPE.CT_ToAgentGroup:
+        if(element.RouterCallsQNow > 0){
+          logger.log('info',"Call_ToAgent", element.RouterCallsQNow);
+          result.Call_ToAgent += element.RouterCallsQNow;
+          result.Call_ToAgentTime += element.RouterCallsQNowTime;
+        }
+        break;
+      case TYPE_CALLTYPE.CT_IVR:
+      case TYPE_CALLTYPE.CT_Tranfer:
+      case TYPE_CALLTYPE.unknown:
+      default:
+        break;
+    }
+  }); 
+
+  result.RouterCallsQNow = result.Call_Queue;// + result.Call_ToAgent;
+  result.RouterCallsQNowTime = result.Call_QueueTime;// + result.Call_ToAgent;
+
+  data.recordset = result;
+
+  // data.rowTotal = rowTotal;
+  return data;
 }

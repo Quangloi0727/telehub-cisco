@@ -53,8 +53,17 @@ const TYPE_CALL_HANDLE = {
     id: "HandleByAgent",
 };
 
+const TYPE_CALLTYPE = {
+    CT_ToAgentGroup: "CT_ToAgentGroup",
+    CT_Queue: "CT_Queue",
+    CT_IVR: "CT_IVR",
+    CT_Tranfer: "CT_Tranfer",
+    unknown: "unknown",
+};
+
 module.exports = {
     TYPE_ADS,
     TYPE_MISSCALL,
     TYPE_CALL_HANDLE,
+    TYPE_CALLTYPE
 };

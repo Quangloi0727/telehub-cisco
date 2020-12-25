@@ -4,22 +4,27 @@ const ObjectID = require("mongodb").ObjectID;
  */
 const { DB_HOST, PORT, IP_PUBLIC } = process.env;
 
-const { FIELD_AGENT } = require("../helpers/constants");
-const { checkKeyValueExists, variableSQL } = require("../helpers/functions");
+const { FIELD_AGENT, TYPE_CALLTYPE } = require("../helpers/constants");
+const {
+  checkKeyValueExists,
+  variableSQL,
+  variableSQLDynamic,
+  callTypeDynamic,
+} = require("../helpers/functions");
 
 /**
- * db: 
+ * db:
  * dbMssql:
- * query: 
+ * query:
  *   { startDate: '2020-10-13 00:00:00'
  *   , endDate: '2020-10-13 23:59:59'
  *   , callTypeID: '5014'
  *    }
  */
+exports.realtime = realtime;
 
 exports.getAll = async (db, dbMssql, query) => {
   try {
-
     let _query = `
     ${variableSQL(query)}
     SET ANSI_WARNINGS OFF SET ARITHABORT OFF SET ARITHIGNORE ON SET ANSI_NULLS ON SET ANSI_PADDING ON SET CONCAT_NULL_YIELDS_NULL ON SET QUOTED_IDENTIFIER ON SET NUMERIC_ROUNDABORT OFF 
@@ -168,3 +173,160 @@ exports.getAll = async (db, dbMssql, query) => {
     throw new Error(error);
   }
 };
+
+async function realtime(db, dbMssql, query) {
+  try {
+    let {
+      CT_JOIN_All_Dynamic,
+      CT_ToAgent_Dynamic,
+      CT_Tranfer_Dynamic,
+      CT_Queue_Dynamic,
+      CT_IVR_Dynamic,
+    } = callTypeDynamic(query);
+
+    let _query = `
+       ${variableSQLDynamic(query)}
+      
+       SELECT ${fieldCallTypeRealTime(
+         CT_ToAgent_Dynamic,
+         CT_Tranfer_Dynamic,
+         CT_Queue_Dynamic,
+         CT_IVR_Dynamic
+       )}
+       FROM [ins1_awdb].[dbo].[t_Call_Type_Real_Time]
+       where
+          CallTypeID in (${CT_JOIN_All_Dynamic.join(",")})`;
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+function fieldCallTypeRealTime(
+  CT_ToAgent_Dynamic,
+  CT_Tranfer_Dynamic,
+  CT_Queue_Dynamic,
+  CT_IVR_Dynamic
+) {
+  return `[CallTypeID]
+     ,[DateTime]
+     ,[RouterCallsQNow]
+     ,[RouterCallsQNowTime]
+     ,CallTypeDefined = CASE
+        WHEN [CallTypeID] in (${CT_ToAgent_Dynamic.join(",")})
+			THEN '${TYPE_CALLTYPE.CT_ToAgentGroup}'
+		WHEN [CallTypeID] in (${CT_Queue_Dynamic.join(",")})
+			THEN '${TYPE_CALLTYPE.CT_Queue}'
+		WHEN [CallTypeID] in (${CT_IVR_Dynamic.join(",")})
+			THEN '${TYPE_CALLTYPE.CT_IVR}'
+		WHEN [CallTypeID] in (${CT_Tranfer_Dynamic.join(",")})
+			THEN '${TYPE_CALLTYPE.CT_Tranfer}'
+        ELSE '${TYPE_CALLTYPE.unknown}' END
+     ,[AvgRouterDelayQHalf]
+     ,[AvgRouterDelayQNow]
+     ,[AvgRouterDelayQTo5]
+     ,[AvgRouterDelayQToday]
+     ,[CallsRoutedToday]
+     ,[CallsRoutedToHalf]
+     ,[ErrorCountToday]
+     ,[ErrorCountToHalf]
+     ,[ICRDefaultRoutedToday]
+     ,[ICRDefaultRoutedToHalf]
+     ,[MasterScriptID]
+     ,[NetworkDefaultRoutedToday]
+     ,[NetworkDefaultRoutedToHalf]
+     ,[ReturnBusyToday]
+     ,[ReturnBusyToHalf]
+     ,[ReturnRingToday]
+     ,[ReturnRingToHalf]
+     ,[RouterCallsAbandQHalf]
+     ,[RouterCallsAbandQTo5]
+     ,[RouterCallsAbandQToday]
+
+     ,[RouterLongestCallQ]
+     ,[RouterQueueCallsHalf]
+     ,[RouterQueueCallsTo5]
+     ,[RouterQueueCallsToday]
+     ,[RouterQueueWaitTimeHalf]
+     ,[RouterQueueWaitTimeTo5]
+     ,[RouterQueueWaitTimeToday]
+     ,[ScriptID]
+     ,[NetworkAnnouncementToHalf]
+     ,[NetworkAnnouncementToday]
+     ,[AnswerWaitTimeTo5]
+     ,[CallsHandledTo5]
+     ,[CallsLeftQTo5]
+     ,[CallsOfferedTo5]
+     ,[DelayQAbandTimeTo5]
+     ,[HandleTimeTo5]
+     ,[ServiceLevelAbandTo5]
+     ,[ServiceLevelCallsOfferedTo5]
+     ,[ServiceLevelCallsTo5]
+     ,[ServiceLevelTo5]
+     ,[TalkTimeTo5]
+     ,[ServiceLevelCallsQHeld]
+     ,[AnswerWaitTimeToday]
+     ,[CallsHandledToday]
+     ,[CallsOfferedToday]
+     ,[HandleTimeToday]
+     ,[ServiceLevelAbandToday]
+     ,[ServiceLevelCallsOfferedToday]
+     ,[ServiceLevelCallsToday]
+     ,[ServiceLevelToday]
+     ,[TalkTimeToday]
+     ,[AnswerWaitTimeHalf]
+     ,[CallsHandledHalf]
+     ,[CallsOfferedHalf]
+     ,[HandleTimeHalf]
+     ,[ServiceLevelAbandHalf]
+     ,[ServiceLevelCallsHalf]
+     ,[ServiceLevelCallsOfferedHalf]
+     ,[ServiceLevelHalf]
+     ,[TalkTimeHalf]
+     ,[HoldTimeTo5]
+     ,[HoldTimeHalf]
+     ,[HoldTimeToday]
+     ,[OverflowOutHalf]
+     ,[OverflowOutTo5]
+     ,[OverflowOutToday]
+     ,[DelayQAbandTimeToday]
+     ,[DelayQAbandTimeHalf]
+     ,[CallsAnsweredTo5]
+     ,[CallsAnsweredHalf]
+     ,[CallsAnsweredToday]
+     ,[CallsRoutedNonAgentHalf]
+     ,[CallsRoutedNonAgentToday]
+     ,[CallsRONATo5]
+     ,[CallsRONAHalf]
+     ,[CallsRONAToday]
+     ,[ReturnReleaseHalf]
+     ,[ReturnReleaseToday]
+     ,[CallsRoutedNonAgentTo5]
+     ,[RouterCallsAbandToAgentTo5]
+     ,[RouterCallsAbandToAgentHalf]
+     ,[RouterCallsAbandToAgentToday]
+     ,[TotalCallsAbandTo5]
+     ,[TotalCallsAbandToday]
+     ,[TotalCallsAbandHalf]
+     ,[DelayAgentAbandTimeToday]
+     ,[DelayAgentAbandTimeTo5]
+     ,[DelayAgentAbandTimeHalf]
+     ,[CallDelayAbandTimeToday]
+     ,[CallDelayAbandTimeTo5]
+     ,[CallDelayAbandTimeHalf]
+     ,[CTDelayAbandTimeToday]
+     ,[CTDelayAbandTimeTo5]
+     ,[CTDelayAbandTimeHalf]
+     ,[ServiceLevelErrorHalf]
+     ,[ServiceLevelErrorToday]
+     ,[ServiceLevelRONATo5]
+     ,[ServiceLevelRONAHalf]
+     ,[ServiceLevelRONAToday]
+     ,[AgentErrorCountHalf]
+     ,[AgentErrorCountToday]
+     ,[CallsAtVRUNow]
+     ,[CallsAtAgentNow]
+     ,[ShortCallsToHalf]
+     ,[ShortCallToday]`;
+}

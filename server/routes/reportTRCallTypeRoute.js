@@ -13,6 +13,9 @@ router
     .route('/statisticInHourByDay')
     .get(reportTRCallTypeController.statisticInHourByDay);
 
+router
+    .route('/statisticRealtime')
+    .get(reportTRCallTypeController.statisticRealtime);
 
 module.exports = router;
 
