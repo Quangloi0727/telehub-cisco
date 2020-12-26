@@ -231,7 +231,8 @@ exports.statisticInHourByDay = async (req, res, next) => {
 function initDataRow(name, Inbound) {
   return {
     block: name,
-    total: 0, // VOLUME
+    total: Inbound, // total = ivr + ReceivedCall
+    volume: 0, // VOLUME = ReceivedCall
     AbdIn15s: 0,  // ABD < 15,
     AbdAfter15s: 0,  // ABD > 15
     connect: 0, // Phục vụ
@@ -270,6 +271,7 @@ function mappingStatisticInHourToday(data, query) {
     result.push(reduceTemp);
 
     rowTotal.total += reduceTemp.total;
+    rowTotal.volume += reduceTemp.volume;
     rowTotal.connect += reduceTemp.connect;
     rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
     rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
@@ -290,7 +292,7 @@ function handleReduceFunc(pre, cur) {
   let { waitTimeQueue, waitTimeAnwser } = cur;
 
   if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)){
-    pre.total++;
+    pre.volume++;
   }
 
 
