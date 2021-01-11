@@ -47,6 +47,7 @@ const APIFeatures = require("../utils/apiFeatures");
  * - dữ liệu real time theo call type 
  */
 exports.statisticRealtime = statisticRealtime;
+exports.statisticInbound = statisticInbound;
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -421,4 +422,130 @@ function mappingStatisticRealtime(data, query) {
 
   // data.rowTotal = rowTotal;
   return data;
+}
+
+
+/**
+ * Lấy dữ liệu trong bảng TCD - [ins1_hds].[dbo].[t_Termination_Call_Detail]
+ * - bản tin TCD cuối cùng của cuộc gọi
+ * Phục vụ cho trang:
+ * Dash board
+ * Dash board Kplus
+ */
+async function statisticInbound(req, res, next) {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    let query = req.query;
+
+    if (!query.startDate || !query.endDate || !query.CT_IVR)
+      return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    /**
+     * Check việc khởi tạo các CallType
+     * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+     */
+    for (let i = 0; i < Object.keys(query).length; i++) {
+      const item = Object.keys(query)[i];
+      // const element = query[item];
+      if (item.includes("CT_ToAgentGroup")) {
+        let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+        if (!query[`CT_Queue${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+
+        if (!query[`SG_Voice_${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+      }
+    }
+
+    const doc = await _modelReportCustomizeModal.lastTCDRecord(
+      db,
+      dbMssql,
+      query
+    );
+
+    if (!doc)
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+    // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+    res
+      .status(SUCCESS_200.code)
+      .json({ data: mappingStatisticInbound(doc, query) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+function mappingStatisticInbound(data, query) {
+  let { recordset } = data;
+
+  // let startTime = moment(query.startDate, "YYYY-MM-DD HH:mm:ss", true);
+  // let endTime = moment(query.endDate, "YYYY-MM-DD HH:mm:ss", true);
+
+  let reduceTemp = recordset.reduce(
+    handleReduceFuncInbound,
+    {
+      block: 'inbound',
+      total: recordset.length, // total = ivr + ReceivedCall
+      // volume: 0, // VOLUME = ReceivedCall
+      // AbdIn15s: 0,  // ABD < 15,
+      // AbdAfter15s: 0,  // ABD > 15
+      missed: 0,  // missIVR + missQueue
+      connect: 0, // Phục vụ, handle
+    }
+  );
+
+  data.recordset = reduceTemp;
+
+  return data;
+}
+
+function handleReduceFuncInbound(pre, cur) {
+
+  let { waitTimeQueue, waitTimeAnwser } = cur;
+
+  if (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR) || cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue)){
+    pre.missed++;
+  }
+  // if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)){
+  //   pre.volume++;
+  // }
+
+
+  if (cur.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)) {
+    pre.connect++;
+  }
+
+  // if (
+  //   cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue) ||
+  //   cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissShortCall) ||
+  //   cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)
+  //   || (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other)) // && cur.CallDisposition == 1 =1 Lỗi mạng
+  // ) {
+  //   if (waitTimeQueue <= 15) pre.AbdIn15s++;
+  //   if (waitTimeQueue > 15) {
+  //     pre.AbdAfter15s++;
+  //   }
+  // }
+  
+  return pre;
 }

@@ -17,6 +17,10 @@ router
     .route('/statisticRealtime')
     .get(reportTRCallTypeController.statisticRealtime);
 
+router
+    .route('/statisticInbound')
+    .get(reportTRCallTypeController.statisticInbound);
+
 module.exports = router;
 
 /**
