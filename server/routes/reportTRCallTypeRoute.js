@@ -21,6 +21,10 @@ router
     .route('/statisticInbound')
     .get(reportTRCallTypeController.statisticInbound);
 
+router
+    .route('/inOverAllAgent')
+    .get(reportTRCallTypeController.inOverAllAgent);
+
 module.exports = router;
 
 /**

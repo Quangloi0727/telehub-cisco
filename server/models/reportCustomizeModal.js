@@ -287,6 +287,7 @@ function fieldCallTCD(query, nameTable = `t_TCD_last`, nameTCDDetail = `TCD_Deta
   ,${nameTable}.CallTypeID
   ,${nameTable}.RouterCallKey
   ,${nameTable}.AgentSkillTargetID
+  ,${nameTable}.AgentPeripheralNumber
   ,${nameTable}.[DateTime]
   --,case 
   --  when 
@@ -323,6 +324,15 @@ function fieldCallTCD(query, nameTable = `t_TCD_last`, nameTCDDetail = `TCD_Deta
   ,${nameTable}.ANI
   ,${nameTable}.TimeZone
   ,${nameTable}.StartDateTimeUTC
+  ,case
+    -- query check call là cuộc handle
+    when ${nameTable}.CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_QUEUE_Dynamic].join(",")})
+          AND ${nameTable}.AgentSkillTargetID is not null
+          AND ${nameTable}.TalkTime >= 0
+          AND ${nameTable}.CallDisposition	in (13)
+          then ${nameTable}.TalkTime + ${nameTable}.HoldTime
+		else 0
+	end TotalDuarationHandling
   ,SG.EnterpriseName EnterpriseName
   ,${nameTable}.CallTypeReportingDateTime
   ,DATEPART(MINUTE, ${nameTable}.CallTypeReportingDateTime) MinuteBlock
