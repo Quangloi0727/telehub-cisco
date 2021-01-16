@@ -21,3 +21,14 @@ IP_PUBLIC=localhost
  * *** Cách khắc phục duplicated:
  * ...
 ```
+
+# Cách thêm 1 API mới
+/server/auth_app.js
+/server/routes/...
+/server/controllers/...
+/server/models/...
+
+# Team Code Format
+1. exports
+
+Tập trung export trên đầu file, viết function ở dưới để dễ control

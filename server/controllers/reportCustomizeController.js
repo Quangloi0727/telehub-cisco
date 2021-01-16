@@ -1,5 +1,5 @@
 const fetch = require("node-fetch");
-const moment = require("moment")
+const moment = require("moment");
 
 /**
  * require Model
@@ -49,6 +49,10 @@ const TEXT_20_80 = {
   total_handle_lt20: "Cuộc gọi kết nối có thời gian chờ dưới 20s",
   total_handle_gt20: "Cuộc gọi kết nối có thời gian chờ trên 20s",
 };
+
+// Định nghĩa các function ở đây cho dễ controls
+exports.reportAgentStatusByTime = reportAgentStatusByTime;
+
 /**
  * Report 20 - 80 của GGG
  */
@@ -92,7 +96,7 @@ exports.report2080 = async (req, res, next) => {
           );
         }
       }
-    };
+    }
 
     const doc = await _model.lastTCDRecord(db, dbMssql, query);
 
@@ -152,7 +156,7 @@ exports.reportIncomingCallTrends = async (req, res, next) => {
           );
         }
       }
-    };
+    }
 
     const doc = await _model.lastTCDRecord(db, dbMssql, query);
 
@@ -214,7 +218,7 @@ exports.reportACDSummary = async (req, res, next) => {
           );
         }
       }
-    };
+    }
 
     const doc = await _model.lastTCDRecord(db, dbMssql, query);
 
@@ -274,7 +278,7 @@ exports.reportIVRMonth2Date = async (req, res, next) => {
           );
         }
       }
-    };
+    }
 
     // Lấy thông tin các cuộc bị nhỡ trên IVR để gửi làm báo cáo
     const docTCD = await _model.lastTCDRecord(db, dbMssql, query);
@@ -657,7 +661,7 @@ function ratioCallQueueHandle(data, query) {
         rowData(
           i.name,
           `${RTCQueueHandle[index] ? RTCQueueHandle[index].result : ""} / ${
-          RTCQueue[index].result
+            RTCQueue[index].result
           }`,
           (RTCQueueHandle[index]
             ? (RTCQueueHandle[index].result / RTCQueue[index].result) * 100
@@ -800,18 +804,23 @@ function mappingIncomingCallTrends(data, query) {
        * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
        
        */
-      reduceTemp.avgTimeWaiting = roundAvg(reduceTemp.ReceivedCall ? (
-        reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
-      ) : 0 );
+      reduceTemp.avgTimeWaiting = roundAvg(
+        reduceTemp.ReceivedCall
+          ? reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
+          : 0
+      );
 
-      reduceTemp.avgHandlingTime = roundAvg(reduceTemp.ServedCall ?  (
-        reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
-      ) : 0);
+      reduceTemp.avgHandlingTime = roundAvg(
+        reduceTemp.ServedCall
+          ? reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
+          : 0
+      );
 
-      reduceTemp.Efficiency = (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
-        ? reduceTemp.ServedCall /
-        (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
-        : 0;
+      reduceTemp.Efficiency =
+        reduceTemp.ReceivedCall - reduceTemp.AbdIn15s
+          ? reduceTemp.ServedCall /
+            (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+          : 0;
 
       reduceTemp.LongestWaitingTime = reduceTemp.LongestWaitingTime;
 
@@ -830,30 +839,55 @@ function mappingIncomingCallTrends(data, query) {
       rowTotal.AbdCall += reduceTemp.AbdCall;
       rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
       rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
-      rowTotal.totalWaitTimeQueue += reduceTemp.totalWaitTimeQueue
-      rowTotal.totalDuarationHandling += reduceTemp.totalDuarationHandling
-      // rowTotal.MaxNumSimultaneousCall = 
+      rowTotal.totalWaitTimeQueue += reduceTemp.totalWaitTimeQueue;
+      rowTotal.totalDuarationHandling += reduceTemp.totalDuarationHandling;
+      // rowTotal.MaxNumSimultaneousCall =
     });
 
-  let resultName = _.pluck(result, 'name')
-  let startTime = moment(query.startDateFilter || query.startDate, 'YYYY-MM-DD HH:mm:ss', true)
-  let endTime = moment(query.endDateFilter || query.endDate, 'YYYY-MM-DD HH:mm:ss', true)
-  let hourQuery = genHourMinuteBlock(startTime, endTime)
+  let resultName = _.pluck(result, "name");
+  let startTime = moment(
+    query.startDateFilter || query.startDate,
+    "YYYY-MM-DD HH:mm:ss",
+    true
+  );
+  let endTime = moment(
+    query.endDateFilter || query.endDate,
+    "YYYY-MM-DD HH:mm:ss",
+    true
+  );
+  let hourQuery = genHourMinuteBlock(startTime, endTime);
 
-  let diffCheck = _.difference(hourQuery, resultName)
+  let diffCheck = _.difference(hourQuery, resultName);
   diffCheck.forEach(function (item) {
-    result.push(initDataRow(item, 0))
-  })
+    result.push(initDataRow(item, 0));
+  });
 
-  data.recordset = _.sortBy(result, 'name');
+  data.recordset = _.sortBy(result, "name");
 
-  rowTotal.Efficiency = (rowTotal.ReceivedCall - rowTotal.AbdIn15s)
-    ? parseFloat(rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s) * 100).toFixed(2)
+  rowTotal.Efficiency =
+    rowTotal.ReceivedCall - rowTotal.AbdIn15s
+      ? parseFloat(
+          (rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s)) *
+            100
+        ).toFixed(2)
+      : 0;
+  rowTotal.totalWaitTimeQueue = roundAvg(
+    rowTotal.ReceivedCall
+      ? rowTotal.totalWaitTimeQueue / rowTotal.ReceivedCall
+      : 0
+  );
+  rowTotal.totalDuarationHandling = roundAvg(
+    rowTotal.ServedCall
+      ? rowTotal.totalDuarationHandling / rowTotal.ServedCall
+      : 0
+  );
+  rowTotal.MaxNumSimultaneousCall = result
+    ? _.max(result, (result) => result.MaxNumSimultaneousCall)
+        .MaxNumSimultaneousCall
     : 0;
-  rowTotal.totalWaitTimeQueue = roundAvg(rowTotal.ReceivedCall ? (rowTotal.totalWaitTimeQueue / rowTotal.ReceivedCall) : 0);
-  rowTotal.totalDuarationHandling = roundAvg(rowTotal.ServedCall ? (rowTotal.totalDuarationHandling / rowTotal.ServedCall) : 0);
-  rowTotal.MaxNumSimultaneousCall = result ? _.max(result, (result) => result.MaxNumSimultaneousCall).MaxNumSimultaneousCall : 0
-  rowTotal.LongestWaitingTime = result ? _.max(result, (result) => result.LongestWaitingTime).LongestWaitingTime : 0
+  rowTotal.LongestWaitingTime = result
+    ? _.max(result, (result) => result.LongestWaitingTime).LongestWaitingTime
+    : 0;
   data.rowTotal = rowTotal;
   return data;
 }
@@ -864,26 +898,27 @@ function mappingIncomingCallTrends(data, query) {
  */
 
 function genHourMinuteBlock(startTime, endTime) {
-  var hour = []
+  var hour = [];
   while (endTime > startTime) {
-    hour.push(`${startTime.format("HH:mm")}-${startTime.add(15, "m").format('HH:mm')}`);
+    hour.push(
+      `${startTime.format("HH:mm")}-${startTime.add(15, "m").format("HH:mm")}`
+    );
   }
   return _.uniq(hour);
-
 }
 
 /**
- * 
+ *
  * *** Mô tả comment *********************************
  * *** Ngày: 2020-12-18
  * *** Dev: hainv
  * *** Lý do:
  * request change: a DũngNĐ - BHS muốn các cuộc có: cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other) thì vào ABD, sẽ tính < 15s hoặc > 15s tùy thuộc vào waitTimeQueue
- * 
+ *
  * *** Cách khắc phục duplicated:
- * 
- * @param {object} pre 
- * @param {object} cur 
+ *
+ * @param {object} pre
+ * @param {object} cur
  */
 function handleReduceFunc(pre, cur) {
   // Thời gian chờ: abandon waiting time trong queue;
@@ -892,7 +927,7 @@ function handleReduceFunc(pre, cur) {
 
   if (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)) pre.StopIVR++;
 
-  if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)){
+  if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)) {
     pre.ReceivedCall++;
     pre.totalWaitTimeQueue += waitTimeQueue || 0;
 
@@ -903,8 +938,6 @@ function handleReduceFunc(pre, cur) {
   if (cur.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)) {
     pre.ServedCall++;
     pre.totalDuarationHandling += cur.TalkTime + cur.HoldTime;
-
-    
   }
 
   if (
@@ -916,20 +949,23 @@ function handleReduceFunc(pre, cur) {
   if (
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue) ||
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissShortCall) ||
-    cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging) 
-    || (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other)) // && cur.CallDisposition == 1 =1 Lỗi mạng
+    cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging) ||
+    cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other) // && cur.CallDisposition == 1 =1 Lỗi mạng
   ) {
     if (waitTimeQueue <= 15) {
       pre.AbdIn15s++;
     }
     if (waitTimeQueue > 15) {
       pre.AbdAfter15s++;
-
     }
   }
 
-  if(cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other)){
-    console.log("CallTypeTXT Other, cur.CallDisposition", cur.CallDisposition, `waitTimeQueue=${waitTimeQueue}`);
+  if (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other)) {
+    console.log(
+      "CallTypeTXT Other, cur.CallDisposition",
+      cur.CallDisposition,
+      `waitTimeQueue=${waitTimeQueue}`
+    );
   }
   return pre;
 }
@@ -977,8 +1013,7 @@ function mappingACDSummary(data, query) {
   if (skillGroups) skillGroups = skillGroups.split(",");
 
   days.forEach((item) => {
-
-    let dataFound = Object.keys(groupByDayMonthBlock).find(i => item == i);
+    let dataFound = Object.keys(groupByDayMonthBlock).find((i) => item == i);
 
     let element = dataFound ? groupByDayMonthBlock[dataFound] : [];
 
@@ -999,21 +1034,24 @@ function mappingACDSummary(data, query) {
 
      * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
      */
-    reduceTemp.avgTimeWaiting = roundAvg(reduceTemp.ReceivedCall ?
-     (
-      reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
-    ) : 0);
+    reduceTemp.avgTimeWaiting = roundAvg(
+      reduceTemp.ReceivedCall
+        ? reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
+        : 0
+    );
 
-    reduceTemp.avgHandlingTime = roundAvg(reduceTemp.ServedCall ?
-     (
-      reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
-    ) : 0);
-    reduceTemp.Efficiency = (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
-      ? reduceTemp.ServedCall /
-      (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
-      : 0;
+    reduceTemp.avgHandlingTime = roundAvg(
+      reduceTemp.ServedCall
+        ? reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
+        : 0
+    );
+    reduceTemp.Efficiency =
+      reduceTemp.ReceivedCall - reduceTemp.AbdIn15s
+        ? reduceTemp.ServedCall /
+          (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+        : 0;
 
-    reduceTemp.LongestWaitingTime = (reduceTemp.LongestWaitingTime);
+    reduceTemp.LongestWaitingTime = reduceTemp.LongestWaitingTime;
     let countByMinuteTime = _.countBy(element, "MinuteTimeBlock");
     let maxInMinuteTime = _.max(
       Object.keys(countByMinuteTime).map((i) => countByMinuteTime[i])
@@ -1029,26 +1067,38 @@ function mappingACDSummary(data, query) {
     rowTotal.AbdCall += reduceTemp.AbdCall;
     rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
     rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
-    rowTotal.totalWaitTimeQueue += reduceTemp.totalWaitTimeQueue
-    rowTotal.totalDuarationHandling += reduceTemp.totalDuarationHandling
+    rowTotal.totalWaitTimeQueue += reduceTemp.totalWaitTimeQueue;
+    rowTotal.totalDuarationHandling += reduceTemp.totalDuarationHandling;
   });
 
-
   data.recordset = result;
-  rowTotal.Aband = rowTotal.ReceivedCall ?
-    rowTotal.AbdCall / rowTotal.ReceivedCall * 100 : 0
+  rowTotal.Aband = rowTotal.ReceivedCall
+    ? (rowTotal.AbdCall / rowTotal.ReceivedCall) * 100
+    : 0;
 
   // rowTotal.totalWaitTimeQueue = rowTotal.ReceivedCall ? hms(rowTotal.totalWaitTimeQueue / rowTotal.ReceivedCall) : 0
   // rowTotal.totalDuarationHandling = rowTotal.ServedCall ? hms(rowTotal.totalDuarationHandling / rowTotal.ServedCall) : 0
   // rowTotal.LongestWaitingTime = result ? _.max(result, function (result) { return hmsToNumber(result.LongestWaitingTime); }).LongestWaitingTime : 0
 
-  rowTotal.totalWaitTimeQueue = roundAvg(rowTotal.ReceivedCall ? (rowTotal.totalWaitTimeQueue / rowTotal.ReceivedCall) : 0);
-  rowTotal.totalDuarationHandling = roundAvg(rowTotal.ServedCall ? (rowTotal.totalDuarationHandling / rowTotal.ServedCall) : 0);
-  rowTotal.LongestWaitingTime = result ? _.max(result, (result) => result.LongestWaitingTime).LongestWaitingTime : 0
-
-  rowTotal.Efficiency = (rowTotal.ReceivedCall - rowTotal.AbdIn15s)
-    ? rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s) * 100
+  rowTotal.totalWaitTimeQueue = roundAvg(
+    rowTotal.ReceivedCall
+      ? rowTotal.totalWaitTimeQueue / rowTotal.ReceivedCall
+      : 0
+  );
+  rowTotal.totalDuarationHandling = roundAvg(
+    rowTotal.ServedCall
+      ? rowTotal.totalDuarationHandling / rowTotal.ServedCall
+      : 0
+  );
+  rowTotal.LongestWaitingTime = result
+    ? _.max(result, (result) => result.LongestWaitingTime).LongestWaitingTime
     : 0;
+
+  rowTotal.Efficiency =
+    rowTotal.ReceivedCall - rowTotal.AbdIn15s
+      ? (rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s)) *
+        100
+      : 0;
 
   data.rowTotal = rowTotal;
 
@@ -1220,4 +1270,139 @@ function genDays(startDate, endDate) {
     startDate.add(1, "days");
   }
   return days;
+}
+
+/**
+ * Report AgentStatusByTime của Kplus
+ */
+async function reportAgentStatusByTime(req, res, next) {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    let query = req.query;
+
+    if (!query.startDate || !query.endDate || !query.Agent_Team)
+      return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    if (!query.status)
+      return next(
+        new ResError(ERR_400.code, "Trạng thái là trường bắt buộc"),
+        req,
+        res,
+        next
+      );
+
+    if(query.agentId && typeof query.agentId == 'string') {
+      query.agentId = query.agentId.split(',');
+    }else {
+      query.agentId = [];
+    }
+
+    const doc = await _model.agentStatusByTime(db, dbMssql, query);
+
+    if (!doc || (doc.recordset && doc.recordset.length == 0))
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+    
+    // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+    res
+      .status(SUCCESS_200.code)
+      .json({ data: mappingAgentStatusByTime(doc, query) });
+    // .json({ data: doc });
+  } catch (error) {
+    next(error);
+  }
+}
+
+function mappingAgentStatusByTime(data, query) {
+  let { recordset } = data;
+  // data vẽ table
+  let result = [];
+  let agents = _.union(_.pluck(recordset, "EnterpriseName"));
+  let { startDate, endDate } = query;
+  startDate = moment(startDate, "YYYY-MM-DD HH:mm:ss", true);
+  endDate = moment(endDate, "YYYY-MM-DD HH:mm:ss", true);
+
+  let hourMinuteBlock = genHourMinuteBlock(startDate, endDate);
+
+  let header = ["id", "status"];
+
+  let resultName = _.pluck(result, "name");
+  let startTime = moment(
+    query.startDateFilter || query.startDate,
+    "YYYY-MM-DD HH:mm:ss",
+    true
+  );
+  let endTime = moment(
+    query.endDateFilter || query.endDate,
+    "YYYY-MM-DD HH:mm:ss",
+    true
+  );
+
+  header = [...header, ...agents];
+
+  hourMinuteBlock.forEach((item, index) => {
+    result.push(
+      initRowAgentStatusByTime(item, query, recordset, agents)
+    );
+  });
+
+  data.recordset = {
+    // data: _.sortBy(result, "EnterpriseName"),
+    data: result,
+    header,
+  };
+
+  return data;
+}
+
+function initRowAgentStatusByTime(id, query, data, agents) {
+  let {status, startDateFilter, endDateFilter} = query;
+  let result = { id, status };
+  startDateFilter = moment(startDateFilter, "YYYY-MM-DD HH:mm:ss", true)._d;
+  endDateFilter = moment(endDateFilter, "YYYY-MM-DD HH:mm:ss", true)._d;
+
+  // item = 01/11 (ngày 1 tháng 11)
+  agents.forEach((item, index) => {
+    // let fromTime
+    if (["Ready", "Not Ready"].includes(status)) {
+      let valueFound = data.filter((i) => {
+        let DateTime = moment(i.DateTime, "YYYY-MM-DD HH:mm:ss", true).add(-420, "m")._d;
+
+        if(i.BlockTimeShort === id && i.EnterpriseName === item && DateTime > startDateFilter && DateTime <= endDateFilter){
+          console.log({i});
+        }
+        return i.BlockTimeShort === id && i.EnterpriseName === item && DateTime > startDateFilter && DateTime <= endDateFilter;
+      });
+      // if(valueFound.length > 0)
+      result[item] = valueFound.reduce((pre, cur) => {
+        let temp = 0;
+        let { AvailTime, NotReadyTime, BlockTimeShort, EnterpriseName } = cur;
+        console.log({ BlockTimeShort, AvailTime, NotReadyTime, EnterpriseName });
+
+        if (status == "Ready") pre += AvailTime;
+        if (status == "Not Ready") pre += NotReadyTime;
+
+        return pre;
+      }, 0);
+    } else {
+      let valueFound = data.filter((i) => {
+
+        let DateTime = moment(i.DateTime, "YYYY-MM-DD HH:mm:ss", true).add(-420, "m")._d;
+
+        return (
+          i.BlockTimeShort === id &&
+          i.EnterpriseName === item &&
+          i.ReasonTextMapping === status  && DateTime > startDateFilter && DateTime <= endDateFilter
+        );
+      });
+      // if(valueFound.length > 0)
+      result[item] = valueFound.reduce((pre, cur) => pre + cur.Duration, 0);
+    }
+
+    // chuyển data từ seconds -> minutes
+    result[item] = Math.round(result[item] / 60);
+  });
+
+  return result;
 }

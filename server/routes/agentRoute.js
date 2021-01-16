@@ -4,7 +4,11 @@ let agentController = require('../controllers/agentController');
 
 router
     .route('/')
-    .get(agentController.getAll)
+    .get(agentController.getAll);
+
+router
+    .route('/AgentMemberTeam')
+    .get(agentController.agentMemberTeam);
 
 // /**
 //  * Chỉ nhận params từ a-z 0-9 và có độ dài bằng 24

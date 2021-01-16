@@ -21,6 +21,9 @@ router
 router
     .route('/report-statistic')
     .post(_controller.reportStatistic);
+router
+    .route('/agent-status-by-time')
+    .get(_controller.reportAgentStatusByTime);
 
 module.exports = router;
 
