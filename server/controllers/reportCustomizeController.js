@@ -1323,21 +1323,22 @@ function mappingAgentStatusByTime(data, query) {
   startDate = moment(startDate, "YYYY-MM-DD HH:mm:ss", true);
   endDate = moment(endDate, "YYYY-MM-DD HH:mm:ss", true);
 
-  let hourMinuteBlock = genHourMinuteBlock(startDate, endDate);
 
   let header = ["id", "status"];
 
   let resultName = _.pluck(result, "name");
-  let startTime = moment(
-    query.startDateFilter || query.startDate,
+  startDateFilter = moment(
+    query.startDateFilter || startDate,
     "YYYY-MM-DD HH:mm:ss",
     true
   );
-  let endTime = moment(
-    query.endDateFilter || query.endDate,
+  endDateFilter = moment(
+    query.endDateFilter || endDate,
     "YYYY-MM-DD HH:mm:ss",
     true
   );
+
+  let hourMinuteBlock = genHourMinuteBlock(startDateFilter, endDateFilter);
 
   header = [...header, ...agents];
 
