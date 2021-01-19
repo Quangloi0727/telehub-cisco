@@ -283,6 +283,7 @@ function fieldCallTCD(query, nameTable = `t_TCD_last`, nameTCDDetail = `TCD_Deta
 
   return `
   ,${nameTable}.RecoveryKey
+  ,${nameTable}.DigitsDialed
   ,${nameTable}.RouterCallKeySequenceNumber
   ,${nameTable}.CallTypeID
   ,${nameTable}.RouterCallKey
