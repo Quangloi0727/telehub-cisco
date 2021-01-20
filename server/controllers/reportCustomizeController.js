@@ -516,9 +516,9 @@ exports.reportStatistic = async (req, res, next) => {
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
 
-    let DigitsDialed_1900_MN = "02435659598";
-    let DigitsDialed_1900_MB = "02437525618";
-    let DigitsDialed_1800 = "02437525619"; // 1800 chưa phân biệt MN,MB nên đang lấy cho miền nam
+    let DigitsDialed_1900_MN = req.query.DigitsDialed_1900_MN;
+    let DigitsDialed_1900_MB = req.query.DigitsDialed_1900_MB;
+    let DigitsDialed_1800 = req.query.DigitsDialed_1800; // 1800 chưa phân biệt MN,MB nên đang lấy cho miền nam
 
     res.status(SUCCESS_200.code).json({
       data: mappingStatistic(
@@ -668,8 +668,7 @@ function ratioCallQueueHandle(data, query) {
       result.childs.push(
         rowData(
           i.name,
-          `${RTCQueueHandle[index] ? RTCQueueHandle[index].result : ""} / ${
-          RTCQueue[index].result
+          `${RTCQueueHandle[index] ? RTCQueueHandle[index].result : ""} / ${RTCQueue[index].result
           }`,
           (RTCQueueHandle[index]
             ? (RTCQueueHandle[index].result / RTCQueue[index].result) * 100
