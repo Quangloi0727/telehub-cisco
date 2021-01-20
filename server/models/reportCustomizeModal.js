@@ -294,6 +294,7 @@ function fieldCallTCD(
 
   return `
   ,${nameTable}.RecoveryKey
+  ,${nameTable}.DigitsDialed
   ,${nameTable}.RouterCallKeySequenceNumber
   ,${nameTable}.CallTypeID
   ,${nameTable}.RouterCallKey

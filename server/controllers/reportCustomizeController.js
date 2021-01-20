@@ -511,6 +511,7 @@ exports.reportStatistic = async (req, res, next) => {
 
     // 1. báo cáo 1900 mien nam
     const doc1900 = await _model.lastTCDRecord(db, dbMssql, callType);
+    const doc1800 = await _model.lastTCDRecord(db, dbMssql, callType1800);
     // 2. báo cáo 1900 mien bac
     // 3. báo cáo 1800 mien nam
     // 4. báo cáo 1800 mien bac
@@ -518,12 +519,23 @@ exports.reportStatistic = async (req, res, next) => {
     if (!doc1900)
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+
+    let DigitsDialed_1900_MN = "02435659598";
+    let DigitsDialed_1900_MB = "02437525618";
+    let DigitsDialed_1800 = "02437525619"; // 1800 chưa phân biệt MN,MB nên đang lấy cho miền nam
+
     res.status(SUCCESS_200.code).json({
       data: mappingStatistic(
         {
-          doc1900: doc1900.recordset,
-          doc1800: [],
-          docMB1900: [],
+          doc1900: doc1900.recordset.filter(function (el) {
+            return el.DigitsDialed == DigitsDialed_1900_MN
+          }),
+          doc1800: doc1800.recordset.filter(function (el) {
+            return el.DigitsDialed == DigitsDialed_1800
+          }),
+          docMB1900: doc1900.recordset.filter(function (el) {
+            return el.DigitsDialed == DigitsDialed_1900_MB
+          }),
           docMB1800: [],
         },
         {
@@ -804,17 +816,13 @@ function mappingIncomingCallTrends(data, query) {
        * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
        
        */
-      reduceTemp.avgTimeWaiting = roundAvg(
-        reduceTemp.ReceivedCall
-          ? reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
-          : 0
-      );
+      reduceTemp.avgTimeWaiting = roundAvg(reduceTemp.ReceivedCall ? (
+        reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
+      ) : 0);
 
-      reduceTemp.avgHandlingTime = roundAvg(
-        reduceTemp.ServedCall
-          ? reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
-          : 0
-      );
+      reduceTemp.avgHandlingTime = roundAvg(reduceTemp.ServedCall ? (
+        reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
+      ) : 0);
 
       reduceTemp.Efficiency =
         reduceTemp.ReceivedCall - reduceTemp.AbdIn15s
@@ -949,8 +957,8 @@ function handleReduceFunc(pre, cur) {
   if (
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue) ||
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissShortCall) ||
-    cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging) ||
-    cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other) // && cur.CallDisposition == 1 =1 Lỗi mạng
+    cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)
+    || (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other)) // && cur.CallDisposition == 1 =1 Lỗi mạng
   ) {
     if (waitTimeQueue <= 15) {
       pre.AbdIn15s++;
@@ -961,11 +969,7 @@ function handleReduceFunc(pre, cur) {
   }
 
   if (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other)) {
-    console.log(
-      "CallTypeTXT Other, cur.CallDisposition",
-      cur.CallDisposition,
-      `waitTimeQueue=${waitTimeQueue}`
-    );
+    console.log("CallTypeTXT Other, cur.CallDisposition", cur.CallDisposition, `waitTimeQueue=${waitTimeQueue}`);
   }
   return pre;
 }
@@ -1034,22 +1038,19 @@ function mappingACDSummary(data, query) {
 
      * Thời gian chờ: Là thời gian tính từ thời điểm KH bấm phím để vào ACD tới khi agent nghe máy hoặc KH ngắt máy
      */
-    reduceTemp.avgTimeWaiting = roundAvg(
-      reduceTemp.ReceivedCall
-        ? reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
-        : 0
-    );
+    reduceTemp.avgTimeWaiting = roundAvg(reduceTemp.ReceivedCall ?
+      (
+        reduceTemp.totalWaitTimeQueue / reduceTemp.ReceivedCall
+      ) : 0);
 
-    reduceTemp.avgHandlingTime = roundAvg(
-      reduceTemp.ServedCall
-        ? reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
-        : 0
-    );
-    reduceTemp.Efficiency =
-      reduceTemp.ReceivedCall - reduceTemp.AbdIn15s
-        ? reduceTemp.ServedCall /
-          (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
-        : 0;
+    reduceTemp.avgHandlingTime = roundAvg(reduceTemp.ServedCall ?
+      (
+        reduceTemp.totalDuarationHandling / reduceTemp.ServedCall
+      ) : 0);
+    reduceTemp.Efficiency = (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+      ? reduceTemp.ServedCall /
+      (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+      : 0;
 
     reduceTemp.LongestWaitingTime = reduceTemp.LongestWaitingTime;
     let countByMinuteTime = _.countBy(element, "MinuteTimeBlock");
@@ -1155,6 +1156,7 @@ function mappingStatistic(
     _.pluck(docMB1800, "name")
   );
 
+
   // item = 01/11
   allDays.forEach((item) => {
     let temp = {
@@ -1217,6 +1219,12 @@ function mappingStatistic(
     }
 
     result.push(temp);
+
+    //loại bỏ những data có name:undefined 
+    result = result.filter(function (el) {
+      return el.name != undefined
+    })
+
   });
 
   return [rowMTD, ...result];
