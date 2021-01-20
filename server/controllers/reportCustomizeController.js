@@ -520,9 +520,9 @@ exports.reportStatistic = async (req, res, next) => {
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
 
-    let DigitsDialed_1900_MN = "02435659598";
-    let DigitsDialed_1900_MB = "02437525618";
-    let DigitsDialed_1800 = "02437525619"; // 1800 chưa phân biệt MN,MB nên đang lấy cho miền nam
+    let DigitsDialed_1900_MN = req.query.DigitsDialed_1900_MN;
+    let DigitsDialed_1900_MB = req.query.DigitsDialed_1900_MB;
+    let DigitsDialed_1800 = req.query.DigitsDialed_1800; // 1800 chưa phân biệt MN,MB nên đang lấy cho miền nam
 
     res.status(SUCCESS_200.code).json({
       data: mappingStatistic(
@@ -1028,6 +1028,7 @@ function mappingACDSummary(data, query) {
     // end reduce
 
     reduceTemp.AbdCall = reduceTemp.ReceivedCall - reduceTemp.ServedCall;
+    reduceTemp.Aband = roundAvg(reduceTemp.AbdCall > 0 ? reduceTemp.AbdCall/ reduceTemp.ReceivedCall : 0);
     /**
      * chờ confirm để tính
      * 20/11/2020:
@@ -1135,14 +1136,8 @@ function mappingStatistic(
   // tạo dòng MTD (month to date) mặc định
   let rowMTD = {
     name: "MTD",
-    1900: {
-      total: 0,
-      north_call: 0,
-      south_call: 0,
-
-      north_percent: "",
-      south_percent: "",
-    },
+    1900: rowInitStatistic(),
+    1800: rowInitStatistic(),
   };
   let result = [];
 
@@ -1186,15 +1181,10 @@ function mappingStatistic(
       delete temp["1900"].name;
     }
 
-    if (_1800Found) {
-      rowMTD["1800"] = {
-        total: 0,
-        north_call: 0,
-        south_call: 0,
+    temp["1800"] = rowInitStatistic();
 
-        north_percent: "",
-        south_percent: "",
-      };
+    if (_1800Found) {
+      
 
       temp["1800"] = Object.assign({}, _1800Found);
 
@@ -1228,6 +1218,17 @@ function mappingStatistic(
   });
 
   return [rowMTD, ...result];
+}
+
+function rowInitStatistic() {
+  return {
+    total: 0,
+    north_call: 0,
+    south_call: 0,
+
+    north_percent: '0 %',
+    south_percent: '0 %',
+  };
 }
 
 /**
