@@ -309,8 +309,14 @@ function fieldCallTCD(
   --    then DATEDIFF(SECOND, TRY_CONVERT(datetime, FORMAT(${nameTCDDetail}.DateTime, 'yyyy-MM') + '-' + ${nameTCDDetail}.Variable4, 102), ${nameTable}.DateTime)
 	--else DATEDIFF(SECOND, ${nameTCDDetail}.DateTime, ${nameTable}.DateTime)
   --end waitTimeQueue
-  ,ABS(DATEDIFF(SECOND, DATEADD(SS, -t_TCD_last.Duration, t_TCD_last.DateTime),
-	TRY_CONVERT(
+  --,ABS(DATEDIFF(SECOND, DATEADD(SS, -t_TCD_last.Duration, t_TCD_last.DateTime),
+    ,ABS(DATEDIFF(SECOND, 
+  case 
+  when t_TCD_last.RouterCallKeySequenceNumber = 1
+  then t_TCD_last.DateTime
+  else DATEADD(SS, -t_TCD_last.Duration, t_TCD_last.DateTime)
+  end
+  ,TRY_CONVERT(
 		datetime,
 		FORMAT(TCD_Detail.DateTime, 'yyyy-MM') + '-' + t_TCD_last.Variable4,
 		102
