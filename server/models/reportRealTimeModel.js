@@ -82,3 +82,33 @@ exports.agentTeam = async (db, dbMssql, query) => {
     throw new Error(error);
   }
 };
+/**
+ * 
+ * @param {*} db 
+ * @param {*} dbMssql 
+ * @param {*} body {
+ *    "PeripheralNumber":[660211,660212],
+ *    "MRDomainID":5001
+ *     }
+ */
+exports.getStatusAgent = async (db, dbMssql, body) => {
+  try {
+    let { MRDomainID, PeripheralNumber } = body;
+
+    let _query = `
+        /****** Script for SelectTopNRows command from SSMS  ******/
+      SELECT Agent_Real_Time.SkillTargetID
+          ,Agent_Real_Time.MRDomainID
+          ,Agent_Real_Time.AgentState
+        ,Agent.PeripheralNumber
+      FROM [ins1_awdb].[dbo].[t_Agent_Real_Time] Agent_Real_Time
+      
+      INNER join [ins1_awdb].[dbo].[t_Agent] Agent on Agent_Real_Time.SkillTargetID = Agent.SkillTargetID
+      where MRDomainID =${MRDomainID} and PeripheralNumber in (${PeripheralNumber.join()})
+     `;
+    _logger.log("info", `getStatusAgent ${_query}`);
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
