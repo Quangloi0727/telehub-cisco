@@ -9,6 +9,9 @@ let _controler = require('../controllers/reportRealTimeController');
 router
     .route('/agentTeam')
     .get(_controler.agentTeam);
+router
+    .route('/getStatusAgent')
+    .post(_controler.getStatusAgent);
 
 
 module.exports = router;
