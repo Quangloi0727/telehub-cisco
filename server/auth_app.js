@@ -62,17 +62,17 @@ function initServer(db, dbMssql) {
     );
 
     // app.use((req, res, next) => {
-	// 	// req.ip = getIP(req)
-	// 	res.header("Access-Control-Allow-Origin", "*")
-	// 	res.header("Access-Control-Allow-Headers", "*")
-	// 	res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-	// 	next()
+    // 	// req.ip = getIP(req)
+    // 	res.header("Access-Control-Allow-Origin", "*")
+    // 	res.header("Access-Control-Allow-Headers", "*")
+    // 	res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+    // 	next()
     // })
-    
+
     app.use(checkAuthenticated);
-    
+
     app.get("/", (req, res) => {
-        res.json({message: "Welcome to Cisco API!"});
+        res.json({ message: "Welcome to Cisco API!" });
     });
 
     app.use("/api/v1/agent", require("./routes/agentRoute"));
@@ -84,6 +84,7 @@ function initServer(db, dbMssql) {
     app.use("/api/v1/reportCustomize", require("./routes/reportCustomizeRoute"));
     app.use("/api/v1/reportRealTime", require("./routes/reportRealTimeRoute"));
     app.use("/api/v1/reasonCode", require("./routes/reasonCodeRoute"));
+    app.use("/api/v1/survey", require("./routes/dialedNumberRoute"));
 
     app.use("/api/v1/exceldemo", require("./routes/excelDemoRoute"));
 
