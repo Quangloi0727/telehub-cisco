@@ -1,6 +1,6 @@
 const express = require('express');
 let router = express.Router();
-let surveyController = require('../controllers/surveyController');
+let surveyController = require('../controllers/getListSurveyController');
 
 router
     .route('/getSurveyByPrefix')

@@ -1,7 +1,7 @@
 /**
  * require Model
  */
-const _model = require('../models/surveyModel');
+const _model = require('../models/getListSurveyModel');
 const _baseModel = require('../models/baseModel');
 
 /**
@@ -73,6 +73,5 @@ function lstDialedNumberString(data) {
     console.log(countByDialedNumberString);
     result = Object.keys(countByDialedNumberString)
     data.recordset = result;
-    console.log(data);
     return data;
 }
