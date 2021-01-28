@@ -7,7 +7,7 @@ const { DB_HOST, PORT, IP_PUBLIC } = process.env;
 const { FIELD_AGENT } = require("../helpers/constants");
 const { checkKeyValueExists } = require("../helpers/functions");
 
-exports.getSurveyByPrefix = async (db, dbMssql, query) => {
+exports.getDialedNumberByPrefix = async (db, dbMssql, query) => {
   try {
     let { Prefix } = query;
 

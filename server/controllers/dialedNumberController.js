@@ -1,7 +1,7 @@
 /**
  * require Model
  */
-const _model = require('../models/getListSurveyModel');
+const _model = require('../models/dialedNumberModel');
 const _baseModel = require('../models/baseModel');
 
 /**
@@ -30,7 +30,7 @@ const APIFeatures = require("../utils/apiFeatures");
  * Lấy dữ liệu trong bảng [ins1_awdb].[dbo].[t_Dialed_Number]
  * - bản tin TCD cuối cùng của cuộc gọi
  */
-exports.getSurveyByPrefix = async (req, res, next) => {
+exports.getDialedNumberByPrefix = async (req, res, next) => {
     try {
         let db = req.app.locals.db;
         let dbMssql = req.app.locals.dbMssql;
@@ -55,7 +55,7 @@ exports.getSurveyByPrefix = async (req, res, next) => {
                 next
             );
         }
-        const doc = await _model.getSurveyByPrefix(db, dbMssql, query);
+        const doc = await _model.getDialedNumberByPrefix(db, dbMssql, query);
 
         if (!doc)
             return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
