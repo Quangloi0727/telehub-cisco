@@ -136,7 +136,7 @@ exports.getAgentsByCompany = async (req, res, next) => {
 
         const agentResult = await _model.agentsByCompany(dbMssql, req.query);
         
-        return res.status(SUCCESS_200.code).json({ data: agentResult });
+        return res.status(SUCCESS_200.code).json({ data: agentResult.recordset });
     } catch (error) {
         console.log(`------- error ------- getAgentsByCompany`);
         console.log(error);
