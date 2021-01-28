@@ -125,6 +125,26 @@ exports.getLast = async (req, res, next) => {
     }
 }
 
+exports.getAgentsByCompany = async (req, res, next) => {
+    try {
+        const dbMssql = req.app.locals.dbMssql;
+
+        if(!req.query.teamId) {
+            const error = new Error('Vui lòng nhập ID công ty!');
+            throw error;
+        }
+
+        const agentResult = await _model.agentsByCompany(dbMssql, req.query);
+        
+        return res.status(SUCCESS_200.code).json({ data: agentResult });
+    } catch (error) {
+        console.log(`------- error ------- getAgentsByCompany`);
+        console.log(error);
+        console.log(`------- error ------- getAgentsByCompany`);
+        next(error);
+    }
+}
+
 exports.download = async (req, res, next) => {
     try {
         let db = req.app.locals.db;
