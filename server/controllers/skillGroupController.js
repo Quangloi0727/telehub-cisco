@@ -97,7 +97,7 @@ exports.getSkillGroupByCompany = async (req, res, next) => {
     try {
         const dbMssql = req.app.locals.dbMssql;
 
-        if (!req.query.peripheralNumber) {
+        if (!req.query.teamId) {
             const error = new Error('Vui lòng nhập ID công ty!');
             throw error;
         }

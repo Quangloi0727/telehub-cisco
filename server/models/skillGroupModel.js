@@ -60,7 +60,7 @@ exports.byIds = async (db, dbMssql, query) => {
 
 exports.getSkillGroupByCompany = async (dbMssql, query) => {
   try {
-    let { peripheralNumber } = query;
+    let { teamId } = query;
     let _query = `
     SELECT
       [ins1_awdb].[dbo].[t_Skill_Group].[SkillTargetID]
@@ -68,7 +68,7 @@ exports.getSkillGroupByCompany = async (dbMssql, query) => {
       ,[ins1_awdb].[dbo].[t_Skill_Group].[EnterpriseName] SkillGroupName
       ,[ins1_awdb].[dbo].[t_Skill_Group].[PeripheralNumber]
     FROM [ins1_awdb].[dbo].[t_Skill_Group]
-    WHERE [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralNumber] = ${peripheralNumber}
+    WHERE [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralNumber] = ${teamId}
       `
     return await dbMssql.query(_query);
   } catch (error) {
