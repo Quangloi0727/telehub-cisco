@@ -34,6 +34,7 @@ const ResError = require('../utils/resError');
 const APIFeatures = require('../utils/apiFeatures');
 
 exports.agentMemberTeam = agentMemberTeam;
+exports.agentTeam = agentTeam;
 
 exports.getAll = async (req, res, next) => {
     try {
@@ -154,6 +155,26 @@ async function agentMemberTeam (req, res, next) {
         if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
         // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
         console.log(doc.recordset.length);
+        res.status(SUCCESS_200.code).json({ data: doc });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function agentTeam (req, res, next) {
+    try {
+        let db = req.app.locals.db;
+        let dbMssql = req.app.locals.dbMssql;
+
+        if (!req.query.prefix)
+        return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+        const doc = await _model.agentTeam(db, dbMssql, req.query);
+
+        if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+        // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+
         res.status(SUCCESS_200.code).json({ data: doc });
 
     } catch (error) {

@@ -10,6 +10,10 @@ router
     .route('/AgentMemberTeam')
     .get(agentController.agentMemberTeam);
 
+router
+    .route('/AgentTeam')
+    .get(agentController.agentTeam);
+
 // /**
 //  * Chỉ nhận params từ a-z 0-9 và có độ dài bằng 24
 //  */
