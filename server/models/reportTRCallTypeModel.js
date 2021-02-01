@@ -215,14 +215,14 @@ function fieldCallTypeRealTime(
      ,[RouterCallsQNowTime]
      ,CallTypeDefined = CASE
         WHEN [CallTypeID] in (${CT_ToAgent_Dynamic.join(",")})
-			THEN '${TYPE_CALLTYPE.CT_ToAgentGroup}'
-		WHEN [CallTypeID] in (${CT_Queue_Dynamic.join(",")})
-			THEN '${TYPE_CALLTYPE.CT_Queue}'
-		WHEN [CallTypeID] in (${CT_IVR_Dynamic.join(",")})
-			THEN '${TYPE_CALLTYPE.CT_IVR}'
-		WHEN [CallTypeID] in (${CT_Tranfer_Dynamic.join(",")})
-			THEN '${TYPE_CALLTYPE.CT_Tranfer}'
-        ELSE '${TYPE_CALLTYPE.unknown}' END
+			    THEN '${TYPE_CALLTYPE.CT_ToAgentGroup}'
+        WHEN [CallTypeID] in (${CT_Queue_Dynamic.join(",")})
+          THEN '${TYPE_CALLTYPE.CT_Queue}'
+        WHEN [CallTypeID] in (${CT_IVR_Dynamic.join(",")})
+          THEN '${TYPE_CALLTYPE.CT_IVR}'
+        WHEN [CallTypeID] in (${CT_Tranfer_Dynamic.join(",")})
+          THEN '${TYPE_CALLTYPE.CT_Tranfer}'
+            ELSE '${TYPE_CALLTYPE.unknown}' END
      ,[AvgRouterDelayQHalf]
      ,[AvgRouterDelayQNow]
      ,[AvgRouterDelayQTo5]

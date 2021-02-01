@@ -75,3 +75,16 @@ function fieldAgent(nameTB, namePK) {
   ,${namePK}.[DepartmentID]
   ,${namePK}.[DateTimeStamp]`;
 }
+
+exports.agentTeam = async (db, dbMssql, query) => {
+  try {
+    let { prefix } = query;
+    let _query = `SELECT * FROM [ins1_awdb].[dbo].[t_Agent_Team]
+
+    where EnterpriseName LIKE '%${prefix}%'`;
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
