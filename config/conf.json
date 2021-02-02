@@ -15,6 +15,7 @@
   "cisco-gateway": {
     "url": "http://172.16.86.170:4343",
     "pathReportMonth2Date": "/api/v1/ivr-histories/report-month-2-Date",
+    "customerReviews": "/api/v1/customer-reviews",
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJhcGkiLCJwd2QiOiJBUEllckAxMjMifQ.zbcraPNh7IvmAFX0D2dBjVfRB_vRzkAJA6P3BU3dh2E"
   }
 }

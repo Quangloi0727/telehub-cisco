@@ -82,6 +82,7 @@ function initServer(db, dbMssql) {
     app.use("/api/v1/reportTCDCallTypeAgentDetail", require("./routes/reportTCDCallTypeAgentDetailRoute"));
     app.use("/api/v1/reportTCDGroupby", require("./routes/reportTCDGroupbyRoute"));
     app.use("/api/v1/reportCustomize", require("./routes/reportCustomizeRoute"));
+    app.use("/api/v1/callDetail", require("./routes/callDetailRoute"));
     app.use("/api/v1/reportRealTime", require("./routes/reportRealTimeRoute"));
     app.use("/api/v1/reasonCode", require("./routes/reasonCodeRoute"));
     app.use("/api/v1/survey", require("./routes/dialedNumberRoute"));
