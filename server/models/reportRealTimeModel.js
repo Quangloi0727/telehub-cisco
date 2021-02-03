@@ -2,7 +2,7 @@ const ObjectID = require("mongodb").ObjectID;
 /**
  * require Helpers
  */
-const { DB_HOST, PORT, IP_PUBLIC } = process.env;
+const { DB_HOST, PORT, IP_PUBLIC, DB_HDS, DB_AWDB, DB_RECORDING } = process.env;
 
 const { FIELD_AGENT, WEIGHT_STATE, WEIGHT_TEAM, CALL_DIRECTION } = require("../helpers/constants");
 const { checkKeyValueExists, variableSQL } = require("../helpers/functions");
@@ -29,9 +29,9 @@ exports.getStatusAgent = async (db, dbMssql, body) => {
           ,Agent_Real_Time.MRDomainID
           ,Agent_Real_Time.AgentState
         ,Agent.PeripheralNumber
-      FROM [ins1_awdb].[dbo].[t_Agent_Real_Time] Agent_Real_Time
+      FROM [${DB_AWDB}].[dbo].[t_Agent_Real_Time] Agent_Real_Time
       
-      INNER join [ins1_awdb].[dbo].[t_Agent] Agent on Agent_Real_Time.SkillTargetID = Agent.SkillTargetID
+      INNER join [${DB_AWDB}].[dbo].[t_Agent] Agent on Agent_Real_Time.SkillTargetID = Agent.SkillTargetID
       where MRDomainID =${MRDomainID} and PeripheralNumber in (${PeripheralNumber.join()})
      `;
     _logger.log("info", `getStatusAgent ${_query}`);
@@ -103,18 +103,18 @@ async function agentTeam (db, dbMssql, query) {
      ,AgentTeam = Agent_Team.EnterpriseName
      ,AgentTeamID = Agent_Team.AgentTeamID
      
-     FROM [ins1_awdb].[dbo].[t_Agent_Team_Member] Agent_Team_Member
+     FROM [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Agent_Team_Member
 
-     INNER join [ins1_awdb].[dbo].[t_Agent] Agent
+     INNER join [${DB_AWDB}].[dbo].[t_Agent] Agent
      on Agent.SkillTargetID = Agent_Team_Member.SkillTargetID
      
-     INNER join [ins1_awdb].[dbo].[t_Agent_Real_Time] Agent_Real_Time
+     INNER join [${DB_AWDB}].[dbo].[t_Agent_Real_Time] Agent_Real_Time
      on Agent_Real_Time.SkillTargetID =  Agent_Team_Member.SkillTargetID
      
-     INNER join [ins1_awdb].[dbo].[t_Agent_Team] Agent_Team
+     INNER join [${DB_AWDB}].[dbo].[t_Agent_Team] Agent_Team
      on Agent_Team.AgentTeamID =  Agent_Team_Member.AgentTeamID
      
-     left join [ins1_awdb].[dbo].[t_Reason_Code] Reason_Code
+     left join [${DB_AWDB}].[dbo].[t_Reason_Code] Reason_Code
      on Reason_Code.ReasonCode =  Agent_Real_Time.ReasonCode
      
      where Agent_Team.AgentTeamID in (${Agent_Team})

@@ -2,7 +2,7 @@ const ObjectID = require("mongodb").ObjectID;
 /**
  * require Helpers
  */
-const { DB_HOST, PORT, IP_PUBLIC } = process.env;
+const { DB_HOST, PORT, IP_PUBLIC, DB_HDS, DB_AWDB, DB_RECORDING } = process.env;
 
 const {
     FIELD_AGENT,
@@ -73,7 +73,7 @@ exports.lastTCDRecordAdvanced = async (db, dbMssql, query) => {
       WITH ${nameTableTCDLast} AS (
         SELECT ROW_NUMBER() OVER (PARTITION BY  RouterCallKeyDay, RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
         ,*
-        FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] as m
+        FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] as m
         where DateTime >= @startDate
         AND DateTime < @endDate
         AND CallTypeID in (${CT_Dynamic.join(",")})
@@ -247,7 +247,7 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail,nameTableTCD
   OUTER APPLY
   (
     SELECT TOP 1 *
-    FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] ${nameTCDDetail}
+    FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] ${nameTCDDetail}
     WHERE ${nameTCDDetail}.RouterCallKey =  ${nameTable}.RouterCallKey
    and ${nameTCDDetail}.RouterCallKeyDay =  ${nameTable}.RouterCallKeyDay
    and (
@@ -262,14 +262,14 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail,nameTableTCD
   OUTER APPLY -- lấy bản tin đầu tiên khi vào IVR
   (
     SELECT TOP 1 *
-    FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] ${nameTableTCDDetailFirst}
+    FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] ${nameTableTCDDetailFirst}
     WHERE ${nameTableTCDDetailFirst}.RouterCallKey =  ${nameTable}.RouterCallKey
    and ${nameTableTCDDetailFirst}.RouterCallKeyDay =  ${nameTable}.RouterCallKeyDay
    and ${nameTableTCDDetailFirst}.AgentSkillTargetID is null
    order by TCD_Detail.RecoveryKey
   ) ${nameTableTCDDetailFirst}
 
-  left join [ins1_awdb].[dbo].[t_Skill_Group] SG
+  left join [${DB_HDS}].[dbo].[t_Skill_Group] SG
     on ${nameTable}.SkillGroupSkillTargetID = SG.SkillTargetID
       ${JOIN_Dynamic.join("")}
   WHERE rn = 1
@@ -454,8 +454,8 @@ function queryAgentInterVal(query, nameTB) {
   ,[AvailTime]
   ,[NotReadyTime]
 
-  FROM [ins1_hds].[dbo].[t_Agent_Interval] ${nameTB}
-  INNER JOIN [ins1_awdb].[dbo].[t_Agent]
+  FROM [${DB_HDS}].[dbo].[t_Agent_Interval] ${nameTB}
+  INNER JOIN [${DB_HDS}].[dbo].[t_Agent]
   on t_Agent.SkillTargetID = ${nameTB}.SkillTargetID
 
 
@@ -463,7 +463,7 @@ function queryAgentInterVal(query, nameTB) {
   AND ${nameTB}.DateTime >= @startDate
   AND ${nameTB}.DateTime < @endDate
   AND ${nameTB}.SkillTargetID in (
-    select SkillTargetID FROM [ins1_awdb].[dbo].[t_Agent_Team_Member] Where AgentTeamID = ${Agent_Team}
+    select SkillTargetID FROM [${DB_HDS}].[dbo].[t_Agent_Team_Member] Where AgentTeamID = ${Agent_Team}
   )
   ${filterAgent}
   --AND ${nameTB}.SkillTargetID = 5225
@@ -516,10 +516,10 @@ function queryAgentStatusDetail(query, nameTB) {
     ,([Duration])
     --,[DbDateTime]
 
-  FROM [ins1_hds].[dbo].[t_Agent_Event_Detail] ${nameTB}
-  LEFT JOIN [ins1_awdb].[dbo].[t_Reason_Code] awdb_Reason_Code
+  FROM [${DB_HDS}].[dbo].[t_Agent_Event_Detail] ${nameTB}
+  LEFT JOIN [${DB_HDS}].[dbo].[t_Reason_Code] awdb_Reason_Code
   ON awdb_Reason_Code.ReasonCode = ${nameTB}.ReasonCode
-  INNER JOIN [ins1_awdb].[dbo].[t_Agent] ${namePK}
+  INNER JOIN [${DB_HDS}].[dbo].[t_Agent] ${namePK}
   on ${namePK}.SkillTargetID = ${nameTB}.SkillTargetID
 
 
@@ -527,7 +527,7 @@ function queryAgentStatusDetail(query, nameTB) {
   AND ${nameTB}.DateTime >= @startDate
   AND ${nameTB}.DateTime < @endDate
   AND ${nameTB}.SkillTargetID in (
-    select SkillTargetID FROM [ins1_awdb].[dbo].[t_Agent_Team_Member] Where AgentTeamID = ${Agent_Team}
+    select SkillTargetID FROM [${DB_HDS}].[dbo].[t_Agent_Team_Member] Where AgentTeamID = ${Agent_Team}
   )
   ${filterAgent}
   --AND ${nameTB}.SkillTargetID = 5225

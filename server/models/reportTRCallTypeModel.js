@@ -2,7 +2,7 @@ const ObjectID = require("mongodb").ObjectID;
 /**
  * require Helpers
  */
-const { DB_HOST, PORT, IP_PUBLIC } = process.env;
+const { DB_HOST, PORT, IP_PUBLIC, DB_HDS, DB_AWDB,DB_RECORDING } = process.env;
 
 const { FIELD_AGENT, TYPE_CALLTYPE } = require("../helpers/constants");
 const {
@@ -193,7 +193,7 @@ async function realtime(db, dbMssql, query) {
          CT_Queue_Dynamic,
          CT_IVR_Dynamic
        )}
-       FROM [ins1_awdb].[dbo].[t_Call_Type_Real_Time]
+       FROM [${DB_AWDB}].[dbo].[t_Call_Type_Real_Time]
        where
           CallTypeID in (${CT_JOIN_All_Dynamic.join(",")})`;
 
