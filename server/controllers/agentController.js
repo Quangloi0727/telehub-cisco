@@ -129,8 +129,8 @@ exports.getAgentsByCompany = async (req, res, next) => {
     try {
         const dbMssql = req.app.locals.dbMssql;
 
-        if(!req.query.teamId) {
-            const error = new Error('Vui lòng nhập ID công ty!');
+        if(!req.query.prefix) {
+            const error = new Error('Vui lòng nhập Prefix!');
             throw error;
         }
 

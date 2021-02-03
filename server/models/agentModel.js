@@ -55,21 +55,31 @@ exports.agentMemberTeam = async (db, dbMssql, query) => {
 
 exports.agentsByCompany = async (dbMssql, query) => {
   try {
-    let { teamId } = query;
+    let { prefix, idSkillGroup } = query;
+
+    let queryWithIdSkillGroup = '';
+    if (idSkillGroup && idSkillGroup != '') {
+      queryWithIdSkillGroup = `AND [ins1_awdb].[dbo].[t_Skill_Group].[SkillTargetID] = ${idSkillGroup}`
+    }
+
     let _query = `
       SELECT
-        [ins1_awdb].[dbo].[t_Agent_Team].[AgentTeamID]
-        ,[ins1_awdb].[dbo].[t_Agent_Team].[EnterpriseName] AgentTeamName
-        ,[ins1_awdb].[dbo].[t_Agent].[SkillTargetID]
-        ,[ins1_awdb].[dbo].[t_Agent].[EnterpriseName] AgentName
-        ,[ins1_awdb].[dbo].[t_Agent].[PersonID]
-        ,[ins1_awdb].[dbo].[t_Person].[FirstName]
-        ,[ins1_awdb].[dbo].[t_Person].[LastName]
-      FROM [ins1_awdb].[dbo].[t_Agent_Team]
-      INNER JOIN [ins1_awdb].[dbo].[t_Agent] ON [ins1_awdb].[dbo].[t_Agent_Team].[PeripheralID] = [ins1_awdb].[dbo].[t_Agent].[PeripheralID]
-      INNER JOIN [ins1_awdb].[dbo].[t_Person] ON [ins1_awdb].[dbo].[t_Agent].[PersonID] = [ins1_awdb].[dbo].[t_Person].[PersonID]
-      WHERE [ins1_awdb].[dbo].[t_Agent_Team].[AgentTeamID] = ${teamId}
-      `
+      [ins1_awdb].[dbo].[t_Agent].[SkillTargetID] agentId,
+      [ins1_awdb].[dbo].[t_Agent].[PeripheralNumber] peripheralNumber,
+      [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralName] skillGroupName,
+      [ins1_awdb].[dbo].[t_Person].[FirstName] firstName,
+      [ins1_awdb].[dbo].[t_Person].[LastName] lastName,
+      [ins1_awdb].[dbo].[t_Person].[LoginName] loginName,
+      [ins1_awdb].[dbo].[t_Agent].[EnterpriseName] AgentName 
+    FROM
+      [ins1_awdb].[dbo].[t_Skill_Group]
+      LEFT JOIN [ins1_awdb].[dbo].[t_Skill_Group_Member] ON [ins1_awdb].[dbo].[t_Skill_Group].[SkillTargetID] = [ins1_awdb].[dbo].[t_Skill_Group_Member].[SkillGroupSkillTargetID]
+      INNER JOIN [ins1_awdb].[dbo].[t_Agent] ON [ins1_awdb].[dbo].[t_Skill_Group_Member].[AgentSkillTargetID] = [ins1_awdb].[dbo].[t_Agent].[SkillTargetID]
+      INNER JOIN [ins1_awdb].[dbo].[t_Person] ON [ins1_awdb].[dbo].[t_Agent].[PersonID] = [ins1_awdb].[dbo].[t_Person].[PersonID] 
+    WHERE
+      [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralName] LIKE '%${prefix}%'
+      ${queryWithIdSkillGroup}
+    `
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);

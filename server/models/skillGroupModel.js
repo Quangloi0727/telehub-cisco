@@ -60,16 +60,18 @@ exports.byIds = async (db, dbMssql, query) => {
 
 exports.getSkillGroupByCompany = async (dbMssql, query) => {
   try {
-    let { teamId } = query;
+    let { prefix } = query;
     let _query = `
-    SELECT
-      [ins1_awdb].[dbo].[t_Skill_Group].[SkillTargetID]
-      ,[ins1_awdb].[dbo].[t_Skill_Group].[ChangeStamp]
-      ,[ins1_awdb].[dbo].[t_Skill_Group].[EnterpriseName] SkillGroupName
-      ,[ins1_awdb].[dbo].[t_Skill_Group].[PeripheralNumber]
-    FROM [ins1_awdb].[dbo].[t_Skill_Group]
-    WHERE [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralNumber] = ${teamId}
-      `
+      SELECT
+        [ins1_awdb].[dbo].[t_Skill_Group].[SkillTargetID] skillGroupId,
+        [ins1_awdb].[dbo].[t_Skill_Group].[ChangeStamp] changeStamp,
+        [ins1_awdb].[dbo].[t_Skill_Group].[EnterpriseName] skillGroupName,
+        [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralNumber] peripheralNumber
+      FROM
+        [ins1_awdb].[dbo].[t_Skill_Group] 
+      WHERE
+        [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralName] LIKE '%${prefix}%'
+    `;
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);
