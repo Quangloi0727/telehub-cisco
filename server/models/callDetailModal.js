@@ -40,11 +40,13 @@ exports.lastTCDRecordAdvanced = async (db, dbMssql, query) => {
         let CT_Dynamic = [];
         const nameTableTCDLast = `t_TCD_last`;
         const nameTableTCDDetail = `TCD_Detail`; // để lấy thông tin của bản tin TCD
+        const nameTableTCDDetailFirst = `TCD_Detail_First`; // để lấy thông tin của bản tin TCD đầu tiên
 
         querySelect = `${selectCallDetailByCustomer(
             query,
             nameTableTCDLast,
-            nameTableTCDDetail
+            nameTableTCDDetail,
+            nameTableTCDDetailFirst
         )}`;
         if (download == 0) {
             queryPage = `OFFSET ${(paging - 1) * rows} ROWS FETCH NEXT ${rows} ROWS ONLY`;
@@ -113,7 +115,7 @@ exports.lastTCDRecordAdvanced = async (db, dbMssql, query) => {
  * @param {string} nameTable
  * @param {string} nameTCDDetail
  */
-function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
+function selectCallDetailByCustomer(query, nameTable, nameTCDDetail,nameTableTCDDetailFirst) {
     let { skillGroups, startDateFilter, endDateFilter } = query;
     // CT-5016
     let conditionFilter = ``;
@@ -122,7 +124,7 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
     let CT_Queue_Dynamic = [];
     let JOIN_Dynamic = [];
 
-    //báo cáo đánh giá chất lượng cuộc gọi
+    //dùng cho báo cáo đánh giá chất lượng cuộc gọi
     if(query.url == "/handleByAgent"){
       reportName = `AND ${nameTable}.AgentSkillTargetID is not null
       AND ${nameTable}.TalkTime >= 0
@@ -257,6 +259,15 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
      -- )
    )
   ) ${nameTCDDetail}
+  OUTER APPLY -- lấy bản tin đầu tiên khi vào IVR
+  (
+    SELECT TOP 1 *
+    FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] ${nameTableTCDDetailFirst}
+    WHERE ${nameTableTCDDetailFirst}.RouterCallKey =  ${nameTable}.RouterCallKey
+   and ${nameTableTCDDetailFirst}.RouterCallKeyDay =  ${nameTable}.RouterCallKeyDay
+   and ${nameTableTCDDetailFirst}.AgentSkillTargetID is null
+   order by TCD_Detail.RecoveryKey
+  ) ${nameTableTCDDetailFirst}
 
   left join [ins1_awdb].[dbo].[t_Skill_Group] SG
     on ${nameTable}.SkillGroupSkillTargetID = SG.SkillTargetID
@@ -272,12 +283,14 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
  * @param {String} query tham số truyền từ req.query
  * @param {String} nameTable tên table TCD_last
  * @param {String} nameTCDDetail tên table TCD_Detail: để lấy thông tin bản tin TCD thỏa mãn RouterCallKeySequenceNumber = 1
+ * @param {String} nameTCDDetailFirst tên table TCD_Detail_First: để lấy thông tin bản tin TCD đầu tiên 
  */
 
 function fieldCallTCD(
     query,
     nameTable = `t_TCD_last`,
-    nameTCDDetail = `TCD_Detail`
+    nameTCDDetail = `TCD_Detail`,
+    nameTCDDetailFirst = `TCD_Detail_First`
 ) {
     let whenDynamic = [];
     let CT_QUEUE_Dynamic = [];
@@ -316,6 +329,7 @@ function fieldCallTCD(
   ,${nameTable}.AgentSkillTargetID
   ,${nameTable}.AgentPeripheralNumber
   ,${nameTable}.[DateTime]
+  ,${nameTCDDetailFirst}.StartDateTimeUTC
   --,case 
   --  when 
   --    ${nameTable}.CallTypeID in (${CT_QUEUE_Dynamic.join(",")})
@@ -353,7 +367,6 @@ function fieldCallTCD(
   ,${nameTable}.CallDisposition
   ,${nameTable}.ANI
   ,${nameTable}.TimeZone
-  ,${nameTable}.StartDateTimeUTC
   ,case
     -- query check call là cuộc handle
     when ${nameTable}.CallTypeID in (${[
@@ -368,6 +381,7 @@ function fieldCallTCD(
 	end TotalDuarationHandling
   ,SG.EnterpriseName EnterpriseName
   ,${nameTable}.CallTypeReportingDateTime
+  ,FORMAT(DATEADD(ss, -${nameTable}.Duration, ${nameTable}.DateTime), 'yyyy-MM-dd HH:mm:ss') TimePickUpCall --thời gian nhấc máy
   ,DATEPART(MINUTE, ${nameTable}.CallTypeReportingDateTime) MinuteBlock
   ,DATEPART(HOUR, ${nameTable}.CallTypeReportingDateTime) HourBlock
   ,DATEPART(DAY, ${nameTable}.CallTypeReportingDateTime) DayBlock
