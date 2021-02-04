@@ -879,12 +879,12 @@ function mappingIncomingCallTrends(data, query) {
             100
         ).toFixed(2)
       : 0;
-  rowTotal.totalWaitTimeQueue = roundAvg(
+  rowTotal.avgTimeWaiting = roundAvg(
     rowTotal.ReceivedCall
       ? rowTotal.totalWaitTimeQueue / rowTotal.ReceivedCall
       : 0
   );
-  rowTotal.totalDuarationHandling = roundAvg(
+  rowTotal.avgHandlingTime = roundAvg(
     rowTotal.ServedCall
       ? rowTotal.totalDuarationHandling / rowTotal.ServedCall
       : 0
@@ -1082,12 +1082,12 @@ function mappingACDSummary(data, query) {
   // rowTotal.totalDuarationHandling = rowTotal.ServedCall ? hms(rowTotal.totalDuarationHandling / rowTotal.ServedCall) : 0
   // rowTotal.LongestWaitingTime = result ? _.max(result, function (result) { return hmsToNumber(result.LongestWaitingTime); }).LongestWaitingTime : 0
 
-  rowTotal.totalWaitTimeQueue = roundAvg(
+  rowTotal.avgTimeWaiting = roundAvg(
     rowTotal.ReceivedCall
       ? rowTotal.totalWaitTimeQueue / rowTotal.ReceivedCall
       : 0
   );
-  rowTotal.totalDuarationHandling = roundAvg(
+  rowTotal.avgHandlingTime = roundAvg(
     rowTotal.ServedCall
       ? rowTotal.totalDuarationHandling / rowTotal.ServedCall
       : 0
