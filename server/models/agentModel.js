@@ -70,12 +70,15 @@ exports.agentsByCompany = async (dbMssql, query) => {
       [ins1_awdb].[dbo].[t_Person].[FirstName] firstName,
       [ins1_awdb].[dbo].[t_Person].[LastName] lastName,
       [ins1_awdb].[dbo].[t_Person].[LoginName] loginName,
-      [ins1_awdb].[dbo].[t_Agent].[EnterpriseName] AgentName 
+      [ins1_awdb].[dbo].[t_Agent].[EnterpriseName] AgentName,
+      [ins1_awdb].[dbo].[t_Agent_Team].[AgentTeamID] agentTeamId,
+      [ins1_awdb].[dbo].[t_Agent_Team].[EnterpriseName] agentTeamName
     FROM
       [ins1_awdb].[dbo].[t_Skill_Group]
       LEFT JOIN [ins1_awdb].[dbo].[t_Skill_Group_Member] ON [ins1_awdb].[dbo].[t_Skill_Group].[SkillTargetID] = [ins1_awdb].[dbo].[t_Skill_Group_Member].[SkillGroupSkillTargetID]
-      INNER JOIN [ins1_awdb].[dbo].[t_Agent] ON [ins1_awdb].[dbo].[t_Skill_Group_Member].[AgentSkillTargetID] = [ins1_awdb].[dbo].[t_Agent].[SkillTargetID]
-      INNER JOIN [ins1_awdb].[dbo].[t_Person] ON [ins1_awdb].[dbo].[t_Agent].[PersonID] = [ins1_awdb].[dbo].[t_Person].[PersonID] 
+      LEFT JOIN [ins1_awdb].[dbo].[t_Agent] ON [ins1_awdb].[dbo].[t_Skill_Group_Member].[AgentSkillTargetID] = [ins1_awdb].[dbo].[t_Agent].[SkillTargetID]
+      LEFT JOIN [ins1_awdb].[dbo].[t_Person] ON [ins1_awdb].[dbo].[t_Agent].[PersonID] = [ins1_awdb].[dbo].[t_Person].[PersonID] 
+      LEFT JOIN [ins1_awdb].[dbo].[t_Agent_Team] ON [ins1_awdb].[dbo].[t_Agent].[AgentDeskSettingsID] = [ins1_awdb].[dbo].[t_Agent_Team].[AgentTeamID] 
     WHERE
       [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralName] LIKE '%${prefix}%'
       ${queryWithIdSkillGroup}
