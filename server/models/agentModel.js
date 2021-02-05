@@ -64,9 +64,9 @@ exports.agentsByCompany = async (dbMssql, query) => {
 
     let _query = `
       SELECT
-      [ins1_awdb].[dbo].[t_Agent].[SkillTargetID] agentId,
-      [ins1_awdb].[dbo].[t_Agent].[PeripheralNumber] peripheralNumber,
       [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralName] skillGroupName,
+      [ins1_awdb].[dbo].[t_Agent].[SkillTargetID] agentSkillTargetId,
+      [ins1_awdb].[dbo].[t_Agent].[PeripheralNumber] agentId,
       [ins1_awdb].[dbo].[t_Person].[FirstName] firstName,
       [ins1_awdb].[dbo].[t_Person].[LastName] lastName,
       [ins1_awdb].[dbo].[t_Person].[LoginName] loginName,
