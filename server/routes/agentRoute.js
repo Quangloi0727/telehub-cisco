@@ -19,7 +19,10 @@ router
 //  */
 router
     .route('/:id([0-9a-f]{24})')
-    // .get(agentController.getByIDIntro)
+// .get(agentController.getByIDIntro)
+
+router.route('/agent-by-company')
+    .get(agentController.getAgentsByCompany);
 
 module.exports = router;
 

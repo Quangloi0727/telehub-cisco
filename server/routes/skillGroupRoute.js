@@ -19,7 +19,10 @@ router
 //  */
 router
     .route('/:id([0-9a-f]{24})')
-    // .get(skillGroupController.getByIDIntro)
+// .get(skillGroupController.getByIDIntro)
+
+router.route('/skill-group-by-company')
+    .get(skillGroupController.getSkillGroupByCompany);
 
 module.exports = router;
 

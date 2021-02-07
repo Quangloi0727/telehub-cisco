@@ -45,7 +45,7 @@ exports.byIds = async (db, dbMssql, query) => {
     let {
       ids
     } = query;
-    
+
     let _query = `
     Select * FROM [${DB_AWDB}].[dbo].[t_Skill_Group]
 
@@ -57,3 +57,23 @@ exports.byIds = async (db, dbMssql, query) => {
     throw new Error(error);
   }
 };
+
+exports.getSkillGroupByCompany = async (dbMssql, query) => {
+  try {
+    let { prefix } = query;
+    let _query = `
+      SELECT
+        [ins1_awdb].[dbo].[t_Skill_Group].[SkillTargetID] skillGroupId,
+        [ins1_awdb].[dbo].[t_Skill_Group].[ChangeStamp] changeStamp,
+        [ins1_awdb].[dbo].[t_Skill_Group].[EnterpriseName] skillGroupName,
+        [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralNumber] peripheralNumber
+      FROM
+        [ins1_awdb].[dbo].[t_Skill_Group] 
+      WHERE
+        [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralName] LIKE '%${prefix}%'
+    `;
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}

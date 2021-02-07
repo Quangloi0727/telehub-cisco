@@ -53,8 +53,8 @@ exports.distinctTCD = async (req, res, next) => {
     try {
         let db = req.app.locals.db;
         let dbMssql = req.app.locals.dbMssql;
-        let query  = req.query;
-        
+        let query = req.query;
+
         if (
             !query.startDate ||
             !query.endDate ||
@@ -76,8 +76,8 @@ exports.byIds = async (req, res, next) => {
     try {
         let db = req.app.locals.db;
         let dbMssql = req.app.locals.dbMssql;
-        let query  = req.query;
-        
+        let query = req.query;
+
         if (
             !query.ids
         ) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
@@ -89,6 +89,26 @@ exports.byIds = async (req, res, next) => {
         res.status(SUCCESS_200.code).json({ data: doc });
 
     } catch (error) {
+        next(error);
+    }
+}
+
+exports.getSkillGroupByCompany = async (req, res, next) => {
+    try {
+        const dbMssql = req.app.locals.dbMssql;
+
+        if (!req.query.prefix) {
+            const error = new Error('Vui lòng nhập Prefix!');
+            throw error;
+        }
+
+        const skillGroupResult = await _model.getSkillGroupByCompany(dbMssql, req.query);
+
+        return res.status(SUCCESS_200.code).json({ data: skillGroupResult.recordset });
+    } catch (error) {
+        console.log(`------- error ------- getSkillGroupByCompany`);
+        console.log(error);
+        console.log(`------- error ------- getSkillGroupByCompany`);
         next(error);
     }
 }

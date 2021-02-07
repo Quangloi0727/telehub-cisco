@@ -53,6 +53,42 @@ exports.agentMemberTeam = async (db, dbMssql, query) => {
   }
 };
 
+exports.agentsByCompany = async (dbMssql, query) => {
+  try {
+    let { prefix, idSkillGroup } = query;
+
+    let queryWithIdSkillGroup = '';
+    if (idSkillGroup && idSkillGroup != '') {
+      queryWithIdSkillGroup = `AND [ins1_awdb].[dbo].[t_Skill_Group].[SkillTargetID] = ${idSkillGroup}`
+    }
+
+    let _query = `
+      SELECT
+      [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralName] skillGroupName,
+      [ins1_awdb].[dbo].[t_Agent].[SkillTargetID] agentSkillTargetId,
+      [ins1_awdb].[dbo].[t_Agent].[PeripheralNumber] agentId,
+      [ins1_awdb].[dbo].[t_Person].[FirstName] firstName,
+      [ins1_awdb].[dbo].[t_Person].[LastName] lastName,
+      [ins1_awdb].[dbo].[t_Person].[LoginName] loginName,
+      [ins1_awdb].[dbo].[t_Agent].[EnterpriseName] AgentName,
+      [ins1_awdb].[dbo].[t_Agent_Team].[AgentTeamID] agentTeamId,
+      [ins1_awdb].[dbo].[t_Agent_Team].[EnterpriseName] agentTeamName
+    FROM
+      [ins1_awdb].[dbo].[t_Skill_Group]
+      LEFT JOIN [ins1_awdb].[dbo].[t_Skill_Group_Member] ON [ins1_awdb].[dbo].[t_Skill_Group].[SkillTargetID] = [ins1_awdb].[dbo].[t_Skill_Group_Member].[SkillGroupSkillTargetID]
+      LEFT JOIN [ins1_awdb].[dbo].[t_Agent] ON [ins1_awdb].[dbo].[t_Skill_Group_Member].[AgentSkillTargetID] = [ins1_awdb].[dbo].[t_Agent].[SkillTargetID]
+      LEFT JOIN [ins1_awdb].[dbo].[t_Person] ON [ins1_awdb].[dbo].[t_Agent].[PersonID] = [ins1_awdb].[dbo].[t_Person].[PersonID] 
+      LEFT JOIN [ins1_awdb].[dbo].[t_Agent_Team] ON [ins1_awdb].[dbo].[t_Agent].[AgentDeskSettingsID] = [ins1_awdb].[dbo].[t_Agent_Team].[AgentTeamID] 
+    WHERE
+      [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralName] LIKE '%${prefix}%'
+      ${queryWithIdSkillGroup}
+    `
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
 function fieldAgent(nameTB, namePK) {
   return `${nameTB}.[AgentTeamID]
   ,${nameTB}.[SkillTargetID]
