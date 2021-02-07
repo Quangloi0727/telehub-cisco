@@ -100,28 +100,26 @@ exports.handleByAgent = async (req, res, next) => {
             if (!result.result) {
                 return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
             } else {
-                if (result.result.length > 0) {
-                    // gộp 2 kết quả dựa theo trường CallGUIDCustomize để lấy code(thông tin đánh giá khách hàng)
-                    let mergeArray = _.map(doc.recordset, function (r1) {
-                        var r3 = {};
+                // gộp 2 kết quả dựa theo trường CallGUIDCustomize để lấy code(thông tin đánh giá khách hàng)
+                let mergeArray = _.map(doc.recordset, function (r1) {
+                    var r3 = {};
+                    if (result.result.length > 0) {
                         _.map(result.result, function (r2) {
                             if (r1.CallGUIDCustomize == r2.CallGUIDCustomize) {
                                 r3 = _.extend(r1, r2);
+                            } else {
+                                r3 = _.extend(r1, {});
                             }
                         })
-                        return r3
-                    });
-                    // loại bỏ những object rỗng ra khỏi array object
-                    mergeArray = mergeArray.filter(value => Object.keys(value).length !== 0);
-
-                    res
-                        .status(SUCCESS_200.code)
-                        .json({ data: mergeArray, startDate: query.startDate, endDate: query.endDate });
-                } else {
-                    res
-                        .status(SUCCESS_200.code)
-                        .json({ data: [] });
-                }
+                    } else {
+                        r3 = _.extend(r1, {});
+                    }
+                    return r3
+                });
+                
+                res
+                    .status(SUCCESS_200.code)
+                    .json({ data: mergeArray, startDate: query.startDate, endDate: query.endDate });
             }
         }
     } catch (error) {
