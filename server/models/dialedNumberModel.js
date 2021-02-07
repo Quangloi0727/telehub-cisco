@@ -29,7 +29,7 @@ exports.getDialedNumberByPrefix = async (db, dbMssql, query) => {
     [PCSPattern],
     [RingtoneName],
     [DateTimeStamp]
-FROM [${DB_HDS}].[dbo].[t_Dialed_Number]
+FROM [${DB_AWDB}].[dbo].[t_Dialed_Number]
 WHERE EnterpriseName LIKE '%${Prefix}%'
 AND MRDomainID=1`;
 
