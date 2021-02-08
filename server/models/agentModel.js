@@ -59,7 +59,7 @@ exports.agentsByCompany = async (dbMssql, query) => {
 
     let queryWithIdSkillGroup = '';
     if (idSkillGroup && idSkillGroup != '') {
-      queryWithIdSkillGroup = `AND [ins1_awdb].[dbo].[t_Skill_Group].[SkillTargetID] = ${idSkillGroup}`
+      queryWithIdSkillGroup = `AND [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralNumber] = ${idSkillGroup}`
     }
 
     let _query = `
