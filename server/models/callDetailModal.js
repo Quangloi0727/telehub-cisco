@@ -269,7 +269,7 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail,nameTableTCD
    order by TCD_Detail.RecoveryKey
   ) ${nameTableTCDDetailFirst}
 
-  left join [${DB_HDS}].[dbo].[t_Skill_Group] SG
+  left join [${DB_AWDB}].[dbo].[t_Skill_Group] SG
     on ${nameTable}.SkillGroupSkillTargetID = SG.SkillTargetID
       ${JOIN_Dynamic.join("")}
   WHERE rn = 1
@@ -455,7 +455,7 @@ function queryAgentInterVal(query, nameTB) {
   ,[NotReadyTime]
 
   FROM [${DB_HDS}].[dbo].[t_Agent_Interval] ${nameTB}
-  INNER JOIN [${DB_HDS}].[dbo].[t_Agent]
+  INNER JOIN [${DB_AWDB}].[dbo].[t_Agent]
   on t_Agent.SkillTargetID = ${nameTB}.SkillTargetID
 
 
@@ -463,7 +463,7 @@ function queryAgentInterVal(query, nameTB) {
   AND ${nameTB}.DateTime >= @startDate
   AND ${nameTB}.DateTime < @endDate
   AND ${nameTB}.SkillTargetID in (
-    select SkillTargetID FROM [${DB_HDS}].[dbo].[t_Agent_Team_Member] Where AgentTeamID = ${Agent_Team}
+    select SkillTargetID FROM [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Where AgentTeamID = ${Agent_Team}
   )
   ${filterAgent}
   --AND ${nameTB}.SkillTargetID = 5225
@@ -517,9 +517,9 @@ function queryAgentStatusDetail(query, nameTB) {
     --,[DbDateTime]
 
   FROM [${DB_HDS}].[dbo].[t_Agent_Event_Detail] ${nameTB}
-  LEFT JOIN [${DB_HDS}].[dbo].[t_Reason_Code] awdb_Reason_Code
+  LEFT JOIN [${DB_AWDB}].[dbo].[t_Reason_Code] awdb_Reason_Code
   ON awdb_Reason_Code.ReasonCode = ${nameTB}.ReasonCode
-  INNER JOIN [${DB_HDS}].[dbo].[t_Agent] ${namePK}
+  INNER JOIN [${DB_AWDB}].[dbo].[t_Agent] ${namePK}
   on ${namePK}.SkillTargetID = ${nameTB}.SkillTargetID
 
 
@@ -527,7 +527,7 @@ function queryAgentStatusDetail(query, nameTB) {
   AND ${nameTB}.DateTime >= @startDate
   AND ${nameTB}.DateTime < @endDate
   AND ${nameTB}.SkillTargetID in (
-    select SkillTargetID FROM [${DB_HDS}].[dbo].[t_Agent_Team_Member] Where AgentTeamID = ${Agent_Team}
+    select SkillTargetID FROM [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Where AgentTeamID = ${Agent_Team}
   )
   ${filterAgent}
   --AND ${nameTB}.SkillTargetID = 5225
