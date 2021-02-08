@@ -40,9 +40,9 @@ exports.agentMemberTeam = async (db, dbMssql, query) => {
   try {
     let { Agent_Team } = query;
     let [nameTB, namePK] = ['awdb_Agent_Team_Member', 'awdb_Agent']
-    let _query = `SELECT ${fieldAgent(nameTB, namePK)} FROM [${DB_HDS}].[dbo].[t_Agent_Team_Member] ${nameTB}
+    let _query = `SELECT ${fieldAgent(nameTB, namePK)} FROM [${DB_AWDB}].[dbo].[t_Agent_Team_Member] ${nameTB}
 
-    INNER join [${DB_HDS}].[dbo].[t_Agent] ${namePK}
+    INNER join [${DB_AWDB}].[dbo].[t_Agent] ${namePK}
     on ${namePK}.SkillTargetID = ${nameTB}.SkillTargetID
 
     where ${nameTB}.AgentTeamID in (${Agent_Team})`;
@@ -79,7 +79,7 @@ function fieldAgent(nameTB, namePK) {
 exports.agentTeam = async (db, dbMssql, query) => {
   try {
     let { prefix } = query;
-    let _query = `SELECT * FROM [${DB_HDS}].[dbo].[t_Agent_Team]
+    let _query = `SELECT * FROM [${DB_AWDB}].[dbo].[t_Agent_Team]
 
     where EnterpriseName LIKE '%${prefix}%'`;
 
