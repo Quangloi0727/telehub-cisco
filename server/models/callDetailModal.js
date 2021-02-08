@@ -527,7 +527,7 @@ function queryAgentStatusDetail(query, nameTB) {
   AND ${nameTB}.DateTime >= @startDate
   AND ${nameTB}.DateTime < @endDate
   AND ${nameTB}.SkillTargetID in (
-    select SkillTargetID FROM [${DB_HDS}].[dbo].[t_Agent_Team_Member] Where AgentTeamID = ${Agent_Team}
+    select SkillTargetID FROM [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Where AgentTeamID = ${Agent_Team}
   )
   ${filterAgent}
   --AND ${nameTB}.SkillTargetID = 5225
