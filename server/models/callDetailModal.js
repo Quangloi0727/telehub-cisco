@@ -116,7 +116,7 @@ exports.lastTCDRecordAdvanced = async (db, dbMssql, query) => {
  * @param {string} nameTCDDetail
  */
 function selectCallDetailByCustomer(query, nameTable, nameTCDDetail,nameTableTCDDetailFirst) {
-    let { skillGroups, startDateFilter, endDateFilter } = query;
+    let { skillGroups, startDateFilter, endDateFilter, ANI,RecoveryKey } = query;
     // CT-5016
     let conditionFilter = ``;
     let reportName =``;
@@ -134,6 +134,14 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail,nameTableTCD
     if (startDateFilter && endDateFilter) {
         conditionFilter = `AND ${nameTable}.DateTime >= '${startDateFilter}'
     AND ${nameTable}.DateTime <= '${endDateFilter}'`;
+    }
+
+    if(ANI && ANI.length > 0){
+      conditionFilter +=`AND ${nameTable}.ANI like '%${ANI}%'`;
+    }
+    
+    if(RecoveryKey && RecoveryKey.length > 0){
+      conditionFilter +=`AND ${nameTable}.RecoveryKey IN (${RecoveryKey})`;
     }
 
     if (skillGroups) {
