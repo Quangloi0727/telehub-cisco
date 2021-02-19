@@ -819,7 +819,7 @@ function selectMissByCustomer(query) {
                 ...CT_ToAgent_Dynamic,
                 ...CT_Queue_Dynamic,
               ].join(",")})
-              AND TCD.CallDisposition in (13)
+              AND TCD.CallDisposition in (13, 28)
               AND TCD.AgentSkillTargetID is not null
               AND TCD.TalkTime > 0
       )`;
