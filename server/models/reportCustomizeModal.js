@@ -215,7 +215,7 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
   ].join(",")})
           AND ${nameTable}.AgentSkillTargetID is not null
           AND ${nameTable}.TalkTime >= 0
-          AND ${nameTable}.CallDisposition	in (13)
+          AND ${nameTable}.CallDisposition	in (13, 28)
           then '${reasonToTelehub(TYPE_CALL_HANDLE)}'
         when 
           ${nameTable}.CallTypeID in (${[
