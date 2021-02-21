@@ -287,6 +287,18 @@ const CALL_DIRECTION = {
 // });
 // JSON.stringify({ data });
 
+const CD_HANDLE = 13;
+const CD_TRANSFER = 6; // lúc trước test với a Tuấn là transfer cho agent
+const CD_TRANSFER_1_buoc = 28; // dùng cho survey GGG
+
+/**
+ * CallDisposition: field trong bảng Termination_Call_Detail của cisco
+ * 
+ */
+const CALL_DISPOSITION = {
+  handle: [CD_HANDLE, CD_TRANSFER, CD_TRANSFER_1_buoc]
+}
+
 module.exports = {
   TYPE_ADS,
   TYPE_MISSCALL,
@@ -295,4 +307,5 @@ module.exports = {
   Agent_REAL_TIME,
   REASON_CODE,
   CALL_DIRECTION,
+  CALL_DISPOSITION
 };

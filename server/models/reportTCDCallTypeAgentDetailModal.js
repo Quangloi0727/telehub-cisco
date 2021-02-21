@@ -4,7 +4,7 @@ const ObjectID = require("mongodb").ObjectID;
  */
 const { DB_HOST, PORT, IP_PUBLIC, DB_HDS, DB_AWDB, DB_RECORDING } = process.env;
 
-const { FIELD_AGENT, TYPE_MISSCALL } = require("../helpers/constants");
+const { FIELD_AGENT, TYPE_MISSCALL, CALL_DISPOSITION } = require("../helpers/constants");
 const {
   checkKeyValueExists,
   reasonToTelehub,
@@ -336,12 +336,14 @@ exports.getDetailAgent = async (db, dbMssql, query) => {
       WHERE DateTime >= @startDate
       and DateTime < @endDate
         AND CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")},@CT_Tranfer)
-        and CallDisposition in (13, 6) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
+        and CallDisposition in (${CALL_DISPOSITION.handle.join(',')}) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
         AND SkillGroupSkillTargetID is not null
         AND AgentSkillTargetID is not null -- sau nay 
         AND TalkTime > 0
         ${queryCondition}
     `;
+
+    _logger.log('info', `getDetailAgent ${_query}`);
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);
