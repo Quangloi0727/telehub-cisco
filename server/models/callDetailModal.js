@@ -280,6 +280,10 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail,nameTableTCD
   left join [${DB_AWDB}].[dbo].[t_Skill_Group] SG
     on ${nameTable}.SkillGroupSkillTargetID = SG.SkillTargetID
       ${JOIN_Dynamic.join("")}
+
+  LEFT join [ins1_recording].[dbo].[call_detail_record] CDR
+      on t_TCD_last.PeripheralCallKey = CDR.callId + 16777216
+      and CDR.called = '660289'
   WHERE rn = 1
     ${conditionFilter}
     ${reportName}
@@ -329,7 +333,8 @@ function fieldCallTCD(
   ,${nameTable}.RecoveryKey
   ,${nameTable}.DigitsDialed
   ,${nameTCDDetail}.CallGUID
-  ,SUBSTRING(${nameTCDDetail}.CallGUID, 12, 12) as CallGUIDCustomize
+  --,SUBSTRING(${nameTCDDetail}.CallGUID, 12, 12) as CallGUIDCustomize
+  ,SUBSTRING(CDR.outgoingProtocolCallRef, 12, 12) as CallGUIDCustomize
   ,${nameTable}.PeripheralCallKey
   ,${nameTable}.RouterCallKeySequenceNumber
   ,${nameTable}.CallTypeID
