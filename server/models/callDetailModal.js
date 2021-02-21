@@ -116,7 +116,7 @@ exports.lastTCDRecordAdvanced = async (db, dbMssql, query) => {
  * @param {string} nameTCDDetail
  */
 function selectCallDetailByCustomer(query, nameTable, nameTCDDetail,nameTableTCDDetailFirst) {
-    let { skillGroups, startDateFilter, endDateFilter, ANI,RecoveryKey } = query;
+    let { skillGroups, startDateFilter, endDateFilter, ANI,RecoveryKey, ternalID } = query;
     // CT-5016
     let conditionFilter = ``;
     let reportName =``;
@@ -283,7 +283,7 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail,nameTableTCD
 
   LEFT join [ins1_recording].[dbo].[call_detail_record] CDR
       on t_TCD_last.PeripheralCallKey = CDR.callId + 16777216
-      and CDR.called = '660289'
+      and CDR.called = '${ternalID}'
   WHERE rn = 1
     ${conditionFilter}
     ${reportName}
