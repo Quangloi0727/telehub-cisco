@@ -2,7 +2,7 @@ const ObjectID = require("mongodb").ObjectID;
 /**
  * require Helpers
  */
-const { DB_HOST, PORT, IP_PUBLIC } = process.env;
+const { DB_HOST, PORT, IP_PUBLIC, DB_HDS, DB_AWDB, DB_RECORDING } = process.env;
 
 const { FIELD_AGENT } = require("../helpers/constants");
 const { checkKeyValueExists } = require("../helpers/functions");
@@ -41,7 +41,7 @@ exports.callDisposition = async (db, dbMssql, query) => {
       then 1
       else 0 end
     ) CallDisposition_13_not_agent
-     FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
+     FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail]
      where
         DateTime >= '${startDate}'
         AND DateTime < '${endDate}'
@@ -127,7 +127,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
   WITH t_TCD_last AS (
     SELECT  ROW_NUMBER() OVER (PARTITION BY  RouterCallKeyDay, RouterCallKey  ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
     ,*
-    FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] as m
+    FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] as m
     where DateTime >= @startDate
     and DateTime < @endDate
     and CallTypeID in (@CT_IVR, @CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
@@ -181,7 +181,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
         ELSE 0 
       END
       handle
-    ,(Select Count(*) from [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+    ,(Select Count(*) from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
       where 
        t_TCD.DateTime >= @startDate
       and t_TCD.DateTime < @endDate
@@ -189,7 +189,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
       and t_TCD.CallDisposition in (3)
       and t_TCD.CallTypeID in (@CT_ToAgentGroup1)
     ) CustomerEndRingingSG1 -- KH dập máy (trước) khi đang ring đến SkillGroup1
-    ,(Select Count(*) from [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+    ,(Select Count(*) from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
       where 
        t_TCD.DateTime >= @startDate
       and t_TCD.DateTime < @endDate
@@ -197,7 +197,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
       and t_TCD.CallDisposition in (3)
       and t_TCD.CallTypeID in (@CT_ToAgentGroup2)
     ) CustomerEndRingingSG2 -- KH dập máy (trước) khi đang ring đến SkillGroup2
-    ,(Select Count(*) from [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+    ,(Select Count(*) from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
       where 
        t_TCD.DateTime >= @startDate
       and t_TCD.DateTime < @endDate
@@ -205,7 +205,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
       and t_TCD.CallDisposition in (3)
       and t_TCD.CallTypeID in (@CT_ToAgentGroup3)
     ) CustomerEndRingingSG3 -- KH dập máy (trước) khi đang ring đến SkillGroup3
-    ,(Select Count(*) from [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+    ,(Select Count(*) from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
       where 
         t_TCD.DateTime >= @startDate
       and t_TCD.DateTime < @endDate
@@ -213,7 +213,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
       and t_TCD.CallDisposition in (19)
       and t_TCD.CallTypeID in (@CT_ToAgentGroup1, @CT_Queue1)
     ) MissAgent1 -- Nhỡ trên SkillGroup1 (Agent ko  nghe máy)
-    ,(Select Count(*) from [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+    ,(Select Count(*) from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
       where 
         t_TCD.DateTime >= @startDate
       and t_TCD.DateTime < @endDate
@@ -221,7 +221,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
       and t_TCD.CallDisposition in (19)
       and t_TCD.CallTypeID in (@CT_ToAgentGroup2, @CT_Queue2)
     ) MissAgent2 -- Nhỡ trên SkillGroup2 (Agent ko  nghe máy)
-    ,(Select Count(*) from [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+    ,(Select Count(*) from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
       where 
        t_TCD.DateTime >= @startDate
       and t_TCD.DateTime < @endDate
@@ -229,7 +229,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
       and t_TCD.CallDisposition in (19)
       and t_TCD.CallTypeID in (@CT_ToAgentGroup3, @CT_Queue3)
     ) MissAgent3 -- Nhỡ trên SkillGroup3 (Agent ko  nghe máy)
-    ,(Select Count(*) from [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+    ,(Select Count(*) from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
       where 
         t_TCD.DateTime >= @startDate
       and t_TCD.DateTime < @endDate
@@ -237,7 +237,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
       and t_TCD.CallDisposition in (60)
       and t_TCD.CallTypeID in (@CT_ToAgentGroup1, @CT_Queue1)
     ) RejectByAgentSG1 -- Agent SkillGroup1 từ chối cuộc gọi (Agent reject cuộc gọi)
-    ,(Select Count(*) from [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+    ,(Select Count(*) from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
       where 
         t_TCD.DateTime >= @startDate
       and t_TCD.DateTime < @endDate
@@ -245,7 +245,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
       and t_TCD.CallDisposition in (60)
       and t_TCD.CallTypeID in ( @CT_ToAgentGroup2, @CT_Queue2)
     ) RejectByAgentSG2 -- Agent SkillGroup2 từ chối cuộc gọi (Agent reject cuộc gọi)
-    ,(Select Count(*) from [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+    ,(Select Count(*) from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
       where 
        t_TCD.DateTime >= @startDate
       and t_TCD.DateTime < @endDate
@@ -253,7 +253,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
       and t_TCD.CallDisposition in (60)
       and t_TCD.CallTypeID in ( @CT_ToAgentGroup3, @CT_Queue3)
     ) RejectByAgentSG3 -- Agent SkillGroup3 từ chối cuộc gọi (Agent reject cuộc gọi)
-    ,(Select Count(*) from [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+    ,(Select Count(*) from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
       where 
         t_TCD.DateTime >= @startDate
       and t_TCD.DateTime < @endDate
@@ -272,7 +272,7 @@ exports.skillGroup = async (db, dbMssql, query) => {
         )
       )
     ) MissTotal -- tổng hợp các cuộc gọi nhỡ: CustomerEndRinging, MissAgent, Reject By agent
-    ,(Select Count(*) from [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
+    ,(Select Count(*) from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
       where 
        t_TCD.DateTime >= @startDate
       and t_TCD.DateTime < @endDate

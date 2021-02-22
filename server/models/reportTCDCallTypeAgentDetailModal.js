@@ -2,9 +2,9 @@ const ObjectID = require("mongodb").ObjectID;
 /**
  * require Helpers
  */
-const { DB_HOST, PORT, IP_PUBLIC } = process.env;
+const { DB_HOST, PORT, IP_PUBLIC, DB_HDS, DB_AWDB, DB_RECORDING } = process.env;
 
-const { FIELD_AGENT, TYPE_MISSCALL } = require("../helpers/constants");
+const { FIELD_AGENT, TYPE_MISSCALL, CALL_DISPOSITION } = require("../helpers/constants");
 const {
   checkKeyValueExists,
   reasonToTelehub,
@@ -88,7 +88,7 @@ exports.getAll = async (db, dbMssql, query) => {
     ,Max(DateTime) DateTime -- cuoc goi dai nhat
     ,Max(AgentPeripheralNumber) AgentPeripheralNumber -- cuoc goi dai nhat
 
-    FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
+    FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail]
         --INNER JOIN Agent
         --ON Agent.SkillTargetID = Termination_Call_Detail.AgentSkillTargetID
     WHERE DateTime >= @startDate
@@ -142,7 +142,7 @@ exports.getByHourBlock = async (db, dbMssql, query) => {
      ,RouterCallKey
      ,RouterCallKeyDay
      ,PeripheralCallKey
-    FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
+    FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail]
       WHERE DateTime >= @startDate
       and DateTime < @endDate
       AND CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")})
@@ -167,7 +167,7 @@ exports.getByHourBlock = async (db, dbMssql, query) => {
 //           ,DATEPART(MONTH, CallTypeReportingDateTime) MonthBlock
 //           ,DATEPART(YEAR, CallTypeReportingDateTime) YearBlock
 //           ,MAX(AgentPeripheralNumber) AgentPeripheralNumber
-//      FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
+//      FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail]
 //      where
 //           DateTime >= '${startDate}'
 //           AND DateTime < '${endDate}'
@@ -223,7 +223,7 @@ exports.getDetailAgent = async (db, dbMssql, query) => {
         ,(
         select 
         MIN(TCDExtend.StartDateTimeUTC)
-        from [ins1_awdb].[dbo].[Termination_Call_Detail] as TCDExtend
+        from [${DB_AWDB}].[dbo].[Termination_Call_Detail] as TCDExtend
         where TCDExtend.RouterCallKey = TCD.RouterCallKey
         and TCDExtend.RouterCallKeyDay = TCD.RouterCallKeyDay
         )as FirstTimeCall
@@ -332,16 +332,18 @@ exports.getDetailAgent = async (db, dbMssql, query) => {
     ${variableSQLDynamic(query)}
     SELECT
       ${querySelect}
-      FROM [ins1_awdb].[dbo].[Termination_Call_Detail] TCD 
+      FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail] TCD 
       WHERE DateTime >= @startDate
       and DateTime < @endDate
         AND CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")},@CT_Tranfer)
-        and CallDisposition in (13, 6) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
+        and CallDisposition in (${CALL_DISPOSITION.handle.join(',')}) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
         AND SkillGroupSkillTargetID is not null
         AND AgentSkillTargetID is not null -- sau nay 
         AND TalkTime > 0
         ${queryCondition}
     `;
+
+    _logger.log('info', `getDetailAgent ${_query}`);
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);
@@ -390,7 +392,7 @@ exports.getGroupByCallDisposition = async (db, dbMssql, query) => {
      ,Max(AgentPeripheralNumber) AgentPeripheralNumber
      ,Count(*) total
 	   ${queryCallDisposition}
-     FROM [ins1_awdb].[dbo].[Termination_Call_Detail]
+     FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail]
           --INNER JOIN Agent
           --ON Agent.SkillTargetID = Termination_Call_Detail.AgentSkillTargetID
      where
@@ -454,7 +456,7 @@ exports.missCall = async (db, dbMssql, query) => {
 WITH t_TCD_last AS (
   SELECT  ROW_NUMBER() OVER (PARTITION BY RouterCallKeyDay, RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
   ,*
-  FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] as m
+  FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] as m
   where DateTime >= @startDate
 	and DateTime < @endDate
 	and CallTypeID in (@CT_IVR, @CT_Queue1, @CT_Queue2, @CT_Queue3)
@@ -530,7 +532,7 @@ exports.missCallByCustomer = async (db, dbMssql, query) => {
       WITH t_TCD_last AS (
         SELECT  ROW_NUMBER() OVER (PARTITION BY  RouterCallKeyDay, RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
         ,*
-        FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] as m
+        FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] as m
         where DateTime >= @startDate
         AND DateTime < @endDate
         AND CallTypeID in (${CT_Dynamic.join(",")})
@@ -642,15 +644,15 @@ exports.missCallOld = async (db, dbMssql, query) => {
   
   Select 
     ${querySelect}
-   FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
-   left join [ins1_awdb].[dbo].[t_Skill_Group] SG
+   FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
+   left join [${DB_AWDB}].[dbo].[t_Skill_Group] SG
    on t_TCD.SkillGroupSkillTargetID = SG.SkillTargetID
    where DateTime >= @startDate
     and DateTime < @endDate
     and CallTypeID in (@CT_IVR, @CT_ToAgentGroup1, @CT_ToAgentGroup2, @CT_ToAgentGroup3, @CT_Queue1, @CT_Queue2, @CT_Queue3)
     and RecoveryKey not in (
       
-      Select RecoveryKey FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD_handle
+      Select RecoveryKey FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD_handle
         where  DateTime >= @startDate
             and DateTime < @endDate
             and (
@@ -805,21 +807,21 @@ function selectMissByCustomer(query) {
       end CT_Type
       ${fieldMissCallTCD(query)}
   FROM t_TCD_last 
-  left join [ins1_awdb].[dbo].[t_Skill_Group] SG
+  left join [${DB_AWDB}].[dbo].[t_Skill_Group] SG
     on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
       ${JOIN_Dynamic.join("")}
   WHERE rn = 1
 
     ${conditionFilter}
     AND t_TCD_last.RecoveryKey not in ( --bỏ những cuộc gọi là handle
-      Select RecoveryKey from [ins1_hds].[dbo].[t_Termination_Call_Detail] TCD
+      Select RecoveryKey from [${DB_HDS}].[dbo].[t_Termination_Call_Detail] TCD
         where TCD.DateTime >= @startDate
               AND TCD.DateTime < @endDate
               AND TCD.CallTypeID in (${[
                 ...CT_ToAgent_Dynamic,
                 ...CT_Queue_Dynamic,
               ].join(",")})
-              AND TCD.CallDisposition in (13)
+              AND TCD.CallDisposition in (13, 28)
               AND TCD.AgentSkillTargetID is not null
               AND TCD.TalkTime > 0
       )`;
@@ -856,7 +858,7 @@ function selectMissIVR(query) {
     end CT_Type
     ${fieldMissCallTCD(query)}
 FROM t_TCD_last 
-left join [ins1_awdb].[dbo].[t_Skill_Group] SG
+left join [${DB_AWDB}].[dbo].[t_Skill_Group] SG
 on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
     WHERE rn = 1
     and AgentSkillTargetID is null
@@ -896,7 +898,7 @@ function selectMissQueue(query) {
     end CT_Type
     ${fieldMissCallTCD(query)}
     FROM t_TCD_last 
-    left join [ins1_awdb].[dbo].[t_Skill_Group] SG
+    left join [${DB_AWDB}].[dbo].[t_Skill_Group] SG
     on t_TCD_last.SkillGroupSkillTargetID = SG.SkillTargetID
   WHERE rn = 1
   and AgentSkillTargetID is null
@@ -935,8 +937,8 @@ function selectMissAgent(query) {
     else 'QUEUE'
     end CT_Type
     ${fieldMissCallTCD(query)}
-   FROM [ins1_hds].[dbo].[t_Termination_Call_Detail] t_TCD
-   left join [ins1_awdb].[dbo].[t_Skill_Group] SG
+   FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD
+   left join [${DB_AWDB}].[dbo].[t_Skill_Group] SG
     on t_TCD.SkillGroupSkillTargetID = SG.SkillTargetID
    WHERE DateTime >= @startDate
       and DateTime < @endDate

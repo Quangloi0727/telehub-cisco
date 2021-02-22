@@ -2,7 +2,7 @@ const ObjectID = require("mongodb").ObjectID;
 /**
  * require Helpers
  */
-const { DB_HOST, PORT, IP_PUBLIC } = process.env;
+const { DB_HOST, PORT, IP_PUBLIC, DB_HDS, DB_AWDB, DB_RECORDING } = process.env;
 
 const { FIELD_AGENT } = require("../helpers/constants");
 const { checkKeyValueExists } = require("../helpers/functions");
@@ -40,9 +40,9 @@ exports.agentMemberTeam = async (db, dbMssql, query) => {
   try {
     let { Agent_Team } = query;
     let [nameTB, namePK] = ['awdb_Agent_Team_Member', 'awdb_Agent']
-    let _query = `SELECT ${fieldAgent(nameTB, namePK)} FROM [ins1_awdb].[dbo].[t_Agent_Team_Member] ${nameTB}
+    let _query = `SELECT ${fieldAgent(nameTB, namePK)} FROM [${DB_AWDB}].[dbo].[t_Agent_Team_Member] ${nameTB}
 
-    INNER join [ins1_awdb].[dbo].[t_Agent] ${namePK}
+    INNER join [${DB_AWDB}].[dbo].[t_Agent] ${namePK}
     on ${namePK}.SkillTargetID = ${nameTB}.SkillTargetID
 
     where ${nameTB}.AgentTeamID in (${Agent_Team})`;
@@ -52,6 +52,42 @@ exports.agentMemberTeam = async (db, dbMssql, query) => {
     throw new Error(error);
   }
 };
+
+exports.agentsByCompany = async (dbMssql, query) => {
+  try {
+    let { prefix, idSkillGroup } = query;
+
+    let queryWithIdSkillGroup = '';
+    if (idSkillGroup && idSkillGroup != '') {
+      queryWithIdSkillGroup = `AND [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralNumber] = ${idSkillGroup}`
+    }
+
+    let _query = `
+      SELECT
+      [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralName] skillGroupName,
+      [ins1_awdb].[dbo].[t_Agent].[SkillTargetID] agentSkillTargetId,
+      [ins1_awdb].[dbo].[t_Agent].[PeripheralNumber] agentId,
+      [ins1_awdb].[dbo].[t_Person].[FirstName] firstName,
+      [ins1_awdb].[dbo].[t_Person].[LastName] lastName,
+      [ins1_awdb].[dbo].[t_Person].[LoginName] loginName,
+      [ins1_awdb].[dbo].[t_Agent].[EnterpriseName] AgentName,
+      [ins1_awdb].[dbo].[t_Agent_Team].[AgentTeamID] agentTeamId,
+      [ins1_awdb].[dbo].[t_Agent_Team].[EnterpriseName] agentTeamName
+    FROM
+      [ins1_awdb].[dbo].[t_Skill_Group]
+      LEFT JOIN [ins1_awdb].[dbo].[t_Skill_Group_Member] ON [ins1_awdb].[dbo].[t_Skill_Group].[SkillTargetID] = [ins1_awdb].[dbo].[t_Skill_Group_Member].[SkillGroupSkillTargetID]
+      LEFT JOIN [ins1_awdb].[dbo].[t_Agent] ON [ins1_awdb].[dbo].[t_Skill_Group_Member].[AgentSkillTargetID] = [ins1_awdb].[dbo].[t_Agent].[SkillTargetID]
+      LEFT JOIN [ins1_awdb].[dbo].[t_Person] ON [ins1_awdb].[dbo].[t_Agent].[PersonID] = [ins1_awdb].[dbo].[t_Person].[PersonID] 
+      LEFT JOIN [ins1_awdb].[dbo].[t_Agent_Team] ON [ins1_awdb].[dbo].[t_Agent].[AgentDeskSettingsID] = [ins1_awdb].[dbo].[t_Agent_Team].[AgentTeamID] 
+    WHERE
+      [ins1_awdb].[dbo].[t_Skill_Group].[PeripheralName] LIKE '%${prefix}%'
+      ${queryWithIdSkillGroup}
+    `
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}
 
 function fieldAgent(nameTB, namePK) {
   return `${nameTB}.[AgentTeamID]
@@ -75,3 +111,16 @@ function fieldAgent(nameTB, namePK) {
   ,${namePK}.[DepartmentID]
   ,${namePK}.[DateTimeStamp]`;
 }
+
+exports.agentTeam = async (db, dbMssql, query) => {
+  try {
+    let { prefix } = query;
+    let _query = `SELECT * FROM [${DB_AWDB}].[dbo].[t_Agent_Team]
+
+    where EnterpriseName LIKE '%${prefix}%'`;
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};

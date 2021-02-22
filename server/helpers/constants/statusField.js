@@ -249,6 +249,31 @@ const REASON_CODE = [
   },
 ];
 
+// https://www.cisco.com/c/en/us/td/docs/voice_ip_comm/cust_contact/contact_center/ipcc_enterprise/ippcenterprise10_0_1/reference/UCCE_BK_D3D5FB15_00_1001-database-schema-guide-for-ucce/UCCE_BK_D3D5FB15_00_10-0-1-database-schema-guide-for-ucce_chapter_010.html
+/**
+ * 
+Direction of call on which the agent is currently working:
+
+NULL= None
+0 = None
+1 = In (non-voice tasks are always inbound)
+2 = Out
+3 = Other In
+4 = Other Out/Direct Preview
+5 = Outbound Reserve
+6 = Outbound Preview
+7 = Outbound Predictive/Progressive
+ */
+const CALL_DIRECTION = {
+  in: {
+    num: 1,
+    text: 'In',
+  },
+  out: {
+    num: 2,
+    text: 'Out',
+  },
+};
 // data = [];
 
 // $(
@@ -262,6 +287,18 @@ const REASON_CODE = [
 // });
 // JSON.stringify({ data });
 
+const CD_HANDLE = 13;
+const CD_TRANSFER = 6; // lúc trước test với a Tuấn là transfer cho agent
+const CD_TRANSFER_1_buoc = 28; // dùng cho survey GGG
+
+/**
+ * CallDisposition: field trong bảng Termination_Call_Detail của cisco
+ * 
+ */
+const CALL_DISPOSITION = {
+  handle: [CD_HANDLE, CD_TRANSFER, CD_TRANSFER_1_buoc]
+}
+
 module.exports = {
   TYPE_ADS,
   TYPE_MISSCALL,
@@ -269,4 +306,6 @@ module.exports = {
   TYPE_CALLTYPE,
   Agent_REAL_TIME,
   REASON_CODE,
+  CALL_DIRECTION,
+  CALL_DISPOSITION
 };
