@@ -51,7 +51,7 @@ exports.lastTCDRecordAdvanced = async (db, dbMssql, query) => {
         if (download == 0) {
             queryPage = `OFFSET ${(paging - 1) * rows} ROWS FETCH NEXT ${rows} ROWS ONLY`;
         }
-        queryCondition = `Order By RouterCallKey, RouterCallKeySequenceNumber`;
+        queryCondition = `Order By TimePickUpCall DESC`; // sort theo thời gian bắt máy
         Object.keys(query).forEach((item) => {
             const element = query[item];
             if (item.includes("CT")) {
