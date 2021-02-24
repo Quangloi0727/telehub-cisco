@@ -1,10 +1,14 @@
 const express = require('express');
 let router = express.Router();
-let _controller = require('../controllers/reportTCDGroupbyController');
+let _controller = require('../controllers/reportTCDOutboundController');
 
 router
     .route('/report-outbound-overall-agent-productivity')
-    .get(_controller.callDisposition);
+    .get(_controller.reportOutboundOverallAgentProductivity);
+
+router
+    .route('/report-outbound-agent')
+    .get(_controller.reportOutboundAgent);
 
 
 
