@@ -86,6 +86,7 @@ function initServer(db, dbMssql) {
     app.use("/api/v1/reportRealTime", require("./routes/reportRealTimeRoute"));
     app.use("/api/v1/reasonCode", require("./routes/reasonCodeRoute"));
     app.use("/api/v1/survey", require("./routes/dialedNumberRoute"));
+    app.use("/api/v1/reportTCDoutbound", require("./routes/reportTCDOutbound"));
 
     app.use("/api/v1/exceldemo", require("./routes/excelDemoRoute"));
 
