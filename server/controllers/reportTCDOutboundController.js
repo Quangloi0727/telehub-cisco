@@ -50,7 +50,7 @@ exports.reportOutboundAgentProductivity = async (req, res, next) => {
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     }
 
-    return res.status(SUCCESS_200.code).json({ data: doc.recordsets });
+    return res.status(SUCCESS_200.code).json({ data: doc.recordset });
   } catch (error) {
     console.log(`------- error ------- reportOutboundAgent`);
     console.log(error);
