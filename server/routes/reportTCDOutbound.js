@@ -4,7 +4,7 @@ let _controller = require('../controllers/reportTCDOutboundController');
 
 router
     .route('/report-outbound-overall-agent-productivity')
-    .get(_controller.reportOutboundOverallAgentProductivity);
+    .get(_controller.reportOutboundAgentProductivity);
 
 router
     .route('/report-outbound-agent')
