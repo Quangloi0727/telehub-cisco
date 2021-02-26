@@ -47,11 +47,11 @@ exports.reportOutboundAgent = async (db, dbMssql, query) => {
       ,DATEPART(hour,TCD_Table.[DateTime]) TimeBlock
       FROM
       [${DB_HDS}].[dbo].[t_Termination_Call_Detail] TCD_Table
-      LEFT JOIN [${DB_HDS}].[dbo].[t_Agent] Agent_Table ON Agent_Table.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
-      LEFT JOIN [${DB_HDS}].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID] 
+      LEFT JOIN [${DB_AWDB}].[dbo].[t_Agent] Agent_Table ON Agent_Table.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
+      LEFT JOIN [${DB_AWDB}].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID] 
       WHERE (TCD_Table.[PeripheralCallType] = 9 OR TCD_Table.[PeripheralCallType] = 10) 
-      AND TCD_Table.[DateTime] >= '${startDate}'
-      AND TCD_Table.[DateTime] < '${endDate}'
+      ${queryStartDate}
+      ${queryEndDate}
       --and Skill_Group_Table.[EnterpriseName] = 'DemoSkillGroup1'
       ) Time_Block_Table
     GROUP BY 
