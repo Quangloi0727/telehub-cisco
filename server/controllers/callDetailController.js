@@ -26,7 +26,9 @@ exports.handleByAgent = async (req, res, next) => {
         let dbMssql = req.app.locals.dbMssql;
 
         let query = req.query;
-
+        let body = req.body;
+        console.log(11111,req.body);
+        
         if (!query.startDate || !query.endDate || !query.CT_IVR)
             return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
@@ -66,7 +68,7 @@ exports.handleByAgent = async (req, res, next) => {
             }
         }
 
-        const doc = await _model.lastTCDRecordAdvanced(db, dbMssql, query);
+        const doc = await _model.lastTCDRecordAdvanced(db, dbMssql, query, body);
 
         if (!doc) {
             return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
@@ -116,7 +118,7 @@ exports.handleByAgent = async (req, res, next) => {
                     }
                     return r3
                 });
-                
+
                 res
                     .status(SUCCESS_200.code)
                     .json({ data: mergeArray, startDate: query.startDate, endDate: query.endDate });
