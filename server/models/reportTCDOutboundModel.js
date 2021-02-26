@@ -9,8 +9,12 @@ const {
 } = process.env;
 
 const { FIELD_AGENT } = require("../helpers/constants");
-const { checkKeyValueExists } = require("../helpers/functions");
-
+const {
+  checkKeyValueExists,
+  reasonToTelehub,
+  variableSQL,
+  variableSQLDynamic,
+} = require("../helpers/functions");
 /**
  * db:
  * dbMssql:
@@ -25,44 +29,50 @@ const { checkKeyValueExists } = require("../helpers/functions");
 
 exports.reportOutboundAgent = async (db, dbMssql, query) => {
   try {
-    let { startDate, endDate } = query;
-    let queryStartDate = '';
-    let queryEndDate = '';
+    let CT_ToAgent_Dynamic = [];
+    let CT_Queue_Dynamic = [];
 
-    if (startDate) queryStartDate = `AND TCD_Table.[DateTime] >= '${startDate}'`;
-    if (endDate) queryEndDate = `AND TCD_Table.[DateTime] < '${endDate}'`;
+    Object.keys(query).forEach(item => {
+      const element = query[item];
+      if (
+        item.includes("CT_ToAgentGroup")
+      ) {
+        CT_ToAgent_Dynamic.push(`@${item}`);
+      }
+
+      if (
+        item.includes("CT_Queue")
+      ) {
+        CT_Queue_Dynamic.push(`@${item}`);
+      }
+
+    });
+
+
     let _query = `
-   SELECT 
-    Time_Block_Table.[AgentID],
-    Time_Block_Table.[AgentName], 
-    Time_Block_Table.[SkillGroupID], 
-    Time_Block_Table.[SkillGroupName], 
-    Time_Block_Table.[TimeBlock], 
-    COUNT(Time_Block_Table.[AgentID]) AS SOLAN FROM 
-      (SELECT 
-      Agent_Table.[SkillTargetID] AgentID
-      ,Agent_Table.[EnterpriseName] AgentName
-      ,Skill_Group_Table.[SkillTargetID] SkillGroupID
-      ,Skill_Group_Table.[EnterpriseName] SkillGroupName
-      ,DATEPART(hour,TCD_Table.[DateTime]) TimeBlock
-      FROM
-      [${DB_HDS}].[dbo].[t_Termination_Call_Detail] TCD_Table
-      LEFT JOIN [${DB_AWDB}].[dbo].[t_Agent] Agent_Table ON Agent_Table.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
-      LEFT JOIN [${DB_AWDB}].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID] 
-      WHERE (TCD_Table.[PeripheralCallType] = 9 OR TCD_Table.[PeripheralCallType] = 10) 
-      ${queryStartDate}
-      ${queryEndDate}
-      --and Skill_Group_Table.[EnterpriseName] = 'DemoSkillGroup1'
-      ) Time_Block_Table
-    GROUP BY 
-    Time_Block_Table.[AgentID],
-    Time_Block_Table.[AgentName], 
-    Time_Block_Table.[SkillGroupID], 
-    Time_Block_Table.[SkillGroupName], 
-    Time_Block_Table.[TimeBlock]
-    ORDER BY 
-    Time_Block_Table.[AgentID]`
-
+    ${variableSQLDynamic(query)}
+    SELECT
+      AgentSkillTargetID
+     ,AgentPeripheralNumber
+     ,DATEPART(HOUR, CallTypeReportingDateTime) HourBlock
+     ,DATEPART(DAY, CallTypeReportingDateTime) DayBlock
+     ,DATEPART(MONTH, CallTypeReportingDateTime) MonthBlock
+     ,DATEPART(YEAR, CallTypeReportingDateTime) YearBlock
+     ,FORMAT(CallTypeReportingDateTime, 'yyyy-MM-dd-HH') timeBlock
+     ,DateTime
+     ,CallTypeReportingDateTime
+     ,RouterCallKey
+     ,RouterCallKeyDay
+     ,PeripheralCallKey
+    FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail]
+      WHERE DateTime >= @startDate
+      and DateTime < @endDate
+      --AND CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")})
+      and PeripheralCallType in (9, 10) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
+      --AND SkillGroupSkillTargetID is not null
+      AND AgentSkillTargetID is not null -- sau nay 
+      AND TalkTime > 0
+  `;
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);
