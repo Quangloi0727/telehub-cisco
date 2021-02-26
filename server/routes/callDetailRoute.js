@@ -4,7 +4,7 @@ let _controller = require('../controllers/callDetailController');
 
 router
     .route('/handleByAgent')
-    .get(_controller.handleByAgent);
+    .post(_controller.handleByAgent);
 
 module.exports = router;
 
