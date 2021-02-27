@@ -31,6 +31,7 @@ exports.getReportReasonDropCall = async (db, dbMssql, query) => {
         let queryBlockTime = "";
         let queryQueue = "";
         let queryANI = "";
+        let queryCauseEnd = "";
         let CT_ToAgent_Dynamic = [];
         let CT_Queue_Dynamic = [];
 
@@ -60,6 +61,17 @@ exports.getReportReasonDropCall = async (db, dbMssql, query) => {
         // tìm kiếm theo queue
         if (query.Queue) {
             queryQueue += `AND DigitsDialed in('${query.Queue.replace(",", "','")}')`;
+        }
+        // tìm kiếm theo nguyên nhân kết thúc
+        if (query.causeEnd) {
+            if(query.causeEnd == "1"){
+                queryCauseEnd += `AND ((direction ='IN_BOUND' AND origCause <> 0 ) OR (direction ='OUT_BOUND' AND origCause = 0 ))`;
+            }else if(query.causeEnd == "2"){
+                queryCauseEnd += `AND ((direction ='IN_BOUND' AND origCause = 0 ) OR (direction ='OUT_BOUND' AND origCause <> 0 ))`;
+            }else{
+                queryCauseEnd += `AND ((direction <> 'IN_BOUND' AND origCause <> 0 ) AND (direction <> 'OUT_BOUND' AND origCause = 0 ))`;
+            }
+            
         }
 
         if (paging == 1) {
@@ -93,6 +105,7 @@ exports.getReportReasonDropCall = async (db, dbMssql, query) => {
                   AND TalkTime > 0
                   ${queryANI}
                   ${queryQueue}
+                  ${queryCauseEnd}
                   ) tempTable
                   ${queryBlockTime}
                 )temptable2 `;
@@ -209,6 +222,7 @@ exports.getReportReasonDropCall = async (db, dbMssql, query) => {
           AND TalkTime > 0
           ${queryANI}
           ${queryQueue}
+          ${queryCauseEnd}
           ) tempTable`;
             if (download === 0) {
                 queryCondition = `ORDER BY DateTime DESC
