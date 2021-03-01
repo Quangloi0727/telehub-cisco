@@ -96,7 +96,7 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
     let {
       startDate,
       endDate,
-      agentID,
+      agentId,
       prefix = 71000,
     } = query;
 
@@ -104,9 +104,9 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
     let queryStartDate = '';
     let queryEndDate = '';
 
-    if (agentID) queryAgent = `AND TCD_Table.[AgentSkillTargetID] = ${agentID}`;
     if (startDate) queryStartDate = `AND TCD_Table.[DateTime] >= '${startDate}'`;
     if (endDate) queryEndDate = `AND TCD_Table.[DateTime] < '${endDate}'`;
+    if (agentId) queryAgent = `AND Agent_Table.[PeripheralNumber] IN ( ${agentId} )`;
 
     let _queryData = `
       SELECT
