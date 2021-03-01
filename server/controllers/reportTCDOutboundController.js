@@ -43,6 +43,10 @@ exports.reportOutboundAgentProductivity = async (req, res, next) => {
     let db = req.app.locals.db;
     let dbMssql = req.app.locals.dbMssql;
 
+    if (!req.query || !req.query.agentTeamId || req.query.agentTeamId == '') {
+      return next(new ResError(ERR_400.code, 'agentTeamId không được để trống!'));
+    }
+
     let query = req.query;
 
     const doc = await _model.reportOutboundAgentProductivity(db, dbMssql, query);

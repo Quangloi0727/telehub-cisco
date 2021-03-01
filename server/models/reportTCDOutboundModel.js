@@ -51,6 +51,7 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
       startDate,
       endDate,
       agentId,
+      agentTeamId,
     } = query;
 
     let queryAgent = '';
@@ -58,7 +59,7 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
     let queryEndDate = '';
 
     if (startDate) queryStartDate = `AND TCD_Table.[DateTime] >= '${startDate}'`;
-    if (endDate) queryEndDate = `AND TCD_Table.[DateTime] < '${endDate}'`;
+    if (endDate) queryEndDate = `AND TCD_Table.[DateTime] <= '${endDate}'`;
     if (agentId) queryAgent = `AND Agent_Table.[PeripheralNumber] IN ( ${agentId} )`;
 
     let _queryData = `
@@ -75,17 +76,24 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
         [${DB_HDS}].[dbo].[t_Termination_Call_Detail] TCD_Table
         LEFT JOIN [${DB_AWDB}].[dbo].[t_Agent] Agent_Table ON Agent_Table.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
         LEFT JOIN [${DB_AWDB}].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID] 
+        INNER JOIN [ins1_awdb].[dbo].[t_Agent_Team_Member] Agent_Team ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
       WHERE
         TCD_Table.[PeripheralCallType] IN (9, 10)
         AND TCD_Table.[AgentSkillTargetID] IS NOT NULL
         AND TCD_Table.[DigitsDialed] IS NOT NULL
-        AND Agent_Table.[PeripheralNumber] IS NOT NULL 
+        AND Agent_Table.[PeripheralNumber] IS NOT NULL
+        AND Agent_Team.[AgentTeamID] = ${agentTeamId}
         ${queryAgent}
         ${queryStartDate}
         ${queryEndDate}
       GROUP BY
       Agent_Table.[PeripheralNumber]
     `;
+
+    console.log(`------- _queryData ------- query reportOutboundAgentProductivity`);
+    console.log(_queryData);
+    console.log(`------- _queryData ------- query reportOutboundAgentProductivity`);
+
     let queryResult = await dbMssql.query(_queryData);
 
     return queryResult;
