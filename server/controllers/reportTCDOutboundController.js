@@ -36,8 +36,12 @@ exports.reportOutboundAgent = async (req, res, next) => {
     let dbMssql = req.app.locals.dbMssql;
 
     let query = req.query;
+    console.log(query);
 
     if (!query.startDate || !query.endDate)
+      return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    if (!query.Agent_Team || query.Agent_Team == '')
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
     // for (let i = 0; i < Object.keys(query).length; i++) {
