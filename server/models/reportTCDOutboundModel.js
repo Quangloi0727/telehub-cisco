@@ -97,7 +97,6 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
       startDate,
       endDate,
       agentId,
-      prefix = 71000,
     } = query;
 
     let queryAgent = '';
@@ -123,7 +122,10 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
         LEFT JOIN [${DB_AWDB}].[dbo].[t_Agent] Agent_Table ON Agent_Table.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
         LEFT JOIN [${DB_AWDB}].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID] 
       WHERE
-        TCD_Table.[DigitsDialed] LIKE '%${prefix}%' 
+        TCD_Table.[PeripheralCallType] IN (9, 10)
+        AND TCD_Table.[AgentSkillTargetID] IS NOT NULL
+        AND TCD_Table.[DigitsDialed] IS NOT NULL
+        AND Agent_Table.[PeripheralNumber] IS NOT NULL 
         ${queryAgent}
         ${queryStartDate}
         ${queryEndDate}
