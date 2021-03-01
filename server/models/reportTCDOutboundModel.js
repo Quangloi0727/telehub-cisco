@@ -52,28 +52,29 @@ exports.reportOutboundAgent = async (db, dbMssql, query) => {
     let _query = `
     ${variableSQLDynamic(query)}
     SELECT
-      AgentSkillTargetID
-     ,AgentPeripheralNumber
-     ,DATEPART(HOUR, CallTypeReportingDateTime) HourBlock
-     ,DATEPART(DAY, CallTypeReportingDateTime) DayBlock
-     ,DATEPART(MONTH, CallTypeReportingDateTime) MonthBlock
-     ,DATEPART(YEAR, CallTypeReportingDateTime) YearBlock
-     ,FORMAT(CallTypeReportingDateTime, 'yyyy-MM-dd-HH') timeBlock
-     ,DateTime
-     ,CallTypeReportingDateTime
-     ,RouterCallKey
-     ,RouterCallKeyDay
-     ,PeripheralCallKey
-    FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail]
-    INNER JOIN [ins1_awdb].[dbo].[t_Agent_Team_Member] Agent_Team 
-      ON Agent_Team.SkillTargetID = TCD_Table.AgentSkillTargetID
-      AND Agent_Team.AgentTeamID = ${Agent_Team}
+      aw_TCD.AgentSkillTargetID
+     ,aw_TCD.AgentPeripheralNumber
+     ,DATEPART(HOUR, aw_TCD.CallTypeReportingDateTime) HourBlock
+     ,DATEPART(DAY, aw_TCD.CallTypeReportingDateTime) DayBlock
+     ,DATEPART(MONTH, aw_TCD.CallTypeReportingDateTime) MonthBlock
+     ,DATEPART(YEAR, aw_TCD.CallTypeReportingDateTime) YearBlock
+     ,FORMAT(aw_TCD.CallTypeReportingDateTime, 'yyyy-MM-dd-HH') timeBlock
+     ,aw_TCD.DateTime
+     ,aw_TCD.CallTypeReportingDateTime
+     ,aw_TCD.RouterCallKey
+     ,aw_TCD.RouterCallKeyDay
+     ,aw_TCD.PeripheralCallKey
+    FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail] aw_TCD
+    INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] aw_Agent_Team_Member
+      ON  aw_Agent_Team_Member.SkillTargetID = aw_TCD.AgentSkillTargetID
+      AND  aw_Agent_Team_Member.AgentTeamID = ${Agent_Team}
     WHERE DateTime >= @startDate
-    AND DateTime < @endDate
-      AND PeripheralCallType in (9, 10) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
-      AND AgentSkillTargetID is not null -- sau nay 
-     
+      AND DateTime < @endDate
+      AND PeripheralCallType in (9, 10)
+      AND AgentSkillTargetID is not null 
   `;
+    _logger.log('info', `reportOutboundAgent ${_query}`);
+
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);
