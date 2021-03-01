@@ -29,25 +29,25 @@ const {
 
 exports.reportOutboundAgent = async (db, dbMssql, query) => {
   try {
-    let CT_ToAgent_Dynamic = [];
-    let CT_Queue_Dynamic = [];
+    // let CT_ToAgent_Dynamic = [];
+    // let CT_Queue_Dynamic = [];
 
-    Object.keys(query).forEach(item => {
-      const element = query[item];
-      if (
-        item.includes("CT_ToAgentGroup")
-      ) {
-        CT_ToAgent_Dynamic.push(`@${item}`);
-      }
+    // Object.keys(query).forEach(item => {
+    //   const element = query[item];
+    //   if (
+    //     item.includes("CT_ToAgentGroup")
+    //   ) {
+    //     CT_ToAgent_Dynamic.push(`@${item}`);
+    //   }
 
-      if (
-        item.includes("CT_Queue")
-      ) {
-        CT_Queue_Dynamic.push(`@${item}`);
-      }
+    //   if (
+    //     item.includes("CT_Queue")
+    //   ) {
+    //     CT_Queue_Dynamic.push(`@${item}`);
+    //   }
 
-    });
-
+    // });
+    let { Agent_Team } = query;
 
     let _query = `
     ${variableSQLDynamic(query)}
@@ -65,13 +65,14 @@ exports.reportOutboundAgent = async (db, dbMssql, query) => {
      ,RouterCallKeyDay
      ,PeripheralCallKey
     FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail]
-      WHERE DateTime >= @startDate
-      and DateTime < @endDate
-      --AND CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")})
-      and PeripheralCallType in (9, 10) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
-      --AND SkillGroupSkillTargetID is not null
+    INNER JOIN [ins1_awdb].[dbo].[t_Agent_Team_Member] Agent_Team 
+      ON Agent_Team.SkillTargetID = TCD_Table.AgentSkillTargetID
+      AND Agent_Team.AgentTeamID = ${Agent_Team}
+    WHERE DateTime >= @startDate
+    AND DateTime < @endDate
+      AND PeripheralCallType in (9, 10) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
       AND AgentSkillTargetID is not null -- sau nay 
-      AND TalkTime > 0
+     
   `;
     return await dbMssql.query(_query);
   } catch (error) {
