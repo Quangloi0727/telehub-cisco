@@ -31,7 +31,7 @@ const {
 
 //exports.agentStatusByTime = agentStatusByTime;
 
-exports.lastTCDRecordAdvanced = async (db, dbMssql, query) => {
+exports.lastTCDRecordAdvanced = async (db, dbMssql, query, body) => {
     try {
         let { paging, rows, download } = query
         let querySelect = "";
@@ -44,6 +44,7 @@ exports.lastTCDRecordAdvanced = async (db, dbMssql, query) => {
 
         querySelect = `${selectCallDetailByCustomer(
             query,
+            body,
             nameTableTCDLast,
             nameTableTCDDetail,
             nameTableTCDDetailFirst
@@ -115,8 +116,9 @@ exports.lastTCDRecordAdvanced = async (db, dbMssql, query) => {
  * @param {string} nameTable
  * @param {string} nameTCDDetail
  */
-function selectCallDetailByCustomer(query, nameTable, nameTCDDetail,nameTableTCDDetailFirst) {
-    let { skillGroups, startDateFilter, endDateFilter, ANI,RecoveryKey, ternalID } = query;
+function selectCallDetailByCustomer(query, body, nameTable, nameTCDDetail,nameTableTCDDetailFirst) {
+    let { skillGroups, startDateFilter, endDateFilter, ANI, ternalID } = query;
+    let { RecoveryKey } = body
     // CT-5016
     let conditionFilter = ``;
     let reportName =``;
