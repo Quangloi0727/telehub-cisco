@@ -9,8 +9,12 @@ const {
 } = process.env;
 
 const { FIELD_AGENT } = require("../helpers/constants");
-const { checkKeyValueExists } = require("../helpers/functions");
-
+const {
+  checkKeyValueExists,
+  reasonToTelehub,
+  variableSQL,
+  variableSQLDynamic,
+} = require("../helpers/functions");
 /**
  * db:
  * dbMssql:
@@ -25,11 +29,55 @@ const { checkKeyValueExists } = require("../helpers/functions");
 
 exports.reportOutboundAgent = async (db, dbMssql, query) => {
   try {
-    let {
+    // let CT_ToAgent_Dynamic = [];
+    // let CT_Queue_Dynamic = [];
 
-    } = query;
+    // Object.keys(query).forEach(item => {
+    //   const element = query[item];
+    //   if (
+    //     item.includes("CT_ToAgentGroup")
+    //   ) {
+    //     CT_ToAgent_Dynamic.push(`@${item}`);
+    //   }
+
+    //   if (
+    //     item.includes("CT_Queue")
+    //   ) {
+    //     CT_Queue_Dynamic.push(`@${item}`);
+    //   }
+
+    // });
+    let { Agent_Team } = query;
+
+    let _query = `
+    ${variableSQLDynamic(query)}
+    SELECT
+      aw_TCD.AgentSkillTargetID
+     ,aw_TCD.AgentPeripheralNumber
+     ,DATEPART(HOUR, aw_TCD.CallTypeReportingDateTime) HourBlock
+     ,DATEPART(DAY, aw_TCD.CallTypeReportingDateTime) DayBlock
+     ,DATEPART(MONTH, aw_TCD.CallTypeReportingDateTime) MonthBlock
+     ,DATEPART(YEAR, aw_TCD.CallTypeReportingDateTime) YearBlock
+     ,FORMAT(aw_TCD.CallTypeReportingDateTime, 'yyyy-MM-dd-HH') timeBlock
+     ,aw_TCD.DateTime
+     ,aw_TCD.CallTypeReportingDateTime
+     ,aw_TCD.RouterCallKey
+     ,aw_TCD.RouterCallKeyDay
+     ,aw_TCD.PeripheralCallKey
+    FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail] aw_TCD
+    INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] aw_Agent_Team_Member
+      ON  aw_Agent_Team_Member.SkillTargetID = aw_TCD.AgentSkillTargetID
+      AND  aw_Agent_Team_Member.AgentTeamID = ${Agent_Team}
+    WHERE DateTime >= @startDate
+      AND DateTime < @endDate
+      AND PeripheralCallType in (9, 10)
+      AND AgentSkillTargetID is not null 
+  `;
+    _logger.log('info', `reportOutboundAgent ${_query}`);
+
+    return await dbMssql.query(_query);
   } catch (error) {
-
+    throw new Error(error);
   }
 };
 
