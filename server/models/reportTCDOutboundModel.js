@@ -82,8 +82,7 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
       WHERE
         TCD_Table.[PeripheralCallType] IN (9, 10)
         AND TCD_Table.[AgentSkillTargetID] IS NOT NULL
-        AND TCD_Table.[DigitsDialed] IS NOT NULL
-        AND Agent_Table.[PeripheralNumber] IS NOT NULL
+        -- AND Agent_Table.[PeripheralNumber] IS NOT NULL
         ${queryAgent}
         ${queryStartDate}
         ${queryEndDate}
