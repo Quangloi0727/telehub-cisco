@@ -29,50 +29,52 @@ const {
 
 exports.reportOutboundAgent = async (db, dbMssql, query) => {
   try {
-    let CT_ToAgent_Dynamic = [];
-    let CT_Queue_Dynamic = [];
+    // let CT_ToAgent_Dynamic = [];
+    // let CT_Queue_Dynamic = [];
 
-    Object.keys(query).forEach(item => {
-      const element = query[item];
-      if (
-        item.includes("CT_ToAgentGroup")
-      ) {
-        CT_ToAgent_Dynamic.push(`@${item}`);
-      }
+    // Object.keys(query).forEach(item => {
+    //   const element = query[item];
+    //   if (
+    //     item.includes("CT_ToAgentGroup")
+    //   ) {
+    //     CT_ToAgent_Dynamic.push(`@${item}`);
+    //   }
 
-      if (
-        item.includes("CT_Queue")
-      ) {
-        CT_Queue_Dynamic.push(`@${item}`);
-      }
+    //   if (
+    //     item.includes("CT_Queue")
+    //   ) {
+    //     CT_Queue_Dynamic.push(`@${item}`);
+    //   }
 
-    });
-
+    // });
+    let { Agent_Team } = query;
 
     let _query = `
     ${variableSQLDynamic(query)}
     SELECT
-      AgentSkillTargetID
-     ,AgentPeripheralNumber
-     ,DATEPART(HOUR, CallTypeReportingDateTime) HourBlock
-     ,DATEPART(DAY, CallTypeReportingDateTime) DayBlock
-     ,DATEPART(MONTH, CallTypeReportingDateTime) MonthBlock
-     ,DATEPART(YEAR, CallTypeReportingDateTime) YearBlock
-     ,FORMAT(CallTypeReportingDateTime, 'yyyy-MM-dd-HH') timeBlock
-     ,DateTime
-     ,CallTypeReportingDateTime
-     ,RouterCallKey
-     ,RouterCallKeyDay
-     ,PeripheralCallKey
-    FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail]
-      WHERE DateTime >= @startDate
-      and DateTime < @endDate
-      --AND CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")})
-      and PeripheralCallType in (9, 10) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
-      --AND SkillGroupSkillTargetID is not null
-      AND AgentSkillTargetID is not null -- sau nay 
-      AND TalkTime > 0
+      aw_TCD.AgentSkillTargetID
+     ,aw_TCD.AgentPeripheralNumber
+     ,DATEPART(HOUR, aw_TCD.CallTypeReportingDateTime) HourBlock
+     ,DATEPART(DAY, aw_TCD.CallTypeReportingDateTime) DayBlock
+     ,DATEPART(MONTH, aw_TCD.CallTypeReportingDateTime) MonthBlock
+     ,DATEPART(YEAR, aw_TCD.CallTypeReportingDateTime) YearBlock
+     ,FORMAT(aw_TCD.CallTypeReportingDateTime, 'yyyy-MM-dd-HH') timeBlock
+     ,aw_TCD.DateTime
+     ,aw_TCD.CallTypeReportingDateTime
+     ,aw_TCD.RouterCallKey
+     ,aw_TCD.RouterCallKeyDay
+     ,aw_TCD.PeripheralCallKey
+    FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail] aw_TCD
+    INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] aw_Agent_Team_Member
+      ON  aw_Agent_Team_Member.SkillTargetID = aw_TCD.AgentSkillTargetID
+      AND  aw_Agent_Team_Member.AgentTeamID = ${Agent_Team}
+    WHERE DateTime >= @startDate
+      AND DateTime < @endDate
+      AND PeripheralCallType in (9, 10)
+      AND AgentSkillTargetID is not null 
   `;
+    _logger.log('info', `reportOutboundAgent ${_query}`);
+
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);
