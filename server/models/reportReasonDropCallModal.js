@@ -24,7 +24,7 @@ const {
 
 exports.getReportReasonDropCall = async (db, dbMssql, query) => {
     try {
-        let { pages, rows, paging, duration_g, wait_g, download } = query;
+        let { pages, rows, paging, duration_g, wait_g, download, agentId } = query;
 
         let querySelect = "";
         let queryCondition = "";
@@ -32,6 +32,7 @@ exports.getReportReasonDropCall = async (db, dbMssql, query) => {
         let queryQueue = "";
         let queryANI = "";
         let queryCauseEnd = "";
+        let queryAgent = "";
         let CT_ToAgent_Dynamic = [];
         let CT_Queue_Dynamic = [];
 
@@ -57,6 +58,10 @@ exports.getReportReasonDropCall = async (db, dbMssql, query) => {
         // tìm kiếm theo số điện thoại
         if (query.ANI) {
             queryANI += `AND ANI like '%${query.ANI}%'`;
+        }
+
+        if (agentId) {
+            queryAgent += `AND AgentPeripheralNumber in (${agentId})`;
         }
         // tìm kiếm theo queue
         if (query.Queue) {
@@ -106,6 +111,7 @@ exports.getReportReasonDropCall = async (db, dbMssql, query) => {
                   ${queryANI}
                   ${queryQueue}
                   ${queryCauseEnd}
+                  ${queryAgent}
                   ) tempTable
                   ${queryBlockTime}
                 )temptable2 `;
@@ -223,6 +229,7 @@ exports.getReportReasonDropCall = async (db, dbMssql, query) => {
           ${queryANI}
           ${queryQueue}
           ${queryCauseEnd}
+          ${queryAgent}
           ) tempTable`;
             if (download === 0) {
                 queryCondition = `ORDER BY DateTime DESC
