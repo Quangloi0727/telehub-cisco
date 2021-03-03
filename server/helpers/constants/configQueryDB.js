@@ -35,7 +35,7 @@ const WEIGHT_TEAM = {
 const WEIGHT_STATE = {
     Ready: {
         num: 1,
-        text: 'INBOUND 1900',
+        text: 'Ready',
     },
     Talking: {
         num: 2,
@@ -67,6 +67,41 @@ const WEIGHT_STATE = {
     }
 };
 
+const WEIGHT_STATE_2 = {
+    Ready: {
+        num: 5,
+        text: 'Ready',
+    },
+    Talking: {
+        num: 2,
+        text: 'Talking',
+    },
+    "Not Ready": {
+        num: 1,
+        text: 'Not Ready',
+    },
+    "AtLunch": {
+        num: 3,
+        text: 'AtLunch',
+    },
+    "Meeting": {
+        num: 4,
+        text: 'Meeting',
+    },
+    "NoAvailable": {
+        num: 7,
+        text: 'NoAvailable',
+    },
+    "NoACD": {
+        num: 6,
+        text: 'NoACD',
+    },
+    "Other": {
+        num: 9999,
+        text: 'Other',
+    }
+};
+
 module.exports = {
     SORT: {
         BY_DEFAULT: 'count',
@@ -76,4 +111,5 @@ module.exports = {
     TYPE_DESC,
     WEIGHT_TEAM,
     WEIGHT_STATE,
+    WEIGHT_STATE_2
 }
