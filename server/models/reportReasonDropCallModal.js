@@ -24,7 +24,7 @@ const {
 
 exports.getReportReasonDropCall = async (db, dbMssql, query) => {
     try {
-        let { pages, rows, paging, duration_g, wait_g, download, agentId } = query;
+        let { pages, rows, paging, duration_g, wait_g, download, agentId, talking } = query;
 
         let querySelect = "";
         let queryCondition = "";
@@ -33,6 +33,7 @@ exports.getReportReasonDropCall = async (db, dbMssql, query) => {
         let queryANI = "";
         let queryCauseEnd = "";
         let queryAgent = "";
+        let queryTalking = "";
         let CT_ToAgent_Dynamic = [];
         let CT_Queue_Dynamic = [];
 
@@ -62,6 +63,33 @@ exports.getReportReasonDropCall = async (db, dbMssql, query) => {
 
         if (agentId) {
             queryAgent += `AND AgentPeripheralNumber in (${agentId})`;
+        }
+
+        if (talking) {
+            let [condi, value] = talking.split("=");
+            console.log({condi, value});
+            if(condi && value){
+                switch (condi) {
+                    case 'gt':
+                        queryAgent += `AND TalkTime > (${value})`;
+                        break;
+                
+                    case 'gte':
+                        queryAgent += `AND TalkTime >= (${value})`;
+                        break;
+
+                    case 'lt':
+                        queryAgent += `AND TalkTime < (${value})`;
+                        break;
+                
+                    case 'lte':
+                        queryAgent += `AND TalkTime <= (${value})`;
+                        break;
+                
+                    default:
+                        break;
+                }
+            }
         }
         // tìm kiếm theo queue
         if (query.Queue) {
