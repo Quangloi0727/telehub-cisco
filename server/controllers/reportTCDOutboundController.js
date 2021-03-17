@@ -62,3 +62,27 @@ exports.reportOutboundAgentProductivity = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.reportOutboundOverallProductivityByAgent = async (req, res, next) => {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    if (!req.query || !req.query.agentTeamId || req.query.agentTeamId == '') {
+      return next(new ResError(ERR_400.code, 'Trường agentTeamId không được để trống!'));
+    }
+
+    let query = req.query;
+
+    const doc = await _model.reportOutboundOverallProductivityByAgent(db, dbMssql, query);
+    if (!doc) {
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+    }
+
+    return res.status(SUCCESS_200.code).json({ data: doc.recordset });
+  } catch (error) {
+    console.error(`------- error ------- reportOutboundOverallProductivityByAgent`);
+    console.error(error);
+    console.error(`------- error ------- reportOutboundOverallProductivityByAgent`);
+  }
+}
