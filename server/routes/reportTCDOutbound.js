@@ -7,6 +7,10 @@ router
     .get(_controller.reportOutboundAgentProductivity);
 
 router
+    .route('/report-outbound-overall-productivity-by-agent')
+    .get(_controller.reportOutboundOverallProductivityByAgent);
+
+router
     .route('/report-outbound-agent')
     .get(_controller.reportOutboundAgent);
 
