@@ -117,10 +117,11 @@ exports.reportOutboundOverallProductivityByAgent = async (db, dbMssql, query) =>
 
     if (startDate) queryStartDate = `AND TCD_Table.[DateTime] >= '${startDate}'`;
     if (endDate) queryEndDate = `AND TCD_Table.[DateTime] <= '${endDate}'`;
-    if (agentId) queryAgent = `AND Agent_Table.[PeripheralNumber] = ${agentId}`;
+    if (agentId) queryAgent = `AND Agent_Table.[PeripheralNumber] IN ( ${agentId} )`;
 
     let _queryData = `
       SELECT
+      Agent_Table.[PeripheralNumber] agentId,
       CAST ( TCD_Table.[DateTime] AS DATE ) AS createDate,
       SUM ( 1 ) AS totalCall,
       SUM ( TCD_Table.[Duration] ) AS totalCallTime,
@@ -142,7 +143,7 @@ exports.reportOutboundOverallProductivityByAgent = async (db, dbMssql, query) =>
       ${queryStartDate}
       ${queryEndDate}
     GROUP BY
-      CAST ( TCD_Table.[DateTime] AS DATE )
+      CAST ( TCD_Table.[DateTime] AS DATE ), Agent_Table.[PeripheralNumber]
     `;
 
     console.log(`------- _queryData ------- query reportOutboundOverallProductivityByAgent`);
