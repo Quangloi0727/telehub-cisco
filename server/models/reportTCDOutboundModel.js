@@ -144,6 +144,74 @@ exports.reportOutboundOverallProductivityByAgent = async (db, dbMssql, query) =>
       ${queryEndDate}
     GROUP BY
       CAST ( TCD_Table.[DateTime] AS DATE ), Agent_Table.[PeripheralNumber]
+    ORDER BY createDate ASC
+    `;
+
+    console.log(`------- _queryData ------- query reportOutboundOverallProductivityByAgent`);
+    console.log(_queryData);
+    console.log(`------- _queryData ------- query reportOutboundOverallProductivityByAgent`);
+
+    let queryResult = await dbMssql.query(_queryData);
+
+    return queryResult;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+
+exports.reportOutboundOverallProductivityDetail = async (db, dbMssql, query) => {
+  try {
+    let {
+      startDate,
+      endDate,
+      agentId,
+      agentTeamId,
+    } = query;
+
+    let queryAgent = '';
+    let queryStartDate = '';
+    let queryEndDate = '';
+
+    if (startDate) queryStartDate = `AND TCD_Table.[DateTime] >= '${startDate}'`;
+    if (endDate) queryEndDate = `AND TCD_Table.[DateTime] <= '${endDate}'`;
+    if (agentId) queryAgent = `AND Agent_Table.[PeripheralNumber] IN ( ${agentId} )`;
+
+    let _queryData = `
+      SELECT
+        TCD_Table.[RecoveryKey],
+        Agent_Table.[SkillTargetID] AgentID,
+        Agent_Table.[EnterpriseName] AgentName,
+        Skill_Group_Table.[SkillTargetID] SkillGroupID,
+        Skill_Group_Table.[EnterpriseName] SkillGroupName,
+        TCD_Table.[DateTime],
+        TCD_Table.[Duration],
+        TCD_Table.[NetworkTime],
+        TCD_Table.[RingTime],
+        TCD_Table.[DelayTime],
+        TCD_Table.[TimeToAband],
+        TCD_Table.[HoldTime],
+        TCD_Table.[TalkTime],
+        TCD_Table.[WorkTime],
+        TCD_Table.[LocalQTime],
+        TCD_Table.[DigitsDialed] DigitsDialed,
+        TCD_Table.[PeripheralID],
+        TCD_Table.[PeripheralCallType],
+        TCD_Table.[PeripheralCallKey],
+        TCD_Table.[CallDisposition]
+      FROM
+        [ins1_hds].[dbo].[t_Termination_Call_Detail] TCD_Table
+        LEFT JOIN [ins1_awdb].[dbo].[t_Agent] Agent_Table ON Agent_Table.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
+        LEFT JOIN [ins1_awdb].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID]
+        INNER JOIN [ins1_awdb].[dbo].[t_Agent_Team_Member] Agent_Team ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID] 
+        AND Agent_Team.[AgentTeamID] IN ( 5004 ) 
+      WHERE
+        TCD_Table.[PeripheralCallType] IN ( 9, 10 )
+        AND TCD_Table.[AgentSkillTargetID] IS NOT NULL
+        AND Agent_Table.[PeripheralNumber] IN ( 660205 )
+        ${queryStartDate}
+        ${queryEndDate}
+        ORDER BY TCD_Table.[DateTime] ASC
     `;
 
     console.log(`------- _queryData ------- query reportOutboundOverallProductivityByAgent`);
