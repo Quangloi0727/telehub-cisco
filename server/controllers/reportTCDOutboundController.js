@@ -137,6 +137,7 @@ exports.reportOutboundAgentProductivityDetail = async (req, res, next) => {
     let page = query.page ? parseInt(query.page) : 1;
     let limit = 10;
     let totalRows = 0;
+    let totalPage = 1;
     let skip = (page - 1) * limit;
 
     const sumRowsResult = await _model.countNumRowsTCD(db, dbMssql, query);
@@ -150,10 +151,15 @@ exports.reportOutboundAgentProductivityDetail = async (req, res, next) => {
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     }
 
+    if(doc.recordset.length > 0) {
+      totalPage = Math.ceil(totalRows / limit);
+    }
+
     return res.status(SUCCESS_200.code).json({
       data: doc.recordset,
-      totalRows,
-      page
+      totalRows: Number(totalRows),
+      totalPage: Number(totalPage),
+      page: Number(page)
     });
   } catch (error) {
     console.log(`------- error ------- reportOutboundAgent`);
