@@ -9,8 +9,12 @@ const {
 } = process.env;
 
 const { FIELD_AGENT } = require("../helpers/constants");
-const { checkKeyValueExists } = require("../helpers/functions");
-
+const {
+  checkKeyValueExists,
+  reasonToTelehub,
+  variableSQL,
+  variableSQLDynamic,
+} = require("../helpers/functions");
 /**
  * db:
  * dbMssql:
@@ -25,11 +29,55 @@ const { checkKeyValueExists } = require("../helpers/functions");
 
 exports.reportOutboundAgent = async (db, dbMssql, query) => {
   try {
-    let {
+    // let CT_ToAgent_Dynamic = [];
+    // let CT_Queue_Dynamic = [];
 
-    } = query;
+    // Object.keys(query).forEach(item => {
+    //   const element = query[item];
+    //   if (
+    //     item.includes("CT_ToAgentGroup")
+    //   ) {
+    //     CT_ToAgent_Dynamic.push(`@${item}`);
+    //   }
+
+    //   if (
+    //     item.includes("CT_Queue")
+    //   ) {
+    //     CT_Queue_Dynamic.push(`@${item}`);
+    //   }
+
+    // });
+    let { Agent_Team } = query;
+
+    let _query = `
+    ${variableSQLDynamic(query)}
+    SELECT
+      aw_TCD.AgentSkillTargetID
+     ,aw_TCD.AgentPeripheralNumber
+     ,DATEPART(HOUR, aw_TCD.CallTypeReportingDateTime) HourBlock
+     ,DATEPART(DAY, aw_TCD.CallTypeReportingDateTime) DayBlock
+     ,DATEPART(MONTH, aw_TCD.CallTypeReportingDateTime) MonthBlock
+     ,DATEPART(YEAR, aw_TCD.CallTypeReportingDateTime) YearBlock
+     ,FORMAT(aw_TCD.CallTypeReportingDateTime, 'yyyy-MM-dd-HH') timeBlock
+     ,aw_TCD.DateTime
+     ,aw_TCD.CallTypeReportingDateTime
+     ,aw_TCD.RouterCallKey
+     ,aw_TCD.RouterCallKeyDay
+     ,aw_TCD.PeripheralCallKey
+    FROM [${DB_AWDB}].[dbo].[Termination_Call_Detail] aw_TCD
+    INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] aw_Agent_Team_Member
+      ON  aw_Agent_Team_Member.SkillTargetID = aw_TCD.AgentSkillTargetID
+      AND  aw_Agent_Team_Member.AgentTeamID = ${Agent_Team}
+    WHERE DateTime >= @startDate
+      AND DateTime < @endDate
+      AND PeripheralCallType in (9, 10)
+      AND AgentSkillTargetID is not null 
+  `;
+    _logger.log('info', `reportOutboundAgent ${_query}`);
+
+    return await dbMssql.query(_query);
   } catch (error) {
-
+    throw new Error(error);
   }
 };
 
@@ -179,44 +227,41 @@ exports.reportOutboundOverallProductivityDetail = async (db, dbMssql, query) => 
 
     let _queryData = `
       SELECT
-        TCD_Table.[RecoveryKey],
-        Agent_Table.[SkillTargetID] AgentID,
-        Agent_Table.[EnterpriseName] AgentName,
-        Skill_Group_Table.[SkillTargetID] SkillGroupID,
-        Skill_Group_Table.[EnterpriseName] SkillGroupName,
-        TCD_Table.[DateTime],
-        TCD_Table.[Duration],
+        TCD_Table.[RecoveryKey] callId,
+        Agent_Table.[PeripheralNumber] agentId,
+        TCD_Table.[DateTime] createDate,
+        TCD_Table.[Duration] callTime,
         TCD_Table.[NetworkTime],
         TCD_Table.[RingTime],
-        TCD_Table.[DelayTime],
+        TCD_Table.[DelayTime] delayTime,
         TCD_Table.[TimeToAband],
-        TCD_Table.[HoldTime],
-        TCD_Table.[TalkTime],
+        TCD_Table.[HoldTime] holdTime,
+        TCD_Table.[TalkTime] talkTime,
         TCD_Table.[WorkTime],
         TCD_Table.[LocalQTime],
-        TCD_Table.[DigitsDialed] DigitsDialed,
+        TCD_Table.[DigitsDialed] digitsDialed,
         TCD_Table.[PeripheralID],
         TCD_Table.[PeripheralCallType],
         TCD_Table.[PeripheralCallKey],
         TCD_Table.[CallDisposition]
       FROM
-        [ins1_hds].[dbo].[t_Termination_Call_Detail] TCD_Table
-        LEFT JOIN [ins1_awdb].[dbo].[t_Agent] Agent_Table ON Agent_Table.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
-        LEFT JOIN [ins1_awdb].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID]
-        INNER JOIN [ins1_awdb].[dbo].[t_Agent_Team_Member] Agent_Team ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID] 
-        AND Agent_Team.[AgentTeamID] IN ( 5004 ) 
+        [${DB_HDS}].[dbo].[t_Termination_Call_Detail] TCD_Table
+        LEFT JOIN [${DB_AWDB}].[dbo].[t_Agent] Agent_Table ON Agent_Table.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
+        LEFT JOIN [${DB_AWDB}].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID]
+        INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Agent_Team ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID] 
+        AND Agent_Team.[AgentTeamID] IN ( ${agentTeamId} ) 
       WHERE
         TCD_Table.[PeripheralCallType] IN ( 9, 10 )
         AND TCD_Table.[AgentSkillTargetID] IS NOT NULL
-        AND Agent_Table.[PeripheralNumber] IN ( 660205 )
+        ${queryAgent}
         ${queryStartDate}
         ${queryEndDate}
-        ORDER BY TCD_Table.[DateTime] ASC
+        ORDER BY TCD_Table.[DateTime] ASC OFFSET ${query.skip} ROWS FETCH NEXT ${query.limit} ROWS ONLY
     `;
 
-    console.log(`------- _queryData ------- query reportOutboundOverallProductivityByAgent`);
+    console.log(`------- _queryData ------- query reportOutboundOverallProductivityDetail`);
     console.log(_queryData);
-    console.log(`------- _queryData ------- query reportOutboundOverallProductivityByAgent`);
+    console.log(`------- _queryData ------- query reportOutboundOverallProductivityDetail`);
 
     let queryResult = await dbMssql.query(_queryData);
 
@@ -225,3 +270,50 @@ exports.reportOutboundOverallProductivityDetail = async (db, dbMssql, query) => 
     throw new Error(error);
   }
 };
+
+exports.countNumRowsTCD = async (db, dbMssql, query) => {
+  try {
+    let {
+      startDate,
+      endDate,
+      agentId,
+      agentTeamId,
+    } = query;
+
+    let queryAgent = '';
+    let queryStartDate = '';
+    let queryEndDate = '';
+
+    if (startDate) queryStartDate = `AND TCD_Table.[DateTime] >= '${startDate}'`;
+    if (endDate) queryEndDate = `AND TCD_Table.[DateTime] <= '${endDate}'`;
+    if (agentId) queryAgent = `AND Agent_Table.[PeripheralNumber] IN ( ${agentId} )`;
+
+    let _queryData = `
+      SELECT
+        count(*) as numRows
+      FROM
+        [${DB_HDS}].[dbo].[t_Termination_Call_Detail] TCD_Table
+        LEFT JOIN [${DB_AWDB}].[dbo].[t_Agent] Agent_Table ON Agent_Table.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
+        LEFT JOIN [${DB_AWDB}].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID]
+        INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Agent_Team ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID] 
+        AND Agent_Team.[AgentTeamID] IN ( ${agentTeamId} ) 
+      WHERE
+        TCD_Table.[PeripheralCallType] IN ( 9, 10 )
+        AND TCD_Table.[AgentSkillTargetID] IS NOT NULL
+        ${queryAgent}
+        ${queryStartDate}
+        ${queryEndDate}
+      `;
+
+    console.log(`------- _queryData ------- query countNumRowsTCD`);
+    console.log(_queryData);
+    console.log(`------- _queryData ------- query countNumRowsTCD`);
+
+    let queryResult = await dbMssql.query(_queryData);
+
+    return queryResult;
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
