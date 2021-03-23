@@ -215,12 +215,15 @@ exports.reportOutboundOverallProductivityDetail = async (db, dbMssql, query) => 
       endDate,
       agentId,
       agentTeamId,
+      page
     } = query;
 
+    let queryPaging = '';
     let queryAgent = '';
     let queryStartDate = '';
     let queryEndDate = '';
 
+    if (page) queryPaging = `OFFSET ${query.skip} ROWS FETCH NEXT ${query.limit} ROWS ONLY`;
     if (startDate) queryStartDate = `AND TCD_Table.[DateTime] >= '${startDate}'`;
     if (endDate) queryEndDate = `AND TCD_Table.[DateTime] <= '${endDate}'`;
     if (agentId) queryAgent = `AND Agent_Table.[PeripheralNumber] IN ( ${agentId} )`;
@@ -256,7 +259,7 @@ exports.reportOutboundOverallProductivityDetail = async (db, dbMssql, query) => 
         ${queryAgent}
         ${queryStartDate}
         ${queryEndDate}
-        ORDER BY TCD_Table.[DateTime] ASC OFFSET ${query.skip} ROWS FETCH NEXT ${query.limit} ROWS ONLY
+        ORDER BY TCD_Table.[DateTime] ASC ${queryPaging}
     `;
 
     console.log(`------- _queryData ------- query reportOutboundOverallProductivityDetail`);
