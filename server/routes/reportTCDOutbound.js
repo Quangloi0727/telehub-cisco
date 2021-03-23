@@ -14,6 +14,10 @@ router
     .route('/report-outbound-agent')
     .get(_controller.reportOutboundAgent);
 
+router
+    .route('/report-outbound-agent-detail')
+    .get(_controller.reportOutboundAgentProductivityDetail);
+
 
 
 module.exports = router;
