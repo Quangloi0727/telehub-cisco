@@ -140,7 +140,7 @@ function selectCallDetailByCustomer(query, nameTable) {
     FROM ${nameTable}
         WHERE DateTime >= @startDate
         AND DateTime < @endDate
-        AND rn = --lấy cuộc gọi cuối cùng
+        AND rn = 1 --lấy cuộc gọi cuối cùng
         AND ${nameTable}.RecoveryKey not in (
             Select RecoveryKey FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD_handle
             where  DateTime >= @startDate
