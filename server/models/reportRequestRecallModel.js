@@ -35,7 +35,6 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
         )}`;
         if (rows) {
             queryPage = `
-                ORDER BY TempTable.DateTime DESC
                 OFFSET ${(pages - 1) * rows} ROWS FETCH NEXT ${rows} ROWS ONLY
             `;
         }
@@ -59,6 +58,7 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
         ${querySelect}
         ${queryQueue}
         ${queryStatus}
+        ORDER BY TempTable.DateTime DESC
         ${queryPage}`;
 
         _logger.log("info", `lastTCDRecord ${_query}`);
@@ -140,6 +140,7 @@ function selectCallDetailByCustomer(query, nameTable) {
     FROM ${nameTable}
         WHERE DateTime >= @startDate
         AND DateTime < @endDate
+        AND rn = --lấy cuộc gọi cuối cùng
         AND ${nameTable}.RecoveryKey not in (
             Select RecoveryKey FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD_handle
             where  DateTime >= @startDate
