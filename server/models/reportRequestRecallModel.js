@@ -128,10 +128,17 @@ function selectCallDetailByCustomer(query, nameTable) {
         (
             select count(*) FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] as tcd
             where tcd.DateTime >= ${nameTable}.DateTime
-            AND tcd.PeripheralCallType in (9)
+            AND tcd.PeripheralCallType in (9,10) --9 gọi ra cho KH,10 gọi ra nội bộ
             AND tcd.CallDisposition in (14)
             AND tcd.CallDispositionFlag in (1)
-            and SUBSTRING(DigitsDialed, 6, 11) = ${nameTable}.ANI
+            AND ${nameTable}.ANI = 
+			case
+			 when 
+				DATALENGTH(tcd.DigitsDialed) = 10
+				then tcd.DigitsDialed  
+			 else
+			   SUBSTRING(tcd.DigitsDialed, 6, 11) 
+			end 
         ) >= 1
         then 0 -- outbound
         else 1
