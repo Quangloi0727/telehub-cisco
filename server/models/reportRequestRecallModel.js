@@ -157,7 +157,7 @@ function selectCallDetailByCustomer(query, nameTable) {
                 AgentSkillTargetID is not null
                 AND t_TCD_handle.CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")},@CT_Tranfer)
                 AND TalkTime > 0
-                AND CallDisposition in (13)
+                AND CallDisposition in (13,28)
             )
         )
        )TempTable
