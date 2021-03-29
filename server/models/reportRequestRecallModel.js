@@ -110,7 +110,15 @@ function selectCallDetailByCustomer(query, nameTable) {
 	   ,DATEADD(ss , -Duration, DateTime) AS startTime
        ,[DigitsDialed]
        ,[RecoveryKey]
-       ,[SkillGroupSkillTargetID]
+       ,CASE
+        WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup1, @CT_Queue1)
+            then @SG_Voice_1
+        WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup2, @CT_Queue2)
+            then @SG_Voice_2
+        WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup3, @CT_Queue3)
+            then @SG_Voice_3
+            else SkillGroupSkillTargetID
+        end SkillGroupSkillTargetID
        ,DIRECTION =
         CASE
         WHEN
