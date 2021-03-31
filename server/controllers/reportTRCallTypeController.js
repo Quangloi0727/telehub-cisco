@@ -501,6 +501,8 @@ function mappingStatisticInbound(data, query) {
     connect: 0, // Phục vụ, handle
   });
 
+  reduceTemp.missed = reduceTemp.total - reduceTemp.connect;
+
   data.recordset = reduceTemp;
 
   return data;
