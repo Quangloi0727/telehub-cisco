@@ -26,11 +26,14 @@ function initServer(db, dbMssql) {
     app.locals.db = db;
     app.locals.dbMssql = dbMssql;
 
-    // for parsing application/x-www-form-urlencoded
-    app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
-    // app.use(express.bodyParser({limit: '50mb'}));
-    // for parsing application/json
-    app.use(bodyParser.json());
+    // // for parsing application/x-www-form-urlencoded
+    // app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+    // // app.use(express.bodyParser({limit: '50mb'}));
+    // // for parsing application/json
+    // app.use(bodyParser.json());
+
+    app.use(bodyParser.json({ limit: '200mb' }));
+    app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
 
     // for parsing multipart/form-data
 
