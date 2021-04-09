@@ -19,13 +19,13 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
         const nameTableTCDLast = `t_TCD_last`;
 
         if (queue) {
-            queryQueue += `Where TempTable.SkillGroupSkillTargetID IN (${queue})`
+            queryQueue += `Where TempTable2.SkillGroupSkillTargetID IN (${queue})`
         }
         if (status) {
             if (queryQueue != "") {
-                queryStatus += `AND TempTable.DIRECTION IN (${status})`
+                queryStatus += `AND TempTable2.DIRECTION IN (${status})`
             } else {
-                queryStatus += `WHERE TempTable.DIRECTION IN (${status})`
+                queryStatus += `WHERE TempTable2.DIRECTION IN (${status})`
             }
         }
 
@@ -58,7 +58,7 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
         ${querySelect}
         ${queryQueue}
         ${queryStatus}
-        ORDER BY TempTable.DateTime DESC
+        ${parseInt(query.flag) != 3 ? "ORDER BY TempTable2.DateTime DESC" : ""}
         ${queryPage}`;
 
         _logger.log("info", `lastTCDRecord ${_query}`);
@@ -102,73 +102,151 @@ function selectCallDetailByCustomer(query, nameTable) {
         }
     });
 
-    return `
-    SELECT * FROM(
-        SELECT
-        [DateTime]
-       ,[Duration]
-	   ,DATEADD(ss , -Duration, DateTime) AS startTime
-       ,[DigitsDialed]
-       ,[RecoveryKey]
-       ,CASE
-        WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup1, @CT_Queue1)
-            then @SG_Voice_1
-        WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup2, @CT_Queue2)
-            then @SG_Voice_2
-        WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup3, @CT_Queue3)
-            then @SG_Voice_3
-            else SkillGroupSkillTargetID
-        end SkillGroupSkillTargetID
-       ,DIRECTION =
-        CASE
-        WHEN
-        (
-            select count(*) FROM [${DB_HDS}].[dbo].[Termination_Call_Detail] as tcd
-            where tcd.DateTime >= ${nameTable}.DateTime
-            and tcd.CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")},@CT_Tranfer)
-            AND tcd.AgentSkillTargetID is not null
-            AND tcd.TalkTime > 0
-            AND tcd.CallDisposition in (13, 28)
-            AND tcd.ANI = ${nameTable}.ANI
-        ) >= 1
-        then 0 --inbound
-        WHEN
-        (
-            select count(*) FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] as tcd
-            where tcd.DateTime >= ${nameTable}.DateTime
-            AND tcd.PeripheralCallType in (9,10) --9 gọi ra cho KH,10 gọi ra nội bộ
-            AND tcd.CallDisposition in (14)
-            AND tcd.CallDispositionFlag in (1)
-            AND ${nameTable}.ANI = 
-			case
-			 when 
-				DATALENGTH(tcd.DigitsDialed) = 10
-				then tcd.DigitsDialed  
-			 else
-			   SUBSTRING(tcd.DigitsDialed, 6, 11) 
-			end 
-        ) >= 1
-        then 0 -- outbound
-        else 1
-        END
-       ,[ANI]
-    FROM ${nameTable}
-        WHERE DateTime >= @startDate
-        AND DateTime < @endDate
-        AND rn = 1 --lấy cuộc gọi cuối cùng
-        AND ${nameTable}.RecoveryKey not in (
-            Select RecoveryKey FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD_handle
-            where  DateTime >= @startDate
-            AND DateTime < @endDate
-            AND (
-                -- loại các cuộc handle
-                AgentSkillTargetID is not null
-                AND t_TCD_handle.CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")},@CT_Tranfer)
-                AND TalkTime > 0
-                AND CallDisposition in (13,28)
-            )
-        )
-       )TempTable
-    `;
+    switch (parseInt(query.flag)) {
+        case 2:
+            return `
+            SELECT * from (
+                SELECT TempTable.DateTime,TempTable.startTime,TempTable.ANI,TempTable.SkillGroupSkillTargetID,
+                    DIRECTION = 
+                    CASE
+                    WHEN TempTable.inbound >=1
+                        then 0 
+                    WHEN TempTable.outbound >=1
+                        then 0
+                    ELSE 1
+                    END 
+                FROM(
+                    SELECT
+                    [DateTime]
+                    ,[Duration]
+                    ,DATEADD(ss , -Duration, DateTime) AS startTime
+                    ,[DigitsDialed]
+                    ,[RecoveryKey]
+                    ,CASE
+                    WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup1, @CT_Queue1)
+                        then @SG_Voice_1
+                    WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup2, @CT_Queue2)
+                        then @SG_Voice_2
+                    WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup3, @CT_Queue3)
+                        then @SG_Voice_3
+                        else SkillGroupSkillTargetID
+                    end SkillGroupSkillTargetID
+                    ,
+                    (
+                        select count(*) FROM [${DB_HDS}].[dbo].[Termination_Call_Detail] as tcd
+                        where tcd.DateTime >= ${nameTable}.DateTime
+                        and tcd.CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")},@CT_Tranfer)
+                        AND tcd.AgentSkillTargetID is not null
+                        AND tcd.TalkTime > 0
+                        AND tcd.CallDisposition in (13, 28)
+                        AND tcd.ANI = ${nameTable}.ANI
+                    ) as inbound
+                    ,
+                    (
+                        select count(*) FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] as tcd
+                        where tcd.DateTime >= ${nameTable}.DateTime
+                        AND tcd.PeripheralCallType in (9,10) --9 gọi ra cho KH,10 gọi ra nội bộ
+                        AND tcd.CallDisposition in (14)
+                        AND tcd.CallDispositionFlag in (1)
+                        AND ${nameTable}.ANI = 
+                        case
+                            when 
+                            DATALENGTH(tcd.DigitsDialed) = 10
+                            then tcd.DigitsDialed  
+                            else
+                            SUBSTRING(tcd.DigitsDialed, 6, 11) 
+                        end 
+                    ) as outbound
+                    ,[ANI]
+                FROM ${nameTable}
+                    WHERE DateTime >= @startDate
+                    AND DateTime < @endDate
+                    AND rn = 1 --lấy cuộc gọi cuối cùng
+                    AND ${nameTable}.RecoveryKey not in (
+                        Select RecoveryKey FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD_handle
+                        where  DateTime >= @startDate
+                        AND DateTime < @endDate
+                        AND (
+                            -- loại các cuộc handle
+                            AgentSkillTargetID is not null
+                            AND t_TCD_handle.CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")},@CT_Tranfer)
+                            AND TalkTime > 0
+                            AND CallDisposition in (13,28)
+                        )
+                    )
+                ) TempTable ) TempTable2`;
+        case 3:
+            return `
+            SELECT count(*) as totalPage from (
+                SELECT TempTable.DateTime,TempTable.startTime,TempTable.ANI,TempTable.SkillGroupSkillTargetID,
+                    DIRECTION = 
+                    CASE
+                    WHEN TempTable.inbound >=1
+                        then 0 
+                    WHEN TempTable.outbound >=1
+                        then 0
+                    ELSE 1
+                    END 
+                FROM(
+                    SELECT
+                    [DateTime]
+                    ,[Duration]
+                    ,DATEADD(ss , -Duration, DateTime) AS startTime
+                    ,[DigitsDialed]
+                    ,[RecoveryKey]
+                    ,CASE
+                    WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup1, @CT_Queue1)
+                        then @SG_Voice_1
+                    WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup2, @CT_Queue2)
+                        then @SG_Voice_2
+                    WHEN SkillGroupSkillTargetID is null and CallTypeID in (@CT_ToAgentGroup3, @CT_Queue3)
+                        then @SG_Voice_3
+                        else SkillGroupSkillTargetID
+                    end SkillGroupSkillTargetID
+                    ,
+                    (
+                        select count(*) FROM [${DB_HDS}].[dbo].[Termination_Call_Detail] as tcd
+                        where tcd.DateTime >= ${nameTable}.DateTime
+                        and tcd.CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")},@CT_Tranfer)
+                        AND tcd.AgentSkillTargetID is not null
+                        AND tcd.TalkTime > 0
+                        AND tcd.CallDisposition in (13, 28)
+                        AND tcd.ANI = ${nameTable}.ANI
+                    ) as inbound
+                    ,
+                    (
+                        select count(*) FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] as tcd
+                        where tcd.DateTime >= ${nameTable}.DateTime
+                        AND tcd.PeripheralCallType in (9,10) --9 gọi ra cho KH,10 gọi ra nội bộ
+                        AND tcd.CallDisposition in (14)
+                        AND tcd.CallDispositionFlag in (1)
+                        AND ${nameTable}.ANI = 
+                        case
+                            when 
+                            DATALENGTH(tcd.DigitsDialed) = 10
+                            then tcd.DigitsDialed  
+                            else
+                            SUBSTRING(tcd.DigitsDialed, 6, 11) 
+                        end 
+                    ) as outbound
+                    ,[ANI]
+                FROM ${nameTable}
+                    WHERE DateTime >= @startDate
+                    AND DateTime < @endDate
+                    AND rn = 1 --lấy cuộc gọi cuối cùng
+                    AND ${nameTable}.RecoveryKey not in (
+                        Select RecoveryKey FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD_handle
+                        where  DateTime >= @startDate
+                        AND DateTime < @endDate
+                        AND (
+                            -- loại các cuộc handle
+                            AgentSkillTargetID is not null
+                            AND t_TCD_handle.CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")},@CT_Tranfer)
+                            AND TalkTime > 0
+                            AND CallDisposition in (13,28)
+                        )
+                    )
+                ) TempTable ) TempTable2`;
+    }
 }
 
