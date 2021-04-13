@@ -17,18 +17,18 @@ const { checkKeyValueExists } = require("../helpers/functions");
 exports.reportAutocallBroadcast = async (db, dbMssql, query, body) => {
   try {
     let { } = query;
-    let { startDate, endDate, SkillGroup, page, row, download, paging } = body;
+    let { startDate, endDate, SkillGroup, page, row, download, paging, campainId } = body;
     let _query = `USE tempdb
-    exec autocall_broadcast_sp '${startDate}', '${endDate}', ${SkillGroup}, ${page}`;
+    exec autocall_broadcast_sp '${startDate}', '${endDate}', ${SkillGroup}, ${page}, '${campainId || "#"}'`;
 
     if(paging == 0){
       _query = `USE tempdb
-      exec autocall_broadcast_total_sp '${startDate}', '${endDate}', ${SkillGroup}`;
+      exec autocall_broadcast_total_sp '${startDate}', '${endDate}', ${SkillGroup}, '${campainId  || "#"}'`;
     }
 
     if(download == 1){
       _query = `USE tempdb
-      exec autocall_broadcast_all_sp '${startDate}', '${endDate}', ${SkillGroup}`;
+      exec autocall_broadcast_all_sp '${startDate}', '${endDate}', ${SkillGroup}, '${campainId  || "#"}'`;
     }
     return await dbMssql.query(_query);
   } catch (error) {
