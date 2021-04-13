@@ -25,6 +25,11 @@ exports.reportAutocallBroadcast = async (db, dbMssql, query, body) => {
       _query = `USE tempdb
       exec autocall_broadcast_total_sp '${startDate}', '${endDate}', ${SkillGroup}`;
     }
+
+    if(download == 1){
+      _query = `USE tempdb
+      exec autocall_broadcast_all_sp '${startDate}', '${endDate}', ${SkillGroup}`;
+    }
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);
