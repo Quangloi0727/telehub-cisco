@@ -78,7 +78,7 @@ exports.agentsByCompany = async (dbMssql, query) => {
           LEFT JOIN [${DB_AWDB}].[dbo].[t_Agent_Team] agentTeamTable ON agentTable.[AgentDeskSettingsID] = agentTeamTable.[AgentTeamID] 
         WHERE
           skillGroupTable.[PeripheralName] LIKE '%${prefix}%'
-          AND skillGroupTable.[PeripheralNumber] = ${idSkillGroup}
+          AND skillGroupTable.[PeripheralNumber] IN (${idSkillGroup})
       `;
     } else {
       _query = `
