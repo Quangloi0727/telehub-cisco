@@ -70,7 +70,7 @@ exports.reportOutboundAgent = async (db, dbMssql, query) => {
       AND  aw_Agent_Team_Member.AgentTeamID = ${Agent_Team}
     WHERE DateTime >= @startDate
       AND DateTime < @endDate
-      AND PeripheralCallType in (9, 10)
+      AND PeripheralCallType in (9, 10, 33)
       AND AgentSkillTargetID is not null 
   `;
     _logger.log('info', `reportOutboundAgent ${_query}`);
@@ -128,7 +128,7 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
           ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
           AND Agent_Team.[AgentTeamID] = ${agentTeamId}
       WHERE
-        TCD_Table.[PeripheralCallType] IN (9, 10)
+        TCD_Table.[PeripheralCallType] IN (9, 10, 33)
         AND TCD_Table.[AgentSkillTargetID] IS NOT NULL
         -- AND Agent_Table.[PeripheralNumber] IS NOT NULL
         ${queryAgent}
@@ -185,7 +185,7 @@ exports.reportOutboundOverallProductivityByAgent = async (db, dbMssql, query) =>
       INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Agent_Team ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID] 
       AND Agent_Team.[AgentTeamID] IN ( ${agentTeamId} ) 
     WHERE
-      TCD_Table.[PeripheralCallType] IN ( 9, 10 ) 
+      TCD_Table.[PeripheralCallType] IN ( 9, 10, 33 ) 
       AND TCD_Table.[AgentSkillTargetID] IS NOT NULL 
       ${queryAgent} 
       ${queryStartDate}
@@ -254,7 +254,7 @@ exports.reportOutboundOverallProductivityDetail = async (db, dbMssql, query) => 
         INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Agent_Team ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID] 
         AND Agent_Team.[AgentTeamID] IN ( ${agentTeamId} ) 
       WHERE
-        TCD_Table.[PeripheralCallType] IN ( 9, 10 )
+        TCD_Table.[PeripheralCallType] IN ( 9, 10, 33 )
         AND TCD_Table.[AgentSkillTargetID] IS NOT NULL
         ${queryAgent}
         ${queryStartDate}
@@ -301,7 +301,7 @@ exports.countNumRowsTCD = async (db, dbMssql, query) => {
         INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Agent_Team ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID] 
         AND Agent_Team.[AgentTeamID] IN ( ${agentTeamId} ) 
       WHERE
-        TCD_Table.[PeripheralCallType] IN ( 9, 10 )
+        TCD_Table.[PeripheralCallType] IN ( 9, 10, 33 )
         AND TCD_Table.[AgentSkillTargetID] IS NOT NULL
         ${queryAgent}
         ${queryStartDate}
