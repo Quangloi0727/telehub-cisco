@@ -19,17 +19,17 @@ exports.reportAutocallBroadcast = async (db, dbMssql, query, body) => {
     let { } = query;
     let { startDate, endDate, SkillGroup, page, row, download, paging, campainId } = body;
     let _query = `USE tempdb
-    exec autocall_broadcast_sp '${startDate}', '${endDate}', ${SkillGroup}, ${page}, '${campainId || "#"}'`;
+    exec autocall_broadcast_sp '${startDate}', '${endDate}', ${page}, ${row}, '${campainId.join(',') || "#"}'`;
 
     if(paging == 0){
       _query = `USE tempdb
-      exec autocall_broadcast_total_sp '${startDate}', '${endDate}', ${SkillGroup}, '${campainId  || "#"}'`;
+      exec autocall_broadcast_total_sp '${startDate}', '${endDate}', '${campainId.join(',')  || "#"}'`;
     }
 
-    if(download == 1){
-      _query = `USE tempdb
-      exec autocall_broadcast_all_sp '${startDate}', '${endDate}', ${SkillGroup}, '${campainId  || "#"}'`;
-    }
+    // if(download == 1){
+    //   _query = `USE tempdb
+    //   exec dev_autocall_broadcast_all_sp '${startDate}', '${endDate}', '${campainId.join(',')  || "#"}'`;
+    // }
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);

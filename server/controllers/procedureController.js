@@ -39,10 +39,10 @@ async function reportAutocallBroadcast (req, res, next) {
     try {
         let db = req.app.locals.db;
         let dbMssql = req.app.locals.dbMssql;
-        let { startDate, endDate, SkillGroup } = req.body
+        let { startDate, endDate, campainId } = req.body
         // if (!req.query.Agent_Team)
         // return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
-        if (!startDate || !endDate || !SkillGroup)
+        if (!startDate || !endDate || !campainId || campainId.length == 0)
         return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
         const doc = await _model.reportAutocallBroadcast(db, dbMssql, req.query, req.body);
