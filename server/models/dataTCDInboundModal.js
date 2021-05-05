@@ -131,6 +131,7 @@ function selectCallDetailByCustomer(query, nameTable) {
                 FROM ${nameTable}
                     WHERE DateTime >= @startDate
                     AND DateTime < @endDate
+                    AND TalkTime >= ${+query.talkTime}
                     AND rn = 1 --lấy cuộc gọi cuối cùng
                     AND ${nameTable}.RecoveryKey not in (
                         Select RecoveryKey FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD_handle
@@ -140,7 +141,7 @@ function selectCallDetailByCustomer(query, nameTable) {
                             -- loại các cuộc handle
                             AgentSkillTargetID is not null
                             AND t_TCD_handle.CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")})
-                            AND TalkTime > ${+query.talkTime}
+                            AND TalkTime > 0
                             AND CallDisposition in (13,28)
                         )
                     )
@@ -165,6 +166,7 @@ function selectCallDetailByCustomer(query, nameTable) {
                 FROM ${nameTable}
                     WHERE DateTime >= @startDate
                     AND DateTime < @endDate
+                    AND TalkTime >= ${+query.talkTime}
                     AND rn = 1 --lấy cuộc gọi cuối cùng
                     AND ${nameTable}.RecoveryKey not in (
                         Select RecoveryKey FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] t_TCD_handle
@@ -174,7 +176,7 @@ function selectCallDetailByCustomer(query, nameTable) {
                             -- loại các cuộc handle
                             AgentSkillTargetID is not null
                             AND t_TCD_handle.CallTypeID in (${[...CT_ToAgent_Dynamic, ...CT_Queue_Dynamic].join(",")})
-                            AND TalkTime > ${+query.talkTime}
+                            AND TalkTime > 0
                             AND CallDisposition in (13,28)
                         )
                     )

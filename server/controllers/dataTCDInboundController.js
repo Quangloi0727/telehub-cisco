@@ -30,6 +30,9 @@ exports.dataTCDRecordAdvanced = async (req, res, next) => {
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
     if (!query.talkTime)
       return next(new ResError(ERR_400.code, 'Missing query talkTime!'), req, res, next);
+    if (!query.flag)
+      query.flag = 2;
+    // return next(new ResError(ERR_400.code, 'Missing query flag!'), req, res, next);
 
     /**
      * Check việc khởi tạo các CallType
