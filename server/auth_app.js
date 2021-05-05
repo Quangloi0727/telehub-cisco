@@ -92,6 +92,8 @@ function initServer(db, dbMssql) {
     app.use("/api/v1/survey", require("./routes/dialedNumberRoute"));
     app.use("/api/v1/", require("./routes/reportReasonDropCallRoute"));
     app.use("/api/v1/reportTCDoutbound", require("./routes/reportTCDOutbound"));
+    app.use("/api/v1/dataTCDInbound", require("./routes/dataTCDInboundRoute"));
+
 
     // api su dung query bang procedure
     app.use("/api/v1/procedure", require("./routes/procedureRoute"));
