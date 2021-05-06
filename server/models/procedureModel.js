@@ -21,15 +21,33 @@ exports.reportAutocallBroadcast = async (db, dbMssql, query, body) => {
     let _query = `USE tempdb
     exec autocall_broadcast_sp '${startDate}', '${endDate}', ${page}, ${row}, '${campainId.join(',') || "#"}'`;
 
-    if(paging == 0){
+    if (paging == 0) {
       _query = `USE tempdb
-      exec autocall_broadcast_total_sp '${startDate}', '${endDate}', '${campainId.join(',')  || "#"}'`;
+      exec autocall_broadcast_total_sp '${startDate}', '${endDate}', '${campainId.join(',') || "#"}'`;
     }
 
     // if(download == 1){
     //   _query = `USE tempdb
     //   exec dev_autocall_broadcast_all_sp '${startDate}', '${endDate}', '${campainId.join(',')  || "#"}'`;
     // }
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+exports.reportAutocallSurvey = async (db, dbMssql, query, body) => {
+  try {
+    let { } = query;
+    let { startDate, endDate, SkillGroup, page, row, download, paging, campainId } = body;
+    let _query = `USE tempdb
+    exec autocall_callsurvey_sp '${startDate}', '${endDate}', ${page}, ${row}, '${campainId.join(',') || "#"}'`;
+
+    if (paging == 0) {
+      _query = `USE tempdb
+      exec autocall_survey_total_sp '${startDate}', '${endDate}', '${campainId.join(',') || "#"}'`;
+    }
+
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);
