@@ -13,7 +13,7 @@
     }
   },
   "cisco-gateway": {
-    "url": "http://localhost:4343",
+    "url": "http://172.16.86.170:4343",
     "pathReportMonth2Date": "/api/v1/ivr-histories/report-month-2-Date",
     "customerReviews": "/api/v1/customer-reviews",
     "reportAutocallSurvey": "/api/v1/report-autocall-survey",
