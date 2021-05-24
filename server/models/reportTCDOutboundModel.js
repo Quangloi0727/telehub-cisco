@@ -320,3 +320,59 @@ exports.countNumRowsTCD = async (db, dbMssql, query) => {
   }
 }
 
+exports.reportOutboundByTime = async (db, dbMssql, query) => {
+  try {
+    let {
+      startDate,
+      endDate,
+      agentId,
+      agentTeamId,
+    } = query;
+
+    let queryAgent = '';
+    let queryStartDate = '';
+    let queryEndDate = '';
+
+    if (startDate) queryStartDate = `AND TCD_Table.[DateTime] >= '${startDate}'`;
+    if (endDate) queryEndDate = `AND TCD_Table.[DateTime] <= '${endDate}'`;
+    if (agentId) queryAgent = `AND Agent_Table.[PeripheralNumber] IN ( ${agentId} )`;
+
+    let _queryData = `
+      SELECT
+      FORMAT (TCD_Table.[DateTime], 'MM/yyyy') AS createDate,
+      SUM ( 1 ) AS totalCall,
+      SUM ( TCD_Table.[Duration] ) AS totalCallTime,
+      AVG ( TCD_Table.[Duration] ) AS avgCallTime,
+      SUM ( CASE WHEN TCD_Table.[TalkTime] > 0 THEN 1 ELSE 0 END ) AS totalCallConnect,
+      SUM ( TCD_Table.[DelayTime] ) AS totalWaitTime,
+      SUM ( TCD_Table.[TalkTime] ) AS totalTalkTime,
+      AVG ( TCD_Table.[TalkTime] ) AS avgTalkTime 
+    FROM
+      [${DB_HDS}].[dbo].[t_Termination_Call_Detail] TCD_Table
+      LEFT JOIN [${DB_AWDB}].[dbo].[t_Agent] Agent_Table ON Agent_Table.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
+      LEFT JOIN [${DB_AWDB}].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID]
+      INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Agent_Team ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID] 
+      AND Agent_Team.[AgentTeamID] IN ( ${agentTeamId} ) 
+    WHERE
+      TCD_Table.[PeripheralCallType] IN ( 9, 10, 33 ) 
+      AND TCD_Table.[AgentSkillTargetID] IS NOT NULL 
+      ${queryAgent} 
+      ${queryStartDate}
+      ${queryEndDate}
+    GROUP BY
+    FORMAT (TCD_Table.[DateTime], 'MM/yyyy')
+    ORDER BY createDate ASC
+    `;
+
+    console.log(`------- _queryData ------- query reportOutboundByTime`);
+    console.log(_queryData);
+    console.log(`------- _queryData ------- query reportOutboundByTime`);
+
+    let queryResult = await dbMssql.query(_queryData);
+
+    return queryResult;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
