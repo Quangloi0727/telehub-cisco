@@ -5,19 +5,19 @@ exports.reportLoginLogout = async (db, dbMssql, body) => {
 
     if (type == 'total') {
       _query = `
-        USE tempdb exec dev_report_login_logout_total ${startTime}, ${endTime}, ${agentTeams}, ${agents}
+        USE tempdb exec dev_report_login_logout_total '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'
       `;
     }
 
     if (type == 'by-day') {
       _query = `
-        USE tempdb exec dev_report_login_logout_per_day ${startTime}, ${endTime}, ${agentTeams}, ${agents}
+        USE tempdb exec dev_report_login_logout_per_day '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'
       `;
     }
 
-    _logger.log(`-------  ------- `);
-    _logger.log(_query);
-    _logger.log(`-------  ------- `);
+    console.info(`------- _query ------- reportLoginLogout`);
+    console.info(_query);
+    console.info(`------- _query ------- reportLoginLogout`);
 
     return await dbMssql.query(_query);
   } catch (error) {

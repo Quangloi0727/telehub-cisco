@@ -13,15 +13,13 @@ exports.reportLoginLogout = async (req, res, next) => {
 
     if (!type) throw new Error('Thiếu trường type');
 
-    if (!agents) throw new Error('Thiếu trường agents');
-
     if (!agentTeams) throw new Error('Thiếu trường agentTeams');
 
     const dataResult = await _model.reportLoginLogout(db, dbMssql, req.query);
 
     if (!dataResult) throw new Error('Not Found');
 
-    return res.status(SUCCESS_200.code).json({ data: dataResult });
+    return res.status(SUCCESS_200.code).json({ data: dataResult.recordset });
   } catch (error) {
     return next(new ResError(ERR_500.code, error.message ? error.message : error), req, res, next);
   }
