@@ -26,7 +26,7 @@ exports.reportRequestRecall = async (req, res, next) => {
         let dbMssql = req.app.locals.dbMssql;
         let query = req.query;
 
-        if (!query.startDate || !query.endDate || !query.CT_IVR)
+        if (!query.startDate || !query.endDate || !query.CT_IVR || !query.Agent_Team || query.flag == undefined)
             return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
         /**

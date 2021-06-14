@@ -10,56 +10,30 @@ const {
 
 exports.lastTCDRecord = async (db, dbMssql, query) => {
     try {
-        let { pages, rows, queue, status } = query
-        let querySelect = "";
-        let queryPage = "";
-        let queryQueue = "";
-        let queryStatus = "";
-        let CT_Dynamic = [];
-        const nameTableTCDLast = `t_TCD_last`;
+        let { pages, rows, queue, status, flag, CT_IVR, CT_Tranfer, startDate, endDate, Agent_Team } = query;
 
-        if (queue) {
-            queryQueue += `Where TempTable2.SkillGroupSkillTargetID IN (${queue})`
-        }
-        if (status) {
-            if (queryQueue != "") {
-                queryStatus += `AND TempTable2.DIRECTION IN (${status})`
-            } else {
-                queryStatus += `WHERE TempTable2.DIRECTION IN (${status})`
-            }
-        }
+        let _query = '';
+        let g_CallType = []; // group CallType
+        let g_SkillGroup = []; // group SkillGroup
 
-        querySelect = `${selectCallDetailByCustomer(
-            query,
-            nameTableTCDLast,
-        )}`;
-        if (rows) {
-            queryPage = `
-                OFFSET ${(pages - 1) * rows} ROWS FETCH NEXT ${rows} ROWS ONLY
-            `;
-        }
         Object.keys(query).forEach((item) => {
-            const element = query[item];
-            if (item.includes("CT")) {
-                CT_Dynamic.push(`@${item}`);
+
+            if (item.includes("SG_Voice_")) {
+                let groupNumber = item.replace("SG_Voice_", "");
+                g_CallType.push(`${query[`CT_ToAgentGroup${groupNumber}`]},${query[`CT_Queue${groupNumber}`]}`);
+                g_SkillGroup.push(`${query[item]}`);
             }
         });
 
-        let _query = `
-        ${variableSQLDynamic(query)}
-        WITH ${nameTableTCDLast} AS (
-            SELECT ROW_NUMBER() OVER (PARTITION BY  RouterCallKeyDay, RouterCallKey ORDER BY RouterCallKeySequenceNumber DESC, RecoveryKey DESC) AS rn
-            ,*
-            FROM [${DB_HDS}].[dbo].[t_Termination_Call_Detail] as m
-            where DateTime >= @startDate
-            AND DateTime < @endDate
-            AND CallTypeID in (${CT_Dynamic.join(",")})
-        )
-        ${querySelect}
-        ${queryQueue}
-        ${queryStatus}
-        ${parseInt(query.flag) != 3 ? "ORDER BY TempTable2.DateTime DESC" : ""}
-        ${queryPage}`;
+        if(flag == 2) {
+            _query = `USE tempdb
+            exec report_request_recall_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}', '${Agent_Team}' , '${queue || "#"}', '${status || "#"}'
+            `;
+        }else if(flag == 3){
+            _query = `USE tempdb
+            exec report_request_recall_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR},  ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}', '${Agent_Team}' , '${queue || "#"}', '${status || "#"}'
+            `;
+        }
 
         _logger.log("info", `lastTCDRecord ${_query}`);
         let resultQuery = await dbMssql.query(_query);
