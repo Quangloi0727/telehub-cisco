@@ -93,6 +93,7 @@ function initServer(db, dbMssql) {
     app.use("/api/v1/", require("./routes/reportReasonDropCallRoute"));
     app.use("/api/v1/reportTCDoutbound", require("./routes/reportTCDOutbound"));
     app.use("/api/v1/dataTCDInbound", require("./routes/dataTCDInboundRoute"));
+    app.use("/api/v1", require("./routes/reportLoginLogout"));
 
 
     // api su dung query bang procedure
