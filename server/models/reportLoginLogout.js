@@ -17,7 +17,7 @@ exports.reportLoginLogout = async (db, dbMssql, body) => {
 
     if (type == 'by-time') {
       _query = `
-        USE tempdb exec dev_report_login_logout_per_time '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'
+        USE tempdb exec report_login_logout_per_time_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'
       `;
     }
 
