@@ -10,6 +10,10 @@ router
     .route('/report-autocall-survey')
     .post(_controller.reportAutocallSurvey);
 
+router
+    .route('/report-inbound-impact-by-agent')
+    .get(_controller.reportInboundImpactByAgent);
+
 
 module.exports = router;
 
