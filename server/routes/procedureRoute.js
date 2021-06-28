@@ -14,6 +14,10 @@ router
     .route('/report-inbound-impact-by-agent')
     .get(_controller.reportInboundImpactByAgent);
 
+router
+    .route('/report-call-by-customer-kh01')
+    .get(_controller.reportCallByCustomerKH01);
+
 
 module.exports = router;
 
