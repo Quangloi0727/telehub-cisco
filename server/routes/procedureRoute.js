@@ -18,6 +18,10 @@ router
     .route('/report-call-by-customer-kh01')
     .get(_controller.reportCallByCustomerKH01);
 
+router
+    .route('/report-detail-statistical-status-end-call')
+    .get(_controller.reportDetailStatisticalStatusEndCall);
+
 
 module.exports = router;
 

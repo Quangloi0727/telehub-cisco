@@ -115,3 +115,35 @@ exports.reportCallByCustomerKH01 = async (db, dbMssql, query, body) => {
     throw new Error(error);
   }
 };
+
+
+exports.reportDetailStatisticalStatusEndCall = async (db, dbMssql, query, body) => {
+  try {
+    let { pages, rows, queue, CT_IVR, CT_Tranfer, startDate, endDate, statusEndCall, idAgentCisco, agentTeam, flag } = query;
+    let _query = '';
+    let g_CallType = []; // group CallType
+    let g_SkillGroup = []; // group SkillGroup
+
+    Object.keys(query).forEach((item) => {
+      if (item.includes("SG_Voice_")) {
+        let groupNumber = item.replace("SG_Voice_", "");
+        g_CallType.push(`${query[`CT_ToAgentGroup${groupNumber}`]},${query[`CT_Queue${groupNumber}`]}`);
+        g_SkillGroup.push(`${query[item]}`);
+      }
+    });
+
+    _query = `USE tempdb exec report_detail_statistical_status_end_call_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${statusEndCall || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}'`;
+
+    if (flag && flag == "1") {
+      _query = `USE tempdb exec report_detail_statistical_status_end_call_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${statusEndCall || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}'`;
+    }
+
+    _logger.log("info", `reportDetailStatisticalStatusEndCall ${_query}`);
+
+    let resultQuery = await dbMssql.query(_query);
+
+    return resultQuery;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
