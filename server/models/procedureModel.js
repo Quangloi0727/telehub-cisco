@@ -147,3 +147,35 @@ exports.reportDetailStatisticalStatusEndCall = async (db, dbMssql, query, body) 
     throw new Error(error);
   }
 };
+
+
+exports.reportInboundMisscallAndConnectedByAgent = async (db, dbMssql, query, body) => {
+  try {
+    let { pages, rows, queue, CT_IVR, CT_Tranfer, startDate, endDate, typeCall, ANI, flag } = query;
+    let _query = '';
+    let g_CallType = []; // group CallType
+    let g_SkillGroup = []; // group SkillGroup
+
+    Object.keys(query).forEach((item) => {
+      if (item.includes("SG_Voice_")) {
+        let groupNumber = item.replace("SG_Voice_", "");
+        g_CallType.push(`${query[`CT_ToAgentGroup${groupNumber}`]},${query[`CT_Queue${groupNumber}`]}`);
+        g_SkillGroup.push(`${query[item]}`);
+      }
+    });
+
+    _query = `USE tempdb exec report_inbound_misscall_and_connected_by_agent_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${typeCall || "#"}','${ANI || "#"}'`;
+
+    if (flag && flag == "1") {
+      _query = `USE tempdb exec report_inbound_misscall_and_connected_by_agent_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${typeCall || "#"}','${ANI || "#"}'`;
+    }
+
+    _logger.log("info", `reportInboundMisscallAndConnectedByAgent ${_query}`);
+
+    let resultQuery = await dbMssql.query(_query);
+
+    return resultQuery;
+  } catch (error) {
+    throw new Error(error);
+  }
+};

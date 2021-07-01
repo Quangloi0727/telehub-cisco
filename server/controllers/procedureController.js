@@ -38,6 +38,7 @@ exports.reportAutocallSurvey = reportAutocallSurvey;
 exports.reportInboundImpactByAgent = reportInboundImpactByAgent;
 exports.reportCallByCustomerKH01 = reportCallByCustomerKH01;
 exports.reportDetailStatisticalStatusEndCall = reportDetailStatisticalStatusEndCall;
+exports.reportInboundMisscallAndConnectedByAgent = reportInboundMisscallAndConnectedByAgent;
 
 async function reportAutocallBroadcast(req, res, next) {
     try {
@@ -184,6 +185,29 @@ async function reportDetailStatisticalStatusEndCall(req, res, next) {
             return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
         const doc = await _model.reportDetailStatisticalStatusEndCall(db, dbMssql, req.query, req.body);
+
+        if (!doc) {
+            return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+        } else {
+            res
+                .status(SUCCESS_200.code)
+                .json({ data: doc, pageCurrent: req.query.pages });
+        }
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function reportInboundMisscallAndConnectedByAgent(req, res, next) {
+    try {
+        let db = req.app.locals.db;
+        let dbMssql = req.app.locals.dbMssql;
+        let { startDate, endDate } = req.query;
+
+        if (!startDate || !endDate)
+            return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+        const doc = await _model.reportInboundMisscallAndConnectedByAgent(db, dbMssql, req.query, req.body);
 
         if (!doc) {
             return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);

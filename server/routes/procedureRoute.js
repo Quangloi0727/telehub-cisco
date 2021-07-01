@@ -22,6 +22,10 @@ router
     .route('/report-detail-statistical-status-end-call')
     .get(_controller.reportDetailStatisticalStatusEndCall);
 
+router
+    .route('/report-inbound-misscall-and-connected-by-agent')
+    .get(_controller.reportInboundMisscallAndConnectedByAgent);
+
 
 module.exports = router;
 
