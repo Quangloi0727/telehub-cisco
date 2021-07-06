@@ -26,6 +26,10 @@ router
     .route('/report-inbound-misscall-and-connected-by-agent')
     .get(_controller.reportInboundMisscallAndConnectedByAgent);
 
+router
+    .route('/report-inbound-by-agent')
+    .get(_controller.reportInboundByAgent);
+
 
 module.exports = router;
 
