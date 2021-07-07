@@ -54,6 +54,24 @@ exports.reportAutocallSurvey = async (db, dbMssql, query, body) => {
   }
 };
 
+exports.reportAutocallSurvey2 = async (db, dbMssql, query, body) => {
+  try {
+    let { } = query;
+    let { startDate, endDate, SkillGroup, page, row, download, paging, campainId } = body;
+    let _query = `USE tempdb
+    exec autocall_callsurvey2_sp '${startDate}', '${endDate}', ${page}, ${row}, '${campainId.join(',') || "#"}'`;
+
+    if (paging == 0) {
+      _query = `USE tempdb
+      exec autocall_survey2_total_sp '${startDate}', '${endDate}', '${campainId.join(',') || "#"}'`;
+    }
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
 exports.reportInboundImpactByAgent = async (db, dbMssql, query, body) => {
   try {
     let { pages, rows, queue, CT_IVR, CT_Tranfer, startDate, endDate, ANI, idAgentCisco, agentTeam, flag } = query;

@@ -17,6 +17,7 @@
     "pathReportMonth2Date": "/api/v1/ivr-histories/report-month-2-Date",
     "customerReviews": "/api/v1/customer-reviews",
     "reportAutocallSurvey": "/api/v1/report-autocall-survey",
+    "reportAutocallSurvey2": "/api/v1/report-autocall-survey2",
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJhcGkiLCJwd2QiOiJBUEllckAxMjMifQ.zbcraPNh7IvmAFX0D2dBjVfRB_vRzkAJA6P3BU3dh2E"
   }
 }

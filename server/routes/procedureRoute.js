@@ -11,6 +11,10 @@ router
     .post(_controller.reportAutocallSurvey);
 
 router
+    .route('/report-autocall-survey2')
+    .post(_controller.reportAutocallSurvey2);
+
+router
     .route('/report-inbound-impact-by-agent')
     .get(_controller.reportInboundImpactByAgent);
 
