@@ -146,9 +146,13 @@ async function reportAutocallSurvey2(req, res, next) {
         } else {
             //get data from cisco gateway
             let { url, reportAutocallSurvey2, token } = _config["cisco-gateway"];
-            
-            let RouterCallKeyDay = _.pluck(doc.recordset, 'RouterCallKeyDay')
+
+            //let RouterCallKeyDay = _.pluck(doc.recordset, 'RouterCallKeyDay')
             let RouterCallKey = _.pluck(doc.recordset, 'RouterCallKey')
+            RouterCallKey = RouterCallKey.map(i => i != null ? i.toString() : '');
+            let filtered = RouterCallKey.filter(function (el) {
+                return el != null && el != "";
+            });
 
             const options = {
                 method: "post",
@@ -156,8 +160,8 @@ async function reportAutocallSurvey2(req, res, next) {
                     startDate: startDate,
                     endDate: endDate,
                     ternalID: autoCallSurvey2,
-                    RouterCallKeyDay: RouterCallKeyDay,
-                    RouterCallKey, RouterCallKey
+                    //RouterCallKeyDay: RouterCallKeyDay,
+                    RouterCallKey: filtered
                 }),
                 headers: {
                     "Content-Type": "application/json",
