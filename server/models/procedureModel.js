@@ -229,3 +229,19 @@ exports.reportInboundByAgent = async (db, dbMssql, query, body) => {
     throw new Error(error);
   }
 };
+
+exports.reportStatisticalOutbound = async (db, dbMssql, query, body) => {
+  try {
+    let { startDate, endDate, Agent_Team } = query;
+
+    let _query = `USE tempdb exec report_statistical_outbound_total_sp '${startDate}', '${endDate}','${Agent_Team}'`;
+
+    _logger.log("info", `reportStatisticalOutbound ${_query}`);
+
+    let resultQuery = await dbMssql.query(_query);
+
+    return resultQuery;
+  } catch (error) {
+    throw new Error(error);
+  }
+};

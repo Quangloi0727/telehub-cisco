@@ -34,6 +34,10 @@ router
     .route('/report-inbound-by-agent')
     .get(_controller.reportInboundByAgent);
 
+router
+    .route('/report-statistical-outbound')
+    .get(_controller.reportStatisticalOutbound);
+
 
 module.exports = router;
 
