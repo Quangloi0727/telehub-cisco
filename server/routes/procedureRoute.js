@@ -34,6 +34,10 @@ router
     .route('/report-inbound-by-agent')
     .get(_controller.reportInboundByAgent);
 
+router
+    .route('/statistic-inbound-by-day')
+    .get(_controller.statisticInboundByDay);
+
 
 module.exports = router;
 
