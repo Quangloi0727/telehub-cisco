@@ -100,9 +100,13 @@ async function agentTeam (db, dbMssql, query) {
 			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${getState['Meeting'].text}'  THEN ${getState['Meeting'].num}
       ELSE ${getState['Other'].num} END
      ,Agent_Real_Time.DateTime
-     ,LastStateChange = DATEDIFF(ss, Agent_Real_Time.DateTimeLastStateChange, CASE WHEN (DATEDIFF(ss, Agent_Real_Time.DateTimeLastStateChange, (SELECT NowTime from Controller_Time (nolock) )) < = 0 ) 
-                              THEN Agent_Real_Time.DateTimeLastStateChange 
-                              ELSE(SELECT NowTime FROM Controller_Time (nolock) ) END)
+     ,LastStateChange = 
+     DATEDIFF(ss, 
+      Agent_Real_Time.DateTimeLastStateChange,
+      CASE WHEN 
+      (DATEDIFF(ss, Agent_Real_Time.DateTimeLastStateChange, (SELECT NowTime from [${DB_AWDB}].[dbo].Controller_Time (nolock) )) < = 0 ) 
+      THEN Agent_Real_Time.DateTimeLastStateChange 
+                              ELSE(SELECT NowTime FROM [${DB_AWDB}].[dbo].Controller_Time (nolock) ) END)
      ,AgentTeam = Agent_Team.EnterpriseName
      ,AgentTeamID = Agent_Team.AgentTeamID
      
