@@ -102,6 +102,41 @@ const WEIGHT_STATE_2 = {
     }
 };
 
+const WEIGHT_STATE_DEFAULT = {
+    Ready: {
+        num: 4,
+        text: 'Ready',
+    },
+    Talking: {
+        num: 2,
+        text: 'Talking',
+    },
+    "Not Ready": {
+        num: 1,
+        text: 'Not Ready',
+    },
+    "AtLunch": {
+        num: 5,
+        text: 'AtLunch',
+    },
+    "Meeting": {
+        num: 6,
+        text: 'Meeting',
+    },
+    "NoAvailable": {
+        num: 7,
+        text: 'NoAvailable',
+    },
+    "NoACD": {
+        num: 3,
+        text: 'NoACD',
+    },
+    "Other": {
+        num: 9999,
+        text: 'Other',
+    }
+};
+
 module.exports = {
     SORT: {
         BY_DEFAULT: 'count',
@@ -111,5 +146,6 @@ module.exports = {
     TYPE_DESC,
     WEIGHT_TEAM,
     WEIGHT_STATE,
-    WEIGHT_STATE_2
+    WEIGHT_STATE_2,
+    WEIGHT_STATE_DEFAULT
 }

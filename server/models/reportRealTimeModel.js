@@ -4,7 +4,7 @@ const ObjectID = require("mongodb").ObjectID;
  */
 const { DB_HOST, PORT, IP_PUBLIC, DB_HDS, DB_AWDB, DB_RECORDING } = process.env;
 
-const { FIELD_AGENT, WEIGHT_STATE, WEIGHT_STATE_2, WEIGHT_TEAM, CALL_DIRECTION } = require("../helpers/constants");
+const { FIELD_AGENT, WEIGHT_STATE, WEIGHT_STATE_2, WEIGHT_TEAM, WEIGHT_STATE_DEFAULT, CALL_DIRECTION } = require("../helpers/constants");
 const { checkKeyValueExists, variableSQL } = require("../helpers/functions");
 
 
@@ -56,7 +56,10 @@ async function agentTeam (db, dbMssql, query) {
     let { Agent_Team, requirement } = query;
     let getState = WEIGHT_STATE;
 
+    // kplus: monitor-realtime-kplus
     if(requirement && requirement > 1) getState = WEIGHT_STATE_2;
+    // MBB: monitor-realtime
+    if(requirement && requirement > 2) getState = WEIGHT_STATE_DEFAULT;
     
     let _query = `
     /****** Script for SelectTopNRows command from SSMS  ******/
