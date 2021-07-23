@@ -101,6 +101,7 @@ async function agentTeam (db, dbMssql, query) {
 			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${getState['Not Ready'].text}'  THEN ${getState['Not Ready'].num}
 			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${getState['AtLunch'].text}'  THEN ${getState['AtLunch'].num}
 			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${getState['Meeting'].text}'  THEN ${getState['Meeting'].num}
+      WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${getState['NoACD'].text}'  THEN ${getState['NoACD'].num}
       ELSE ${getState['Other'].num} END
      ,Agent_Real_Time.DateTime
      ,LastStateChange = 
