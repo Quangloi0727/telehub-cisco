@@ -37,6 +37,9 @@ router
 router
     .route('/report-statistical-outbound')
     .get(_controller.reportStatisticalOutbound);
+    
+router.route('/statistic-inbound-by-day')
+    .get(_controller.statisticInboundByDay);
 
 
 module.exports = router;
