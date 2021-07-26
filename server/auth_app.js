@@ -98,6 +98,8 @@ function initServer(db, dbMssql) {
 
     // api su dung query bang procedure
     app.use("/api/v1/procedure", require("./routes/procedureRoute"));
+    // báo cáo tổng hợp
+    app.use("/api/v1/statistic", require("./routes/statisticRoute"));
 
     app.use("/api/v1/exceldemo", require("./routes/excelDemoRoute"));
 
