@@ -26,11 +26,14 @@ function initServer(db, dbMssql) {
     app.locals.db = db;
     app.locals.dbMssql = dbMssql;
 
-    // for parsing application/x-www-form-urlencoded
-    app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
-    // app.use(express.bodyParser({limit: '50mb'}));
-    // for parsing application/json
-    app.use(bodyParser.json());
+    // // for parsing application/x-www-form-urlencoded
+    // app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+    // // app.use(express.bodyParser({limit: '50mb'}));
+    // // for parsing application/json
+    // app.use(bodyParser.json());
+
+    app.use(bodyParser.json({ limit: '200mb' }));
+    app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
 
     // for parsing multipart/form-data
 
@@ -83,10 +86,18 @@ function initServer(db, dbMssql) {
     app.use("/api/v1/reportTCDGroupby", require("./routes/reportTCDGroupbyRoute"));
     app.use("/api/v1/reportCustomize", require("./routes/reportCustomizeRoute"));
     app.use("/api/v1/callDetail", require("./routes/callDetailRoute"));
+    app.use("/api/v1/", require("./routes/reportRequestRecallRoute"));
     app.use("/api/v1/reportRealTime", require("./routes/reportRealTimeRoute"));
     app.use("/api/v1/reasonCode", require("./routes/reasonCodeRoute"));
     app.use("/api/v1/survey", require("./routes/dialedNumberRoute"));
+    app.use("/api/v1/", require("./routes/reportReasonDropCallRoute"));
     app.use("/api/v1/reportTCDoutbound", require("./routes/reportTCDOutbound"));
+    app.use("/api/v1/dataTCDInbound", require("./routes/dataTCDInboundRoute"));
+    app.use("/api/v1", require("./routes/reportLoginLogout"));
+
+
+    // api su dung query bang procedure
+    app.use("/api/v1/procedure", require("./routes/procedureRoute"));
 
     app.use("/api/v1/exceldemo", require("./routes/excelDemoRoute"));
 

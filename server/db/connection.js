@@ -37,6 +37,7 @@ let initMssqlDB = async () => {
       password,
       server,
       database,
+      requestTimeout: 180000, //thời gian default cho 1 lần query mặc định là 15s,nếu quá sẽ báo timeout giờ chỉnh lên là 3 phút
       "options": {
         "enableArithAbort": false, // ko hiểu, chỉ là thêm vào config mssql cho ko báo warning khi running
       }

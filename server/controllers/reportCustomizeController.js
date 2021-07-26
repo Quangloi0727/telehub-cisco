@@ -839,16 +839,17 @@ function mappingIncomingCallTrends(data, query) {
       reduceTemp.MaxNumSimultaneousCall = maxInMinuteTime;
       result.push(reduceTemp);
 
-      rowTotal.Inbound += reduceTemp.Inbound;
-      rowTotal.StopIVR += reduceTemp.StopIVR;
-      rowTotal.ReceivedCall += reduceTemp.ReceivedCall;
-      rowTotal.ServedCall += reduceTemp.ServedCall;
-      rowTotal.MissCall += reduceTemp.MissCall;
-      rowTotal.AbdCall += reduceTemp.AbdCall;
-      rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
-      rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
-      rowTotal.totalWaitTimeQueue += reduceTemp.totalWaitTimeQueue;
-      rowTotal.totalDuarationHandling += reduceTemp.totalDuarationHandling;
+      rowTotal.Inbound += reduceTemp.Inbound; // kplus
+      rowTotal.StopIVR += reduceTemp.StopIVR; // kplus
+      rowTotal.ReceivedCall += reduceTemp.ReceivedCall; // kplus
+      rowTotal.ServedCall += reduceTemp.ServedCall; // kplus
+      rowTotal.MissCall += reduceTemp.MissCall; // kplus
+      rowTotal.AbdCall += reduceTemp.AbdCall; // kplus
+      rowTotal.AbdIn15s += reduceTemp.AbdIn15s; // kplus
+      rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s; // kplus
+      rowTotal.totalWaitTimeQueue += reduceTemp.totalWaitTimeQueue; // kplus
+      rowTotal.totalDuarationHandling += reduceTemp.totalDuarationHandling; // kplus
+      rowTotal.missQueue += reduceTemp.missQueue; // dashboad MBB
       // rowTotal.MaxNumSimultaneousCall =
     });
 
@@ -960,6 +961,11 @@ function handleReduceFunc(pre, cur) {
     cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.CustomerEndRinging)
     || (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other)) // && cur.CallDisposition == 1 =1 Lỗi mạng
   ) {
+
+    if(cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue)) {
+      pre.missQueue++; // dash board MBB
+    }
+    
     if (waitTimeQueue <= 15) {
       pre.AbdIn15s++;
     }
@@ -984,8 +990,10 @@ function initDataRow(name, Inbound) {
     MissCall: 0,
     Aband: 0,
     AbdCall: 0,
-    AbdIn15s: 0,
-    AbdAfter15s: 0,
+    AbdIn15s: 0, // kplus
+    AbdAfter15s: 0, // kplus
+    missCustomerEndRinging: 0, // MBB dash board, ko dung nữa do MBB có auto call
+    missQueue: 0, // MBB dash board
     Efficiency: 0,
     totalDuarationHandling: 0,
     MaxNumSimultaneousCall: 0,
@@ -1061,16 +1069,17 @@ function mappingACDSummary(data, query) {
     reduceTemp.MaxNumSimultaneousCall = maxInMinuteTime;
     result.push(reduceTemp);
 
-    rowTotal.Inbound += reduceTemp.Inbound;
-    rowTotal.StopIVR += reduceTemp.StopIVR;
-    rowTotal.ReceivedCall += reduceTemp.ReceivedCall;
-    rowTotal.ServedCall += reduceTemp.ServedCall;
-    rowTotal.MissCall += reduceTemp.MissCall;
-    rowTotal.AbdCall += reduceTemp.AbdCall;
-    rowTotal.AbdIn15s += reduceTemp.AbdIn15s;
-    rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s;
-    rowTotal.totalWaitTimeQueue += reduceTemp.totalWaitTimeQueue;
-    rowTotal.totalDuarationHandling += reduceTemp.totalDuarationHandling;
+    rowTotal.Inbound += reduceTemp.Inbound; // kplus
+    rowTotal.StopIVR += reduceTemp.StopIVR; // kplus
+    rowTotal.ReceivedCall += reduceTemp.ReceivedCall; // kplus
+    rowTotal.ServedCall += reduceTemp.ServedCall; // kplus
+    rowTotal.MissCall += reduceTemp.MissCall; // kplus
+    rowTotal.AbdCall += reduceTemp.AbdCall; // kplus
+    rowTotal.AbdIn15s += reduceTemp.AbdIn15s; // kplus
+    rowTotal.AbdAfter15s += reduceTemp.AbdAfter15s; // kplus
+    rowTotal.totalWaitTimeQueue += reduceTemp.totalWaitTimeQueue; // kplus
+    rowTotal.totalDuarationHandling += reduceTemp.totalDuarationHandling; // kplus
+    rowTotal.missQueue += reduceTemp.missQueue; // doadborad MBBANK
   });
 
   data.recordset = result;

@@ -4,7 +4,7 @@ const ObjectID = require("mongodb").ObjectID;
  */
 const { DB_HOST, PORT, IP_PUBLIC, DB_HDS, DB_AWDB, DB_RECORDING } = process.env;
 
-const { FIELD_AGENT, WEIGHT_STATE, WEIGHT_TEAM, CALL_DIRECTION } = require("../helpers/constants");
+const { FIELD_AGENT, WEIGHT_STATE, WEIGHT_STATE_2, WEIGHT_TEAM, WEIGHT_STATE_DEFAULT, CALL_DIRECTION } = require("../helpers/constants");
 const { checkKeyValueExists, variableSQL } = require("../helpers/functions");
 
 
@@ -53,8 +53,14 @@ exports.getStatusAgent = async (db, dbMssql, body) => {
 
 async function agentTeam (db, dbMssql, query) {
   try {
-    let { Agent_Team } = query;
+    let { Agent_Team, requirement } = query;
+    let getState = WEIGHT_STATE;
 
+    // kplus: monitor-realtime-kplus
+    if(requirement && requirement > 1) getState = WEIGHT_STATE_2;
+    // MBB: monitor-realtime
+    if(requirement && requirement > 2) getState = WEIGHT_STATE_DEFAULT;
+    
     let _query = `
     /****** Script for SelectTopNRows command from SSMS  ******/
      SELECT
@@ -89,17 +95,22 @@ async function agentTeam (db, dbMssql, query) {
       ,Direction = Agent_Real_Time.Direction
       ,WeightTeam = ${genWeightCondition(WEIGHT_TEAM)}
       ,WeightState = CASE
-			WHEN Agent_Real_Time.AgentState = 3   THEN ${WEIGHT_STATE.Ready.num}
-			WHEN Agent_Real_Time.AgentState = 4   THEN ${WEIGHT_STATE.Talking.num}
-			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText is NULL  THEN ${WEIGHT_STATE['Not Ready'].num}
-			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${WEIGHT_STATE['Not Ready'].text}'  THEN ${WEIGHT_STATE['Not Ready'].num}
-			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${WEIGHT_STATE['AtLunch'].text}'  THEN ${WEIGHT_STATE['AtLunch'].num}
-			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${WEIGHT_STATE['Meeting'].text}'  THEN ${WEIGHT_STATE['Meeting'].num}
-      ELSE ${WEIGHT_STATE['Other'].num} END
+			WHEN Agent_Real_Time.AgentState = 3   THEN ${getState.Ready.num}
+			WHEN Agent_Real_Time.AgentState = 4   THEN ${getState.Talking.num}
+			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText is NULL  THEN ${getState['Not Ready'].num}
+			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${getState['Not Ready'].text}'  THEN ${getState['Not Ready'].num}
+			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${getState['AtLunch'].text}'  THEN ${getState['AtLunch'].num}
+			WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${getState['Meeting'].text}'  THEN ${getState['Meeting'].num}
+      WHEN Agent_Real_Time.AgentState = 2 and Reason_Code.ReasonText = '${getState['NoACD'].text}'  THEN ${getState['NoACD'].num}
+      ELSE ${getState['Other'].num} END
      ,Agent_Real_Time.DateTime
-     ,LastStateChange = DATEDIFF(ss, Agent_Real_Time.DateTimeLastStateChange, CASE WHEN (DATEDIFF(ss, Agent_Real_Time.DateTimeLastStateChange, (SELECT NowTime from Controller_Time (nolock) )) < = 0 ) 
-                              THEN Agent_Real_Time.DateTimeLastStateChange 
-                              ELSE(SELECT NowTime FROM Controller_Time (nolock) ) END)
+     ,LastStateChange = 
+     DATEDIFF(ss, 
+      Agent_Real_Time.DateTimeLastStateChange,
+      CASE WHEN 
+      (DATEDIFF(ss, Agent_Real_Time.DateTimeLastStateChange, (SELECT NowTime from [${DB_AWDB}].[dbo].Controller_Time (nolock) )) < = 0 ) 
+      THEN Agent_Real_Time.DateTimeLastStateChange 
+                              ELSE(SELECT NowTime FROM [${DB_AWDB}].[dbo].Controller_Time (nolock) ) END)
      ,AgentTeam = Agent_Team.EnterpriseName
      ,AgentTeamID = Agent_Team.AgentTeamID
      

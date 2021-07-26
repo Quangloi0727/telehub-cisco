@@ -98,3 +98,73 @@ exports.reportOutboundAgentProductivity = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.reportOutboundOverallProductivityByAgent = async (req, res, next) => {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    if (!req.query || !req.query.agentTeamId || req.query.agentTeamId == '') {
+      return next(new ResError(ERR_400.code, 'Trường agentTeamId không được để trống!'));
+    }
+
+    let query = req.query;
+
+    const doc = await _model.reportOutboundOverallProductivityByAgent(db, dbMssql, query);
+    if (!doc) {
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+    }
+
+    return res.status(SUCCESS_200.code).json({ data: doc.recordset });
+  } catch (error) {
+    console.error(`------- error ------- reportOutboundOverallProductivityByAgent`);
+    console.error(error);
+    console.error(`------- error ------- reportOutboundOverallProductivityByAgent`);
+  }
+}
+
+exports.reportOutboundAgentProductivityDetail = async (req, res, next) => {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    if (!req.query || !req.query.agentTeamId || req.query.agentTeamId == '') {
+      return next(new ResError(ERR_400.code, 'agentTeamId không được để trống!'));
+    }
+
+    let query = req.query;
+
+    let page = query.page ? parseInt(query.page) : 1;
+    let limit = 10;
+    let totalRows = 0;
+    let totalPage = 1;
+    let skip = (page - 1) * limit;
+
+    const sumRowsResult = await _model.countNumRowsTCD(db, dbMssql, query);
+    totalRows = sumRowsResult.recordset[0].numRows;
+
+    query.limit = limit;
+    query.skip = skip;
+
+    const doc = await _model.reportOutboundOverallProductivityDetail(db, dbMssql, query);
+    if (!doc) {
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+    }
+
+    if(doc.recordset.length > 0) {
+      totalPage = Math.ceil(totalRows / limit);
+    }
+
+    return res.status(SUCCESS_200.code).json({
+      data: doc.recordset,
+      totalRows: Number(totalRows),
+      totalPage: Number(totalPage),
+      page: Number(page)
+    });
+  } catch (error) {
+    console.log(`------- error ------- reportOutboundAgent`);
+    console.log(error);
+    console.log(`------- error ------- reportOutboundAgent`);
+    next(error);
+  }
+};
