@@ -320,3 +320,29 @@ exports.countNumRowsTCD = async (db, dbMssql, query) => {
   }
 }
 
+exports.reportOutboundDaily = async (db, dbMssql, query) => {
+  try {
+    const { startTime, endTime, type, agents, agentTeams, campaigns } = query;
+    let _query = '';
+
+    if (type == 'login-daily') {
+      _query = `USE tempdb exec dev_total_agent_login_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'`;
+    }
+
+    if (type == 'click-to-call-daily') {
+      _query = `USE tempdb exec dev_report_total_click_to_call_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'`;
+    }
+
+    if (type == 'auto-dialing-daily') {
+      _query = `USE tempdb exec dev_report_total_auto_dialing_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}', '${campaigns}'`;
+    }
+
+    console.info(`------- _query ------- reportLoginLogout`);
+    console.info(_query);
+    console.info(`------- _query ------- reportLoginLogout`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}

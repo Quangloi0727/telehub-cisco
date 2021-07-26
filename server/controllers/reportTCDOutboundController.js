@@ -151,7 +151,7 @@ exports.reportOutboundAgentProductivityDetail = async (req, res, next) => {
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     }
 
-    if(doc.recordset.length > 0) {
+    if (doc.recordset.length > 0) {
       totalPage = Math.ceil(totalRows / limit);
     }
 
@@ -168,3 +168,28 @@ exports.reportOutboundAgentProductivityDetail = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.reportOutboundDaily = async (req, res, next) => {
+  try {
+    const { db, dbMssql } = req.app.locals;
+    const { startTime, endTime, type, agentTeams, campaigns } = req.query;
+
+    if (!startTime) throw new Error('Thiếu trường startTime');
+
+    if (!endTime) throw new Error('Thiếu trường endTime');
+
+    if (!type) throw new Error('Thiếu trường type');
+
+    if (!agentTeams) throw new Error('Thiếu trường agentTeams');
+
+    if(type == 'auto-dialing-daily' && !campaigns) throw new Error('Thiếu trường campaigns');
+
+    const dataResult = await _model.reportOutboundDaily(db, dbMssql, req.query);
+
+    if (!dataResult) throw new Error('Not Found');
+
+    return res.status(SUCCESS_200.code).json({ data: dataResult.recordset });
+  } catch (error) {
+    return next(new ResError(ERR_500.code, error.message ? error.message : error), req, res, next);
+  }
+}

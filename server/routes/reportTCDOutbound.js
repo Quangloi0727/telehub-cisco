@@ -18,6 +18,10 @@ router
     .route('/report-outbound-agent-detail')
     .get(_controller.reportOutboundAgentProductivityDetail);
 
+router
+    .route('/report-outbound-daily')
+    .get(_controller.reportOutboundDaily);
+
 
 
 module.exports = router;
