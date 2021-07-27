@@ -44,7 +44,7 @@ exports.byDigitDialedByDay = async (db, dbMssql, query, callType) => {
     DECLARE @p_SG varchar(2000) = '${g_SkillGroup.join(',')}';
     DECLARE @p_DigitsDialed varchar(2000) = '${[DigitsDialed.MB || '#', DigitsDialed.MN || '#'].join(',')}'; -- dau so nha mang theo Mien (Nam / Bac)
 
-    exec dev_stt_c_ib_by_digit_dialed_by_day @p_startTime, @p_endTime, @p_page, @p_limit, @p_paging, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_DigitsDialed
+    exec stt_c_ib_by_digit_dialed_by_day @p_startTime, @p_endTime, @p_page, @p_limit, @p_paging, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_DigitsDialed
     `;
 
     _logger.log("info", `statisticInboundByDay ${_query}`);
