@@ -15,6 +15,12 @@ exports.reportLoginLogout = async (db, dbMssql, body) => {
       `;
     }
 
+    if (type == 'by-time') {
+      _query = `
+        USE tempdb exec report_login_logout_per_time_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'
+      `;
+    }
+
     console.info(`------- _query ------- reportLoginLogout`);
     console.info(_query);
     console.info(`------- _query ------- reportLoginLogout`);
