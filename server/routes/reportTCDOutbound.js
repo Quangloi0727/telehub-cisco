@@ -22,6 +22,9 @@ router
     .route('/report-outbound-daily')
     .get(_controller.reportOutboundDaily);
 
+router
+    .route('/report-outbound-daily-by-agent')
+    .get(_controller.reportOutboundDailyByAgent);
 
 
 module.exports = router;
