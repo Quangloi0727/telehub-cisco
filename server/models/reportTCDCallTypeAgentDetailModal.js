@@ -336,7 +336,8 @@ exports.getDetailAgent = async (db, dbMssql, query) => {
       WHERE DateTime >= @startDate
       and DateTime < @endDate
         AND CallTypeID in (${[...CT_ToAgent_Dynamic,...CT_Queue_Dynamic].join(",")},@CT_Tranfer)
-        and CallDisposition in (${CALL_DISPOSITION.handle.join(',')}) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
+        --and CallDisposition in (${CALL_DISPOSITION.handle.join(',')}) -- 13: cuộc gọi inbound, 6: cuộc gọi tranfer
+        and CallDisposition in (13,28) -- bỏ cuộc gọi tranfer vì chỉ lấy cuộc gọi cuối cùng
         AND SkillGroupSkillTargetID is not null
         AND AgentSkillTargetID is not null -- sau nay 
         AND TalkTime > 0
