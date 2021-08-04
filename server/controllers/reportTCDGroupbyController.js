@@ -431,13 +431,13 @@ function misscallGroupbySkillGroup(data, query) {
       // temp[`type_${TYPE_MISSCALL.MissQueue.value}`] = filterMissQueue.length;
       // temp[`type_${TYPE_MISSCALL.Other.value}`] = filterOther.length;
       // do phía telehub fix cứng vậy -_-
-      // temp[`type_other`] = filterOther.length;
+      temp[`type_other`] = filterOther.length;
       temp.totalDur =
         caculatorDuration(filterIVR) *
         // + caculatorDuration(filterOther)
         // + caculatorDuration(filterMissQueue)
         1000;
-      temp.total = filterIVR.length; // + filterMissQueue.length;
+      temp.total = filterIVR.length + filterOther.length; // + filterMissQueue.length;
       temp.avgDur = temp.total == 0 ? 0 : temp.totalDur / temp.total;
 
       if (
