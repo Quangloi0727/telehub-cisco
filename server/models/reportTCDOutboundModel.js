@@ -337,9 +337,9 @@ exports.reportOutboundDaily = async (db, dbMssql, query) => {
       _query = `USE tempdb exec report_total_auto_dialing_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}', '${campaigns}'`;
     }
 
-    console.info(`------- _query ------- reportLoginLogout`);
+    console.info(`------- _query ------- reportOutboundDaily`);
     console.info(_query);
-    console.info(`------- _query ------- reportLoginLogout`);
+    console.info(`------- _query ------- reportOutboundDaily`);
 
     return await dbMssql.query(_query);
   } catch (error) {
@@ -364,9 +364,32 @@ exports.reportOutboundDailyByAgent = async (db, dbMssql, query) => {
       _query = `USE tempdb exec report_total_auto_dialing_daily_by_agent_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}', '${campaigns}'`;
     }
 
-    console.info(`------- _query ------- reportLoginLogout`);
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
     console.info(_query);
-    console.info(`------- _query ------- reportLoginLogout`);
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+exports.reportOutboundOverallPDS = async (db, dbMssql, query) => {
+  try {
+    const { startTime, endTime, type, campaigns } = query;
+    let _query = '';
+
+    if (type == 'total-call') {
+      _query = `USE tempdb exec report_total_call_auto_dialing_sp '${startTime}', '${endTime}', '${campaigns}'`;
+    }
+
+    if (type == 'total-time') {
+      _query = `USE tempdb exec report_total_call_auto_dialing_detail_sp '${startTime}', '${endTime}', '${campaigns}'`;
+    }
+
+    console.info(`------- _query ------- reportOutboundOverallPDS`);
+    console.info(_query);
+    console.info(`------- _query ------- reportOutboundOverallPDS`);
 
     return await dbMssql.query(_query);
   } catch (error) {

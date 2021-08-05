@@ -182,7 +182,7 @@ exports.reportOutboundDaily = async (req, res, next) => {
 
     if (!agentTeams) throw new Error('Thiếu trường agentTeams');
 
-    if(type == 'auto-dialing-daily' && !campaigns) throw new Error('Thiếu trường campaigns');
+    if (type == 'auto-dialing-daily' && !campaigns) throw new Error('Thiếu trường campaigns');
 
     const dataResult = await _model.reportOutboundDaily(db, dbMssql, req.query);
 
@@ -207,9 +207,32 @@ exports.reportOutboundDailyByAgent = async (req, res, next) => {
 
     if (!agentTeams) throw new Error('Thiếu trường agentTeams');
 
-    if(type == 'auto-dialing-daily' && !campaigns) throw new Error('Thiếu trường campaigns');
+    if (type == 'auto-dialing-daily' && !campaigns) throw new Error('Thiếu trường campaigns');
 
     const dataResult = await _model.reportOutboundDailyByAgent(db, dbMssql, req.query);
+
+    if (!dataResult) throw new Error('Not Found');
+
+    return res.status(SUCCESS_200.code).json({ data: dataResult.recordset });
+  } catch (error) {
+    return next(new ResError(ERR_500.code, error.message ? error.message : error), req, res, next);
+  }
+}
+
+exports.reportOutboundOverallPDS = async (req, res, next) => {
+  try {
+    const { db, dbMssql } = req.app.locals;
+    const { startTime, endTime, type, campaigns } = req.query;
+
+    if (!startTime) throw new Error('Thiếu trường startTime');
+
+    if (!endTime) throw new Error('Thiếu trường endTime');
+
+    if (!campaigns) throw new Error('Thiếu trường campaigns');
+
+    if (!type) throw new Error('Thiếu trường type');
+
+    const dataResult = await _model.reportOutboundOverallPDS(db, dbMssql, req.query);
 
     if (!dataResult) throw new Error('Not Found');
 
