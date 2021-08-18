@@ -30,6 +30,11 @@ router
     .route('/report-outbound-overall-pds')
     .get(_controller.reportOutboundOverallPDS);
 
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+router
+    .route('/report-outbound-total-call-by-time')
+    .get(_controller.reportOutboundTotalCallByTime);
+
 module.exports = router;
 
 /**

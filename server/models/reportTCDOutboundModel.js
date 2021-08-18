@@ -396,3 +396,54 @@ exports.reportOutboundOverallPDS = async (db, dbMssql, query) => {
     throw new Error(error);
   }
 }
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.reportOutboundTotalCallByTime = async (db, dbMssql, query) => {
+  try {
+    const {
+      startTime,
+      endTime,
+      type,
+      agentTeams,
+      campaigns = '#',
+      dateStr = '#',
+      agentId = '#',
+      isFindPDS,
+      isFindC2C
+    } = query;
+    let _query = '';
+
+    if (type == 'by-month') {
+      _query = `
+        USE tempdb exec dev_report_outbound_total_call_by_month '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}'
+      `;
+    }
+
+    if (type == 'by-day') {
+      _query = `
+        USE tempdb exec dev_report_outbound_total_call_by_day '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}'
+      `;
+    }
+
+    if (type == 'by-agent') {
+      _query = `
+        USE tempdb exec dev_report_outbound_total_call_by_agent '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}'
+      `;
+    }
+
+    if (type == 'detail') {
+      _query = `
+        USE tempdb exec dev_report_outbound_total_call_detail '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}', '${agentId}'
+      `;
+    }
+
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
+    console.info(_query);
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+

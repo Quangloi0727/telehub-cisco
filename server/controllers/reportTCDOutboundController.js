@@ -241,3 +241,31 @@ exports.reportOutboundOverallPDS = async (req, res, next) => {
     return next(new ResError(ERR_500.code, error.message ? error.message : error), req, res, next);
   }
 }
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.reportOutboundTotalCallByTime = async (req, res, next) => {
+  try {
+    const { db, dbMssql } = req.app.locals;
+    const { startTime, endTime, type, agentTeams } = req.query;
+
+    if (!startTime) throw new Error('Thiếu trường startTime');
+
+    if (!endTime) throw new Error('Thiếu trường endTime');
+
+    if (!agentTeams) throw new Error('Thiếu trường agentTeams');
+
+    if (!type) throw new Error('Thiếu trường type');
+
+    const dataResult = await _model.reportOutboundTotalCallByTime(db, dbMssql, req.query);
+
+    if (!dataResult) throw new Error('Not Found');
+
+    return res.status(SUCCESS_200.code).json({ data: dataResult.recordset });
+  } catch (error) {
+    console.error(`------- error ------- reportOutboundTotalCallByTime`);
+    console.error(error);
+    console.error(`------- error ------- reportOutboundTotalCallByTime`);
+
+    return next(new ResError(ERR_500.code, error.message ? error.message : error), req, res, next);
+  }
+}
