@@ -126,7 +126,7 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
         LEFT JOIN [${DB_AWDB}].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID] 
         INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Agent_Team 
           ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
-          AND Agent_Team.[AgentTeamID] = ${agentTeamId}
+          AND Agent_Team.[AgentTeamID] IN (${agentTeamId})
       WHERE
         TCD_Table.[PeripheralCallType] IN (9, 10, 33)
         AND TCD_Table.[AgentSkillTargetID] IS NOT NULL
