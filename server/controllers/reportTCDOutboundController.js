@@ -169,6 +169,7 @@ exports.reportOutboundAgentProductivityDetail = async (req, res, next) => {
   }
 };
 
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
 exports.reportOutboundDaily = async (req, res, next) => {
   try {
     const { db, dbMssql } = req.app.locals;
@@ -194,6 +195,7 @@ exports.reportOutboundDaily = async (req, res, next) => {
   }
 }
 
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
 exports.reportOutboundDailyByAgent = async (req, res, next) => {
   try {
     const { db, dbMssql } = req.app.locals;
@@ -219,6 +221,7 @@ exports.reportOutboundDailyByAgent = async (req, res, next) => {
   }
 }
 
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
 exports.reportOutboundOverallPDS = async (req, res, next) => {
   try {
     const { db, dbMssql } = req.app.locals;
@@ -265,6 +268,28 @@ exports.reportOutboundTotalCallByTime = async (req, res, next) => {
     console.error(`------- error ------- reportOutboundTotalCallByTime`);
     console.error(error);
     console.error(`------- error ------- reportOutboundTotalCallByTime`);
+
+    return next(new ResError(ERR_500.code, error.message ? error.message : error), req, res, next);
+  }
+}
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.getCallDetailWithCallIds = async (req, res, next) => {
+  try {
+    const { db, dbMssql } = req.app.locals;
+    const { callIds } = req.query;
+
+    if (!callIds) throw new Error('Thiếu trường callIds');
+
+    const dataResult = await _model.getCallDetailWithCallIds(db, dbMssql, req.query);
+
+    if (!dataResult) throw new Error('Not Found');
+
+    return res.status(SUCCESS_200.code).json({ data: dataResult.recordset });
+  } catch (error) {
+    console.error(`------- error ------- getCallDetailWithCallIds`);
+    console.error(error);
+    console.error(`------- error ------- getCallDetailWithCallIds`);
 
     return next(new ResError(ERR_500.code, error.message ? error.message : error), req, res, next);
   }

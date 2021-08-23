@@ -320,6 +320,7 @@ exports.countNumRowsTCD = async (db, dbMssql, query) => {
   }
 }
 
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
 exports.reportOutboundDaily = async (db, dbMssql, query) => {
   try {
     const { startTime, endTime, type, agents, agentTeams, campaigns } = query;
@@ -347,6 +348,7 @@ exports.reportOutboundDaily = async (db, dbMssql, query) => {
   }
 }
 
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
 exports.reportOutboundDailyByAgent = async (db, dbMssql, query) => {
   try {
     const { startTime, endTime, type, agents, agentTeams, campaigns } = query;
@@ -374,6 +376,7 @@ exports.reportOutboundDailyByAgent = async (db, dbMssql, query) => {
   }
 }
 
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
 exports.reportOutboundOverallPDS = async (db, dbMssql, query) => {
   try {
     const { startTime, endTime, type, campaigns } = query;
@@ -440,6 +443,41 @@ exports.reportOutboundTotalCallByTime = async (db, dbMssql, query) => {
     console.info(`------- _query ------- reportOutboundDailyByAgent`);
     console.info(_query);
     console.info(`------- _query ------- reportOutboundDailyByAgent`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.getCallDetailWithCallIds = async (db, dbMssql, query) => {
+  try {
+    const { callIds } = query;
+
+    let _query = `
+      SELECT
+        TCD_Table.PeripheralCallKey AS CallId,
+        Agent_Table.PeripheralNumber AS AgentId,
+        TCD_Table.PeripheralCallType,
+        TCD_Table.Duration,
+        TCD_Table.RingTime,
+        TCD_Table.DelayTime,
+        TCD_Table.HoldTime,
+        TCD_Table.TalkTime,
+        TCD_Table.DigitsDialed,
+        TCD_Table.ANI,
+        TCD_Table.DateTime
+      FROM ${DB_HDS}.dbo.t_Termination_Call_Detail TCD_Table
+      LEFT JOIN ${DB_AWDB}.dbo.t_Agent Agent_Table ON Agent_Table.SkillTargetID = TCD_Table.AgentSkillTargetID
+      WHERE
+        TCD_Table.PeripheralCallKey IN ( ${callIds} )
+        AND TCD_Table.AgentSkillTargetID IS NOT NULL
+    `;
+
+    console.info(`------- _query ------- getCallDetailWithCallIds`);
+    console.info(_query);
+    console.info(`------- _query ------- getCallDetailWithCallIds`);
 
     return await dbMssql.query(_query);
   } catch (error) {
