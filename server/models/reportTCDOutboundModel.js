@@ -418,25 +418,25 @@ exports.reportOutboundTotalCallByTime = async (db, dbMssql, query) => {
 
     if (type == 'by-month') {
       _query = `
-        USE tempdb exec dev_report_outbound_total_call_by_month '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}'
+        USE tempdb exec report_outbound_total_call_by_month '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}'
       `;
     }
 
     if (type == 'by-day') {
       _query = `
-        USE tempdb exec dev_report_outbound_total_call_by_day '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}'
+        USE tempdb exec report_outbound_total_call_by_day '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}'
       `;
     }
 
     if (type == 'by-agent') {
       _query = `
-        USE tempdb exec dev_report_outbound_total_call_by_agent '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}'
+        USE tempdb exec report_outbound_total_call_by_agent '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}'
       `;
     }
 
     if (type == 'detail') {
       _query = `
-        USE tempdb exec dev_report_outbound_total_call_detail '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}', '${agentId}'
+        USE tempdb exec report_outbound_total_call_detail '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}', '${agentId}'
       `;
     }
 
