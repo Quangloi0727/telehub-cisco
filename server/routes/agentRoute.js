@@ -24,6 +24,9 @@ router
 router.route('/agent-by-company')
     .get(agentController.getAgentsByCompany);
 
+router.route('/reset-pass')
+    .post(agentController.resetPass);
+
 module.exports = router;
 
 /**

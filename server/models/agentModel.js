@@ -1,4 +1,4 @@
-const ObjectID = require("mongodb").ObjectID;
+const ldapLib = require("../libs/ldap");
 /**
  * require Helpers
  */
@@ -137,3 +137,46 @@ exports.agentTeam = async (db, dbMssql, query) => {
     throw new Error(error);
   }
 };
+
+/**
+ * 1. call api update password cisco: do ko có config của API cisco trên telehub-cisco nên chuyển việc này xuống CRM
+ * 2. call method update password Active Directory (AD) by ldap
+ * @param {*} db 
+ * @param {*} dbMssql 
+ * @param {*} query 
+ * @returns 
+ */
+exports.resetPass = async (db, dbMssql, query, body) => {
+  try {
+    let { username, oldPass, newPass } = body;
+
+    return await resetPassAD(username, oldPass, newPass);
+
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+/**
+ * 
+ * @param {*} params 
+ */
+async function resetPassAD(username, oldPass, newPass) {
+  try {
+    const client = await ldapLib.initConnect(_config.adServer.url);
+    const agentEntry = await ldapLib.searchAgentByUsername(client, username, oldPass, _config.adServer.dc1, _config.adServer.dc2);
+    const userDN = agentEntry.object.dn;
+    
+    const result = await ldapLib.changePassByDN(client, userDN, oldPass, newPass);
+
+    return result;
+
+  } catch (error) {
+
+    // handle message  gửi về người dùng
+    if(error.message && error.message.includes('AcceptSecurityContext')) {
+      error.message = 'Tên đăng nhập hoặc mật khẩu không chính xác';
+    }
+    throw error;
+  }
+}
