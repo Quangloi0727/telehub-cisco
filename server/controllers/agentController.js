@@ -160,6 +160,24 @@ exports.download = async (req, res, next) => {
     }
 }
 
+exports.resetPass = async (req, res, next) => {
+    try {
+        let db = req.app.locals.db;
+        const dbMssql = req.app.locals.dbMssql;
+        const { username, oldPass, newPass } = req.body;
+
+        if (!oldPass || !newPass || !username) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+        const result = await _model.resetPass(db, dbMssql, req.query, req.body);
+
+        return res.status(SUCCESS_200.code).json({ data: result });
+    } catch (error) {
+        console.log(`------- error ------- resetPass AD`);
+        console.log(error);
+        console.log(`------- error ------- resetPass AD`);
+        next(error);
+    }
+}
+
 exports.deleteIntro = base.delete(process.env.AGENT_COLLECTION);
 
 async function agentMemberTeam (req, res, next) {

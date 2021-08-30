@@ -11,6 +11,7 @@
     "express": "^4.17.0",
     "fs-extra": "^9.0.1",
     "jsonwebtoken": "^8.5.1",
+    "ldapjs": "^2.3.1",
     "localenv": "^0.2.2",
     "mongodb": "^2.2.36",
     "mssql": "^6.2.3",
