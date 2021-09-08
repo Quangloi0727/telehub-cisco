@@ -4,6 +4,7 @@ const fetch = require("node-fetch");
  */
 const _model = require('../models/procedureModel');
 const _baseModel = require('../models/baseModel');
+const { mapping2080 } = require('./reportCustomizeController');
 
 /**
  * require Controller
@@ -107,17 +108,17 @@ async function reportAutocallSurvey(req, res, next) {
             } else {
                 //gộp 2 kết quả dựa theo trường RouterCallKey và RouterCallKeyDay để lấy tiến trình cuộc gọi
                 let mergeArray = _.map(doc.recordset, function (r1) {
-                    var r3 = { };
+                    var r3 = {};
                     if (result.result.length > 0) {
                         _.map(result.result, function (r2) {
                             if (r1.RouterCallKey == r2._id.RouterCallKey && r1.RouterCallKeyDay == r2._id.RouterCallKeyDay) {
                                 r3 = _.extend(r1, r2);
                             } else {
-                                r3 = _.extend(r1, { });
+                                r3 = _.extend(r1, {});
                             }
                         })
                     } else {
-                        r3 = _.extend(r1, { });
+                        r3 = _.extend(r1, {});
                     }
                     return r3
                 });
@@ -183,17 +184,17 @@ async function reportAutocallSurvey2(req, res, next) {
             } else {
                 //gộp 2 kết quả dựa theo trường RouterCallKey và RouterCallKeyDay để lấy tiến trình cuộc gọi
                 let mergeArray = _.map(doc.recordset, function (r1) {
-                    var r3 = { };
+                    var r3 = {};
                     if (result.result.length > 0) {
                         _.map(result.result, function (r2) {
                             if (r1.RouterCallKey == r2._id.RouterCallKey && r1.RouterCallKeyDay == r2._id.RouterCallKeyDay) {
                                 r3 = _.extend(r1, r2);
                             } else {
-                                r3 = _.extend(r1, { });
+                                r3 = _.extend(r1, {});
                             }
                         })
                     } else {
-                        r3 = _.extend(r1, { });
+                        r3 = _.extend(r1, {});
                     }
                     return r3
                 });
@@ -386,6 +387,40 @@ async function reportAcdSummaryDaily(req, res, next) {
         if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
 
         return res.status(SUCCESS_200.code).json({ data: doc });
+    } catch (error) {
+        next(error);
+    }
+}
+
+exports.reportInbound2080 = async (req, res, next) => {
+    try {
+        const dbMssql = req.app.locals.dbMssql;
+        const { startDate, endDate, CT_IVR } = req.query;
+        const query = req.query;
+
+        if (!startDate || !endDate || !CT_IVR) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+        for (let i = 0; i < Object.keys(query).length; i++) {
+            const item = Object.keys(query)[i];
+
+            if (item.includes("CT_ToAgentGroup")) {
+                let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+                if (!query[`CT_Queue${groupNumber}`]) {
+                    return next(new ResError(ERR_400.code, `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`), req, res, next);
+                }
+
+                if (!query[`SG_Voice_${groupNumber}`]) {
+                    return next(new ResError(ERR_400.code, `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`), req, res, next);
+                }
+            }
+        }
+
+        const doc = await _model.reportInbound2080(dbMssql, query);
+
+        if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+
+        return res.status(SUCCESS_200.code).json({ data: mapping2080(doc, query) });
     } catch (error) {
         next(error);
     }
