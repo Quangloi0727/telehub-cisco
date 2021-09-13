@@ -4,6 +4,7 @@ const fetch = require("node-fetch");
  */
 const _model = require('../models/procedureModel');
 const _baseModel = require('../models/baseModel');
+const { mapping2080 } = require('./reportCustomizeController');
 
 /**
  * require Controller
@@ -43,6 +44,7 @@ exports.reportInboundMisscallAndConnectedByAgent = reportInboundMisscallAndConne
 exports.reportInboundByAgent = reportInboundByAgent;
 exports.reportStatisticalOutbound = reportStatisticalOutbound;
 exports.statisticInboundByDay = statisticInboundByDay;
+exports.reportAcdSummaryDaily = reportAcdSummaryDaily;
 
 async function reportAutocallBroadcast(req, res, next) {
     try {
@@ -334,7 +336,7 @@ async function reportStatisticalOutbound(req, res, next) {
             return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
         const doc = await _model.reportStatisticalOutbound(db, dbMssql, req.query, req.body);
-        
+
         if (!doc) {
             return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
         } else {
@@ -348,25 +350,78 @@ async function reportStatisticalOutbound(req, res, next) {
 }
 
 async function statisticInboundByDay(req, res, next) {
-        try {
-            let db = req.app.locals.db;
-            let dbMssql = req.app.locals.dbMssql;
-            let { startDate, endDate } = req.query;
-    
-            if (!startDate || !endDate)
-                return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
-    
+    try {
+        let db = req.app.locals.db;
+        let dbMssql = req.app.locals.dbMssql;
+        let { startDate, endDate } = req.query;
 
-            const doc = await _model.statisticInboundByDay(db, dbMssql, req.query, req.query);
-    
-            if (!doc) {
-                return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
-            } else {
-                res
-                    .status(SUCCESS_200.code)
-                    .json({ data: doc});
-            }
-        } catch (error) {
-            next(error);
+        if (!startDate || !endDate)
+            return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+
+        const doc = await _model.statisticInboundByDay(db, dbMssql, req.query, req.query);
+
+        if (!doc) {
+            return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+        } else {
+            res
+                .status(SUCCESS_200.code)
+                .json({ data: doc });
         }
+    } catch (error) {
+        next(error);
     }
+}
+
+
+async function reportAcdSummaryDaily(req, res, next) {
+    try {
+        let db = req.app.locals.db;
+        let dbMssql = req.app.locals.dbMssql;
+        let { startDate, endDate } = req.query;
+
+        if (!startDate || !endDate) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+        const doc = await _model.reportAcdSummaryDaily(db, dbMssql, req.query, req.query);
+
+        if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+
+        return res.status(SUCCESS_200.code).json({ data: doc });
+    } catch (error) {
+        next(error);
+    }
+}
+
+exports.reportInbound2080 = async (req, res, next) => {
+    try {
+        const dbMssql = req.app.locals.dbMssql;
+        const { startDate, endDate, CT_IVR } = req.query;
+        const query = req.query;
+
+        if (!startDate || !endDate || !CT_IVR) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+        for (let i = 0; i < Object.keys(query).length; i++) {
+            const item = Object.keys(query)[i];
+
+            if (item.includes("CT_ToAgentGroup")) {
+                let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+                if (!query[`CT_Queue${groupNumber}`]) {
+                    return next(new ResError(ERR_400.code, `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`), req, res, next);
+                }
+
+                if (!query[`SG_Voice_${groupNumber}`]) {
+                    return next(new ResError(ERR_400.code, `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`), req, res, next);
+                }
+            }
+        }
+
+        const doc = await _model.reportInbound2080(dbMssql, query);
+
+        if (!doc) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+
+        return res.status(SUCCESS_200.code).json({ data: mapping2080(doc, query) });
+    } catch (error) {
+        next(error);
+    }
+}

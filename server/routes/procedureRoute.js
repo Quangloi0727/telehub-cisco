@@ -41,6 +41,11 @@ router
 router.route('/statistic-inbound-by-day')
     .get(_controller.statisticInboundByDay);
 
+router.route('/report-ACD-summary-daily')
+    .get(_controller.reportAcdSummaryDaily);
+
+router.route('/report-inbound-20-80')
+    .get(_controller.reportInbound2080);
 
 module.exports = router;
 
