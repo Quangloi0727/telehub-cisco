@@ -55,15 +55,15 @@ exports.reportChangeStatus = async (dbMssql, body) => {
     let childQuery = '';
 
     if (type == 'total') {
-      childQuery = 'EXEC dev_report_login_logout_total_new_sp @p_startTime ,@p_endTime ,@p_agentTeam ,@p_agentId';
+      childQuery = 'EXEC report_login_logout_total_new_sp @p_startTime ,@p_endTime ,@p_agentTeam ,@p_agentId';
     }
 
     if (type == 'by-day') {
-      childQuery = 'EXEC dev_report_login_logout_per_day_new_sp @p_startTime ,@p_endTime ,@p_agentTeam ,@p_agentId'
+      childQuery = 'EXEC report_login_logout_per_day_new_sp @p_startTime ,@p_endTime ,@p_agentTeam ,@p_agentId'
     }
 
     if (type == 'by-time') {
-      childQuery = 'EXEC dev_report_login_logout_per_time_new_sp @p_startTime ,@p_endTime ,@p_agentTeam ,@p_agentId';
+      childQuery = 'EXEC report_login_logout_per_time_new_sp @p_startTime ,@p_endTime ,@p_agentTeam ,@p_agentId';
     }
 
     let _query = `
