@@ -25,7 +25,7 @@ exports.reportDoNotCall = async (req, res, next) => {
       fs.mkdirSync(path.join(_rootPath, dir), { recursive: true });
     }
 
-    let url = `mongoexport --db fast-contact-cloud --collection donotcalls --sort='{STT: 1}' --out=${pathFile} --type csv --fields STT,called,type -h ${hostSplit[hostSplit.length - 1]}  -u '${user}' -p '${pass}' --authenticationDatabase=${auth}`;
+    let url = `mongoexport --db fast-contact-cloud --collection donotcalls --out=${pathFile} --type csv --fields STT,called,type -h ${hostSplit[hostSplit.length - 1]}  -u '${user}' -p '${pass}' --authenticationDatabase=${auth}`;
 
     exec(url, (error, data, getter) => {
       if (error) {
