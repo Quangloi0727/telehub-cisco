@@ -22,7 +22,7 @@ exports.reportDoNotCall = async (req, res, next) => {
 
     // Kiểm tra xem thư mục exports có tồn tại không, nếu không thì tạo mới
     if (!fs.existsSync(path.join(_rootPath, dir))) {
-      fs.mkdirSync(path.join(_rootPath, dir));
+      fs.mkdirSync(path.join(_rootPath, dir), { recursive: true });
     }
 
     let url = `mongoexport --db fast-contact-cloud --collection donotcalls --out=${pathFile} --type csv --fields STT,called,type -h ${hostSplit[hostSplit.length - 1]}  -u '${user}' -p '${pass}' --authenticationDatabase=${auth}`;
