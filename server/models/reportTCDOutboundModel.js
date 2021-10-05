@@ -100,6 +100,7 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
       endDate,
       agentId,
       agentTeamId,
+      exportExcel
     } = query;
 
     let queryAgent = '';
