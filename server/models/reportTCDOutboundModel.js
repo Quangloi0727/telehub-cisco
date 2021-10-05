@@ -376,3 +376,168 @@ exports.reportOutboundByTime = async (db, dbMssql, query) => {
   }
 };
 
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.reportOutboundDaily = async (db, dbMssql, query) => {
+  try {
+    const { startTime, endTime, type, agents, agentTeams, campaigns } = query;
+    let _query = '';
+
+    if (type == 'login-daily') {
+      _query = `USE tempdb exec total_agent_login_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'`;
+    }
+
+    if (type == 'click-to-call-daily') {
+      _query = `USE tempdb exec report_total_click_to_call_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'`;
+    }
+
+    if (type == 'auto-dialing-daily') {
+      _query = `USE tempdb exec report_total_auto_dialing_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}', '${campaigns}'`;
+    }
+
+    console.info(`------- _query ------- reportOutboundDaily`);
+    console.info(_query);
+    console.info(`------- _query ------- reportOutboundDaily`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.reportOutboundDailyByAgent = async (db, dbMssql, query) => {
+  try {
+    const { startTime, endTime, type, agents, agentTeams, campaigns } = query;
+    let _query = '';
+
+    if (type == 'login-daily') {
+      _query = `USE tempdb exec total_login_daily_by_agent_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'`;
+    }
+
+    if (type == 'click-to-call-daily') {
+      _query = `USE tempdb exec report_total_click_to_call_daily_by_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'`;
+    }
+
+    if (type == 'auto-dialing-daily') {
+      _query = `USE tempdb exec report_total_auto_dialing_daily_by_agent_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}', '${campaigns}'`;
+    }
+
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
+    console.info(_query);
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.reportOutboundOverallPDS = async (db, dbMssql, query) => {
+  try {
+    const { startTime, endTime, type, campaigns } = query;
+    let _query = '';
+
+    if (type == 'total-call') {
+      _query = `USE tempdb exec report_total_call_auto_dialing_sp '${startTime}', '${endTime}', '${campaigns}'`;
+    }
+
+    if (type == 'total-time') {
+      _query = `USE tempdb exec report_total_call_auto_dialing_detail_sp '${startTime}', '${endTime}', '${campaigns}'`;
+    }
+
+    console.info(`------- _query ------- reportOutboundOverallPDS`);
+    console.info(_query);
+    console.info(`------- _query ------- reportOutboundOverallPDS`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.reportOutboundTotalCallByTime = async (db, dbMssql, query) => {
+  try {
+    const {
+      startTime,
+      endTime,
+      type,
+      agentTeams,
+      campaigns = '#',
+      dateStr = '#',
+      agentId = '#',
+      isFindPDS,
+      isFindC2C
+    } = query;
+    let _query = '';
+
+    if (type == 'by-month') {
+      _query = `
+        USE tempdb exec report_outbound_total_call_by_month '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}'
+      `;
+    }
+
+    if (type == 'by-day') {
+      _query = `
+        USE tempdb exec report_outbound_total_call_by_day '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}'
+      `;
+    }
+
+    if (type == 'by-agent') {
+      _query = `
+        USE tempdb exec report_outbound_total_call_by_agent '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}'
+      `;
+    }
+
+    if (type == 'detail') {
+      _query = `
+        USE tempdb exec report_outbound_total_call_detail '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}', '${agentId}'
+      `;
+    }
+
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
+    console.info(_query);
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.getCallDetailWithCallIds = async (db, dbMssql, query) => {
+  try {
+    const { callIds } = query;
+
+    let _query = `
+      SELECT
+        TCD_Table.PeripheralCallKey AS CallId,
+        Agent_Table.PeripheralNumber AS AgentId,
+        TCD_Table.PeripheralCallType,
+        TCD_Table.Duration,
+        TCD_Table.RingTime,
+        TCD_Table.DelayTime,
+        TCD_Table.HoldTime,
+        TCD_Table.TalkTime,
+        TCD_Table.DigitsDialed,
+        TCD_Table.ANI,
+        TCD_Table.DateTime
+      FROM ${DB_HDS}.dbo.t_Termination_Call_Detail TCD_Table
+      LEFT JOIN ${DB_AWDB}.dbo.t_Agent Agent_Table ON Agent_Table.SkillTargetID = TCD_Table.AgentSkillTargetID
+      WHERE
+        TCD_Table.PeripheralCallKey IN ( ${callIds} )
+        AND TCD_Table.AgentSkillTargetID IS NOT NULL
+    `;
+
+    console.info(`------- _query ------- getCallDetailWithCallIds`);
+    console.info(_query);
+    console.info(`------- _query ------- getCallDetailWithCallIds`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
