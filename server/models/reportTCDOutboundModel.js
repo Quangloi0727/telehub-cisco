@@ -100,11 +100,14 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
       endDate,
       agentId,
       agentTeamId,
+      exportExcel
     } = query;
 
     let queryAgent = '';
     let queryStartDate = '';
     let queryEndDate = '';
+    let queryExcelSelect = '';
+    let queryExcelGroupBy = '';
 
     if (startDate) queryStartDate = `AND TCD_Table.[DateTime] >= '${startDate}'`;
     if (endDate) queryEndDate = `AND TCD_Table.[DateTime] <= '${endDate}'`;
