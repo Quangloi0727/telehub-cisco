@@ -30,6 +30,8 @@ exports.reportAutocallBroadcast = async (db, dbMssql, query, body) => {
     //   _query = `USE ins1_recording
     //   exec dev_autocall_broadcast_all_sp '${startDate}', '${endDate}', '${campainId.join(',')  || "#"}'`;
     // }
+    _logger.log("info", `reportAutocallBroadcast ${_query}`);
+
     return await dbMssql.query(_query);
   } catch (error) {
     throw new Error(error);
@@ -47,6 +49,7 @@ exports.reportAutocallSurvey = async (db, dbMssql, query, body) => {
       _query = `USE ins1_recording
       exec autocall_survey_total_sp '${startDate}', '${endDate}', '${campainId.join(',') || "#"}'`;
     }
+    _logger.log("info", `reportAutocallSurvey ${_query}`);
 
     return await dbMssql.query(_query);
   } catch (error) {
