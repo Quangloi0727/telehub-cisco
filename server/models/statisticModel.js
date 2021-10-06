@@ -32,7 +32,7 @@ exports.byDigitDialedByDay = async (db, dbMssql, query, callType) => {
     });
 
     _query = `
-    USE tempdb
+    USE ins1_recording
     DECLARE @p_startTime  varchar(2000) = '${startDate}';
     DECLARE @p_endTime  varchar(2000) =  '${endDate}';
     DECLARE @p_page int = ${pages || 1};

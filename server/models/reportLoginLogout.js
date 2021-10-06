@@ -5,19 +5,19 @@ exports.reportLoginLogout = async (db, dbMssql, body) => {
 
     if (type == 'total') {
       _query = `
-        USE tempdb exec report_login_logout_total_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'
+        USE ins1_recording exec report_login_logout_total_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'
       `;
     }
 
     if (type == 'by-day') {
       _query = `
-        USE tempdb exec report_login_logout_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'
+        USE ins1_recording exec report_login_logout_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'
       `;
     }
 
     if (type == 'by-time') {
       _query = `
-        USE tempdb exec report_login_logout_per_time_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'
+        USE ins1_recording exec report_login_logout_per_time_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'
       `;
     }
 
@@ -72,7 +72,7 @@ exports.reportChangeStatus = async (dbMssql, body) => {
       DECLARE @p_agentTeam varchar(2000) = '${agentTeams}'
       DECLARE @p_agentId varchar(2000) = '${agents || '#'}'
       
-      USE tempdb
+      USE ins1_recording
       ${childQuery}
     `;
 

@@ -18,16 +18,16 @@ exports.reportAutocallBroadcast = async (db, dbMssql, query, body) => {
   try {
     let { } = query;
     let { startDate, endDate, SkillGroup, page, row, download, paging, campainId } = body;
-    let _query = `USE tempdb
+    let _query = `USE ins1_recording
     exec autocall_broadcast_sp '${startDate}', '${endDate}', ${page}, ${row}, '${campainId.join(',') || "#"}'`;
 
     if (paging == 0) {
-      _query = `USE tempdb
+      _query = `USE ins1_recording
       exec autocall_broadcast_total_sp '${startDate}', '${endDate}', '${campainId.join(',') || "#"}'`;
     }
 
     // if(download == 1){
-    //   _query = `USE tempdb
+    //   _query = `USE ins1_recording
     //   exec dev_autocall_broadcast_all_sp '${startDate}', '${endDate}', '${campainId.join(',')  || "#"}'`;
     // }
     return await dbMssql.query(_query);
@@ -40,11 +40,11 @@ exports.reportAutocallSurvey = async (db, dbMssql, query, body) => {
   try {
     let { } = query;
     let { startDate, endDate, SkillGroup, page, row, download, paging, campainId } = body;
-    let _query = `USE tempdb
+    let _query = `USE ins1_recording
     exec autocall_callsurvey_sp '${startDate}', '${endDate}', ${page}, ${row}, '${campainId.join(',') || "#"}'`;
 
     if (paging == 0) {
-      _query = `USE tempdb
+      _query = `USE ins1_recording
       exec autocall_survey_total_sp '${startDate}', '${endDate}', '${campainId.join(',') || "#"}'`;
     }
 
@@ -58,11 +58,11 @@ exports.reportAutocallSurvey2 = async (db, dbMssql, query, body) => {
   try {
     let { } = query;
     let { startDate, endDate, SkillGroup, page, row, download, paging, campainId } = body;
-    let _query = `USE tempdb
+    let _query = `USE ins1_recording
     exec autocall_callsurvey2_sp '${startDate}', '${endDate}', ${page}, ${row}, '${campainId.join(',') || "#"}'`;
 
     if (paging == 0) {
-      _query = `USE tempdb
+      _query = `USE ins1_recording
       exec autocall_survey2_total_sp '${startDate}', '${endDate}', '${campainId.join(',') || "#"}'`;
     }
 
@@ -87,10 +87,10 @@ exports.reportInboundImpactByAgent = async (db, dbMssql, query, body) => {
       }
     });
 
-    _query = `USE tempdb exec report_inbound_impact_by_agent_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${ANI || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}' `;
+    _query = `USE ins1_recording exec report_inbound_impact_by_agent_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${ANI || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}' `;
 
     if (flag && flag == "1") {
-      _query = `USE tempdb exec report_inbound_impact_by_agent_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${ANI || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}' `;
+      _query = `USE ins1_recording exec report_inbound_impact_by_agent_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${ANI || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}' `;
     }
 
     _logger.log("info", `reportInboundImpactByAgent ${_query}`);
@@ -118,10 +118,10 @@ exports.reportCallByCustomerKH01 = async (db, dbMssql, query, body) => {
       }
     });
 
-    _query = `USE tempdb exec report_call_by_customer_kh01_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${ANI || "#"}'`;
+    _query = `USE ins1_recording exec report_call_by_customer_kh01_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${ANI || "#"}'`;
 
     if (flag && flag == "1") {
-      _query = `USE tempdb exec report_call_by_customer_kh01_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${ANI || "#"}'`;
+      _query = `USE ins1_recording exec report_call_by_customer_kh01_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${ANI || "#"}'`;
     }
 
     _logger.log("info", `reportCallByCustomerKH01 ${_query}`);
@@ -150,10 +150,10 @@ exports.reportDetailStatisticalStatusEndCall = async (db, dbMssql, query, body) 
       }
     });
 
-    _query = `USE tempdb exec report_detail_statistical_status_end_call_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${statusEndCall || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}'`;
+    _query = `USE ins1_recording exec report_detail_statistical_status_end_call_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${statusEndCall || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}'`;
 
     if (flag && flag == "1") {
-      _query = `USE tempdb exec report_detail_statistical_status_end_call_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${statusEndCall || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}'`;
+      _query = `USE ins1_recording exec report_detail_statistical_status_end_call_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${statusEndCall || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}'`;
     }
 
     _logger.log("info", `reportDetailStatisticalStatusEndCall ${_query}`);
@@ -182,10 +182,10 @@ exports.reportInboundMisscallAndConnectedByAgent = async (db, dbMssql, query, bo
       }
     });
 
-    _query = `USE tempdb exec report_inbound_misscall_and_connected_by_agent_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${typeCall || "#"}','${ANI || "#"}'`;
+    _query = `USE ins1_recording exec report_inbound_misscall_and_connected_by_agent_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${typeCall || "#"}','${ANI || "#"}'`;
 
     if (flag && flag == "1") {
-      _query = `USE tempdb exec report_inbound_misscall_and_connected_by_agent_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${typeCall || "#"}','${ANI || "#"}'`;
+      _query = `USE ins1_recording exec report_inbound_misscall_and_connected_by_agent_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${typeCall || "#"}','${ANI || "#"}'`;
     }
 
     _logger.log("info", `reportInboundMisscallAndConnectedByAgent ${_query}`);
@@ -214,10 +214,10 @@ exports.reportInboundByAgent = async (db, dbMssql, query, body) => {
       }
     });
 
-    _query = `USE tempdb exec report_inbound_by_agent_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${idAgentCisco || "#"}'`;
+    _query = `USE ins1_recording exec report_inbound_by_agent_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${idAgentCisco || "#"}'`;
 
     if (flag && flag == "1") {
-      _query = `USE tempdb exec report_inbound_by_agent_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${idAgentCisco || "#"}'`;
+      _query = `USE ins1_recording exec report_inbound_by_agent_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${idAgentCisco || "#"}'`;
     }
 
     _logger.log("info", `reportInboundByAgent ${_query}`);
@@ -234,7 +234,7 @@ exports.reportStatisticalOutbound = async (db, dbMssql, query, body) => {
   try {
     let { startDate, endDate, Agent_Team } = query;
 
-    let _query = `USE tempdb exec report_statistical_outbound_total_sp '${startDate}', '${endDate}','${Agent_Team}'`;
+    let _query = `USE ins1_recording exec report_statistical_outbound_total_sp '${startDate}', '${endDate}','${Agent_Team}'`;
 
     _logger.log("info", `reportStatisticalOutbound ${_query}`);
 
@@ -262,7 +262,7 @@ exports.statisticInboundByDay = async (db, dbMssql, query) => {
     });
 
     _query = `
-    USE tempdb
+    USE ins1_recording
     DECLARE @p_startTime  varchar(2000) = '${startDate}';
     DECLARE @p_endTime  varchar(2000) =  '${endDate}';
     DECLARE @p_page int = ${pages || 1};
@@ -306,7 +306,7 @@ exports.reportAcdSummaryDaily = async (db, dbMssql, query) => {
     });
 
     _query = `
-      USE tempdb
+      USE ins1_recording
       DECLARE @p_startTime  varchar(2000) = '${startDate}';
       DECLARE @p_endTime  varchar(2000) =  '${endDate}';
       DECLARE @p_CT_IVR varchar(2000) = '${CT_IVR}';
@@ -345,7 +345,7 @@ exports.reportInbound2080 = async (dbMssql, query) => {
     });
 
     _query = `
-      USE tempdb
+      USE ins1_recording
       DECLARE @p_startTime  varchar(2000) = '${startDate}';
       DECLARE @p_endTime  varchar(2000) =  '${endDate}';
       DECLARE @p_CT_IVR varchar(2000) = '${CT_IVR}';
