@@ -156,6 +156,10 @@ exports.reportDetailStatisticalStatusEndCall = async (db, dbMssql, query, body) 
     _query = `USE ins1_recording exec report_detail_statistical_status_end_call_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${statusEndCall || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}'`;
 
     if (flag && flag == "1") {
+      _query = `USE ins1_recording exec report_detail_statistical_status_end_call_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${statusEndCall || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}'`;
+    }
+
+    if (flag && flag == "2") {
       _query = `USE ins1_recording exec report_detail_statistical_status_end_call_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${statusEndCall || "#"}','${idAgentCisco || "#"}','${agentTeam || "#"}'`;
     }
 
@@ -188,6 +192,10 @@ exports.reportInboundMisscallAndConnectedByAgent = async (db, dbMssql, query, bo
     _query = `USE ins1_recording exec report_inbound_misscall_and_connected_by_agent_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${typeCall || "#"}','${ANI || "#"}'`;
 
     if (flag && flag == "1") {
+      _query = `USE ins1_recording exec report_inbound_misscall_and_connected_by_agent_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${typeCall || "#"}','${ANI || "#"}'`;
+    }
+
+    if (flag && flag == "2") {
       _query = `USE ins1_recording exec report_inbound_misscall_and_connected_by_agent_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${typeCall || "#"}','${ANI || "#"}'`;
     }
 
