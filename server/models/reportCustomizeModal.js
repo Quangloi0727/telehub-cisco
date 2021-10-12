@@ -600,3 +600,50 @@ function genReasonCodeGlobal(nameTB) {
         else 'REASON_CODE not found'
         end`;
 }
+
+/**
+ * Tai lieu procedure:
+ * 
+ * Ping Team Lead tao procedure (neu chua co)
+ * Nhận mã procedure từ Team Lead
+ * Viết procedure: query, tạo bảng tạm, ...
+ * exec procedure: chạy procedure
+ */
+
+exports.reportIncomingCallTrendsV2 = async (db, dbMssql, query) => {
+  try {
+    let { pages, rows, queue, startDate, endDate, CT_IVR, CT_Tranfer, DigitsDialed } = query;
+    // let {  } = callType;
+    let _query = '';
+    let g_CallType = []; // group CallType
+    let g_SkillGroup = []; // group SkillGroup
+
+    Object.keys(query).forEach((item) => {
+      if (item.includes("SG_Voice_")) {
+        let groupNumber = item.replace("SG_Voice_", "");
+        g_CallType.push(`${query[`CT_ToAgentGroup${groupNumber}`]},${query[`CT_Queue${groupNumber}`]}`);
+        g_SkillGroup.push(`${query[item]}`);
+      }
+    });
+
+    _query = `
+    USE ins1_recording
+    DECLARE @p_startTime  varchar(2000) = '${startDate}';
+    DECLARE @p_endTime  varchar(2000) =  '${endDate}';
+    DECLARE @p_CT_IVR varchar(2000) = '${CT_IVR || '#'}';
+    DECLARE @p_CT_Tranfer varchar(2000)  = '${CT_Tranfer || '#'}';
+    DECLARE @p_CT varchar(2000) = '${g_CallType.join(';')}'; -- 'CT_ToAgentGroup1,CT_Queue1;CT_ToAgentGroup2,CT_Queue2...'
+    DECLARE @p_SG varchar(2000) = '${g_SkillGroup.join(',')}';
+
+    exec report_inbound_ICT @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG
+    `;
+
+    _logger.log("info", `reportIncomingCallTrendsV2 ${_query}`);
+
+    let resultQuery = await dbMssql.query(_query);
+
+    return resultQuery;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
