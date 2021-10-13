@@ -649,7 +649,10 @@ exports.reportIncomingCallTrendsV2 = async (db, dbMssql, query) => {
       skillGroups = skillGroups.split(",");
       let filterIVR = skillGroups.filter((i) => i.includes("CT"));
       let filterSG = skillGroups.filter((i) => !i.includes("CT"));
-
+      if(filterIVR.length > 0){
+        CallTypeIDFilter = [CT_IVR];
+        
+      }
       filterSG.forEach((item) => {
         let SG_FOUND = Object.keys(query).find((i) => query[i] === item);
         if (SG_FOUND) {
