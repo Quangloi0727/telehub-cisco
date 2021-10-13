@@ -124,6 +124,10 @@ exports.reportCallByCustomerKH01 = async (db, dbMssql, query, body) => {
     _query = `USE ins1_recording exec report_call_by_customer_kh01_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${ANI || "#"}'`;
 
     if (flag && flag == "1") {
+      _query = `USE ins1_recording exec report_call_by_customer_kh01_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${ANI || "#"}'`;
+    }
+
+    if (flag && flag == "2") {
       _query = `USE ins1_recording exec report_call_by_customer_kh01_total_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}','${ANI || "#"}'`;
     }
 
