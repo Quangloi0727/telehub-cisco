@@ -676,7 +676,10 @@ exports.reportIncomingCallTrendsV2 = async (db, dbMssql, query) => {
     DECLARE @p_SG varchar(2000) = '${g_SkillGroup.join(",")}';
     DECLARE @p_CT_Filter varchar(2000) = '${CallTypeIDFilter.length == 0 ? '#' : CallTypeIDFilter .join(",") }';
 
-    exec report_inbound_ICT @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_CT_Filter
+    DECLARE @f_startTime  varchar(2000) = '${startDateFilter || '#'}'
+    DECLARE @f_endTime  varchar(2000) = '${endDateFilter || '#'}'
+
+    exec report_inbound_ICT @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_CT_Filter, @f_startTime, @f_endTime
     `;
 
     _logger.log("info", `reportIncomingCallTrendsV2 ${_query}`);
