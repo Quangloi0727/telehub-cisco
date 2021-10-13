@@ -674,7 +674,6 @@ exports.reportIncomingCallTrendsV2 = async (db, dbMssql, query) => {
       ";"
     )}'; -- 'CT_ToAgentGroup1,CT_Queue1;CT_ToAgentGroup2,CT_Queue2...'
     DECLARE @p_SG varchar(2000) = '${g_SkillGroup.join(",")}';
-    DECLARE @p_SG varchar(2000) = '${g_SkillGroup.join(",")}';
     DECLARE @p_CT_Filter varchar(2000) = '${CallTypeIDFilter.length == 0 ? '#' : CallTypeIDFilter .join(",") }';
 
     exec report_inbound_ICT @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_CT_Filter
