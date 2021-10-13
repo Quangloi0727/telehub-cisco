@@ -25,6 +25,10 @@ router
     .route('/agent-status-by-time')
     .get(_controller.reportAgentStatusByTime);
 
+// toi uu: procedure
+router
+    .route('/report-IncomingCallTrends-v2')
+    .get(_controller.reportIncomingCallTrendsV2);
 module.exports = router;
 
 /**
