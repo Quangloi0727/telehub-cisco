@@ -412,10 +412,10 @@ async function agentStatusByTime(db, dbMssql, query) {
 function queryAgentInterVal(query, nameTB) {
   let { Agent_Team, status, agentId } = query;
 
-  let filterAgent = '';
+  let filterAgent = "";
 
-  if(agentId && agentId.length > 0) {
-    filterAgent = `AND ${nameTB}.[Extension] in (${agentId.join(',')})`;
+  if (agentId && agentId.length > 0) {
+    filterAgent = `AND ${nameTB}.[Extension] in (${agentId.join(",")})`;
   }
 
   return `SELECT 
@@ -449,12 +449,12 @@ function queryAgentInterVal(query, nameTB) {
 }
 
 function queryAgentStatusDetail(query, nameTB) {
-  let { Agent_Team , agentId } = query;
-  let namePK = `t_Agent`
-  let filterAgent = '';
+  let { Agent_Team, agentId } = query;
+  let namePK = `t_Agent`;
+  let filterAgent = "";
 
-  if(agentId && agentId.length > 0) {
-    filterAgent = `AND ${namePK}.[PeripheralNumber] in (${agentId.join(',')})`;
+  if (agentId && agentId.length > 0) {
+    filterAgent = `AND ${namePK}.[PeripheralNumber] in (${agentId.join(",")})`;
   }
 
   return `SELECT 
@@ -603,7 +603,7 @@ function genReasonCodeGlobal(nameTB) {
 
 /**
  * Tai lieu procedure:
- * 
+ *
  * Ping Team Lead tao procedure (neu chua co)
  * Nhận mã procedure từ Team Lead
  * Viết procedure: query, tạo bảng tạm, ...
@@ -612,30 +612,72 @@ function genReasonCodeGlobal(nameTB) {
 
 exports.reportIncomingCallTrendsV2 = async (db, dbMssql, query) => {
   try {
-    let { pages, rows, queue, startDate, endDate, CT_IVR, CT_Tranfer, DigitsDialed } = query;
+    // skillGroups = 5179,CT-5020
+
+    let {
+      pages,
+      rows,
+      queue,
+      startDate,
+      endDate,
+      CT_IVR,
+      CT_Tranfer,
+      DigitsDialed,
+      skillGroups,
+      startDateFilter,
+      endDateFilter,
+    } = query;
     // let {  } = callType;
-    let _query = '';
+    let _query = "";
     let g_CallType = []; // group CallType
     let g_SkillGroup = []; // group SkillGroup
 
     Object.keys(query).forEach((item) => {
       if (item.includes("SG_Voice_")) {
         let groupNumber = item.replace("SG_Voice_", "");
-        g_CallType.push(`${query[`CT_ToAgentGroup${groupNumber}`]},${query[`CT_Queue${groupNumber}`]}`);
+        g_CallType.push(
+          `${query[`CT_ToAgentGroup${groupNumber}`]},${
+            query[`CT_Queue${groupNumber}`]
+          }`
+        );
         g_SkillGroup.push(`${query[item]}`);
       }
     });
+    let CallTypeIDFilter = [];
+
+    if (skillGroups) {
+      skillGroups = skillGroups.split(",");
+      let filterIVR = skillGroups.filter((i) => i.includes("CT"));
+      let filterSG = skillGroups.filter((i) => !i.includes("CT"));
+
+      filterSG.forEach((item) => {
+        let SG_FOUND = Object.keys(query).find((i) => query[i] === item);
+        if (SG_FOUND) {
+          let groupNumber = SG_FOUND.replace("SG_Voice_", "");
+          CallTypeIDFilter = [
+            ...CallTypeIDFilter,
+            query[`CT_ToAgentGroup${groupNumber}`],
+            query[`CT_Queue${groupNumber}`],
+          ];
+        }
+      });
+
+    }
 
     _query = `
     USE ins1_recording
     DECLARE @p_startTime  varchar(2000) = '${startDate}';
     DECLARE @p_endTime  varchar(2000) =  '${endDate}';
-    DECLARE @p_CT_IVR varchar(2000) = '${CT_IVR || '#'}';
-    DECLARE @p_CT_Tranfer varchar(2000)  = '${CT_Tranfer || '#'}';
-    DECLARE @p_CT varchar(2000) = '${g_CallType.join(';')}'; -- 'CT_ToAgentGroup1,CT_Queue1;CT_ToAgentGroup2,CT_Queue2...'
-    DECLARE @p_SG varchar(2000) = '${g_SkillGroup.join(',')}';
+    DECLARE @p_CT_IVR varchar(2000) = '${CT_IVR || "#"}';
+    DECLARE @p_CT_Tranfer varchar(2000)  = '${CT_Tranfer || "#"}';
+    DECLARE @p_CT varchar(2000) = '${g_CallType.join(
+      ";"
+    )}'; -- 'CT_ToAgentGroup1,CT_Queue1;CT_ToAgentGroup2,CT_Queue2...'
+    DECLARE @p_SG varchar(2000) = '${g_SkillGroup.join(",")}';
+    DECLARE @p_SG varchar(2000) = '${g_SkillGroup.join(",")}';
+    DECLARE @p_CT_Filter varchar(2000) = '${CallTypeIDFilter.length == 0 ? '#' : CallTypeIDFilter .join(",") }';
 
-    exec report_inbound_ICT @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG
+    exec report_inbound_ICT @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_CT_Filter
     `;
 
     _logger.log("info", `reportIncomingCallTrendsV2 ${_query}`);
