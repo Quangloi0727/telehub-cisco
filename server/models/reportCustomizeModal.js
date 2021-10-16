@@ -119,8 +119,8 @@ function selectCallDetailByCustomer(query, nameTable, nameTCDDetail) {
   let JOIN_Dynamic = [];
 
   if (startDateFilter && endDateFilter) {
-    conditionFilter = `AND ${nameTable}.DateTime >= '${startDateFilter}'
-    AND ${nameTable}.DateTime <= '${endDateFilter}'`;
+    conditionFilter = `AND ${nameTable}.DateTime >= @startDate
+    AND ${nameTable}.DateTime < @endDate`;
   }
 
   if (skillGroups) {
