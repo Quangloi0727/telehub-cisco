@@ -99,10 +99,10 @@ exports.skillGroupMapping = async (req, res, next) => {
     if (!query.startDate || !query.endDate || !query.CT_IVR)
       return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
 
-     /**
-     * Check việc khởi tạo các CallType
-     * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
-     */
+    /**
+    * Check việc khởi tạo các CallType
+    * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+    */
     for (let i = 0; i < Object.keys(query).length; i++) {
       const item = Object.keys(query)[i];
       if (item.includes("CT_ToAgentGroup")) {
@@ -132,7 +132,7 @@ exports.skillGroupMapping = async (req, res, next) => {
           );
         }
       }
-      
+
     }
 
     const doc = await _callTypeModel.missCallByCustomer(db, dbMssql, query);
@@ -200,9 +200,8 @@ exports.byQueueMapping = async (req, res, next) => {
     if (!doc)
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
-    res
-      .status(SUCCESS_200.code)
-      .json({ data: getDataGroupBy(doc, query, query.groupBy) });
+    res.status(SUCCESS_200.code).json({ data: doc, query: query });
+    // res.status(SUCCESS_200.code).json({ data: getDataGroupBy(doc, query, query.groupBy) });
   } catch (error) {
     next(error);
   }
@@ -247,37 +246,37 @@ function mappingReportByQueueByMonth(data, query) {
 
 
       Object.keys(groupByKey)
-      .sort()
-      .forEach((itemKey) => {
-        let eleKey = groupByKey[itemKey];
+        .sort()
+        .forEach((itemKey) => {
+          let eleKey = groupByKey[itemKey];
 
-        let temp = {};
-        let filterIVR = eleKey.filter(
-          (i) => i.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)
-        );
+          let temp = {};
+          let filterIVR = eleKey.filter(
+            (i) => i.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)
+          );
 
-        let filterCallHandled = eleKey.filter(
-          (i) => i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)
-        );
+          let filterCallHandled = eleKey.filter(
+            (i) => i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)
+          );
 
-        let totalDuration =
-          sumByKey(eleKey, "Duration") - sumByKey(filterIVR, "Duration");
+          let totalDuration =
+            sumByKey(eleKey, "Duration") - sumByKey(filterIVR, "Duration");
 
-        // handle data mapping for report telehub
-        temp._id = {
-          name: element[0].SkillGroupSkillTargetID,
-          month: eleKey[0].MonthBlock,
-          year: eleKey[0].YearBlock,
-        };
-        temp.EnterpriseName = item;
-        temp.totalCall = eleKey.length - filterIVR.length;
-        temp.connected = filterCallHandled.length;
-        // element.missed = element.routerCallsAbandQ;
-        temp.callDuration = totalDuration * 1000;
+          // handle data mapping for report telehub
+          temp._id = {
+            name: element[0].SkillGroupSkillTargetID,
+            month: eleKey[0].MonthBlock,
+            year: eleKey[0].YearBlock,
+          };
+          temp.EnterpriseName = item;
+          temp.totalCall = eleKey.length - filterIVR.length;
+          temp.connected = filterCallHandled.length;
+          // element.missed = element.routerCallsAbandQ;
+          temp.callDuration = totalDuration * 1000;
 
-        result.push(temp);
+          result.push(temp);
 
-      });
+        });
     });
   data.recordset = result;
   return data;
@@ -305,38 +304,38 @@ function mappingReportByQueueByDay(data, query) {
 
 
       Object.keys(groupByKey)
-      .sort()
-      .forEach((itemKey) => {
-        let eleKey = groupByKey[itemKey];
+        .sort()
+        .forEach((itemKey) => {
+          let eleKey = groupByKey[itemKey];
 
-        let temp = {};
-        let filterIVR = eleKey.filter(
-          (i) => i.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)
-        );
+          let temp = {};
+          let filterIVR = eleKey.filter(
+            (i) => i.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissIVR)
+          );
 
-        let filterCallHandled = eleKey.filter(
-          (i) => i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)
-        );
+          let filterCallHandled = eleKey.filter(
+            (i) => i.CallTypeTXT == reasonToTelehub(TYPE_CALL_HANDLE)
+          );
 
-        let totalDuration =
-          sumByKey(eleKey, "Duration") - sumByKey(filterIVR, "Duration");
+          let totalDuration =
+            sumByKey(eleKey, "Duration") - sumByKey(filterIVR, "Duration");
 
-        // handle data mapping for report telehub
-        temp._id = {
-          name: element[0].SkillGroupSkillTargetID,
-          day: eleKey[0].DayBlock,
-          month: eleKey[0].MonthBlock,
-          year: eleKey[0].YearBlock,
-        };
-        temp.EnterpriseName = item;
-        temp.totalCall = eleKey.length - filterIVR.length;
-        temp.connected = filterCallHandled.length;
-        // element.missed = element.routerCallsAbandQ;
-        temp.callDuration = totalDuration * 1000;
+          // handle data mapping for report telehub
+          temp._id = {
+            name: element[0].SkillGroupSkillTargetID,
+            day: eleKey[0].DayBlock,
+            month: eleKey[0].MonthBlock,
+            year: eleKey[0].YearBlock,
+          };
+          temp.EnterpriseName = item;
+          temp.totalCall = eleKey.length - filterIVR.length;
+          temp.connected = filterCallHandled.length;
+          // element.missed = element.routerCallsAbandQ;
+          temp.callDuration = totalDuration * 1000;
 
-        result.push(temp);
+          result.push(temp);
 
-      });
+        });
     });
   data.recordset = result;
   return data;
