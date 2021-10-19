@@ -135,6 +135,7 @@ exports.skillGroupMapping = async (req, res, next) => {
           );
         }
       }
+
     }
 
     const doc = await _callTypeModel.missCallByCustomer(db, dbMssql, query);
@@ -202,9 +203,8 @@ exports.byQueueMapping = async (req, res, next) => {
     if (!doc)
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
-    res
-      .status(SUCCESS_200.code)
-      .json({ data: getDataGroupBy(doc, query, query.groupBy) });
+    res.status(SUCCESS_200.code).json({ data: doc, query: query });
+    // res.status(SUCCESS_200.code).json({ data: getDataGroupBy(doc, query, query.groupBy) });
   } catch (error) {
     next(error);
   }
