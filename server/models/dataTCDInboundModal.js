@@ -21,7 +21,7 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
     if (queue) {
       queryQueue += `Where ${nameTableTCDLast}.SkillGroupSkillTargetID IN (${queue})`
     }
-    if (status) {
+    if (status && status != 'undefined') {
       if (queryQueue != "") {
         queryStatus += `AND ${nameTableTCDLast}.DIRECTION IN (${status})`
       } else {
