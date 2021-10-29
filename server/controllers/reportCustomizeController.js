@@ -842,6 +842,8 @@ function mappingIncomingCallTrends(data, query) {
       rowTotal.Inbound += reduceTemp.Inbound; // kplus
       rowTotal.StopIVR += reduceTemp.StopIVR; // kplus
       rowTotal.ReceivedCall += reduceTemp.ReceivedCall; // kplus
+      rowTotal.ReceivedCall1900MB += reduceTemp.ReceivedCall1900MB; // kplus
+      rowTotal.ReceivedCall1900MN += reduceTemp.ReceivedCall1900MN; // kplus
       rowTotal.ServedCall += reduceTemp.ServedCall; // kplus
       rowTotal.MissCall += reduceTemp.MissCall; // kplus
       rowTotal.AbdCall += reduceTemp.AbdCall; // kplus
@@ -938,6 +940,15 @@ function handleReduceFunc(pre, cur) {
 
   if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)) {
     pre.ReceivedCall++;
+    
+    if(cur.DigitsDialed == "02437525618"){
+      pre.ReceivedCall1900MB++;
+    }
+
+    if(cur.DigitsDialed == "02435659598"){
+      pre.ReceivedCall1900MN++;
+    }
+
     pre.totalWaitTimeQueue += waitTimeQueue || 0;
 
     if (waitTimeQueue > pre.LongestWaitingTime)
@@ -986,6 +997,8 @@ function initDataRow(name, Inbound) {
     Inbound,
     StopIVR: 0,
     ReceivedCall: 0,
+    ReceivedCall1900MB: 0,
+    ReceivedCall1900MN: 0,
     ServedCall: 0,
     MissCall: 0,
     Aband: 0,
