@@ -45,7 +45,7 @@ router
 // Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
 router
     .route('/call-detail-with-callid')
-    .get(_controller.getCallDetailWithCallIds);
+    .post(_controller.getCallDetailWithCallIds);
 
 module.exports = router;
 

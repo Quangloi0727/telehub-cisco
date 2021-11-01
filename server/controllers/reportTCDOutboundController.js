@@ -301,11 +301,11 @@ exports.reportOutboundTotalCallByTime = async (req, res, next) => {
 exports.getCallDetailWithCallIds = async (req, res, next) => {
   try {
     const { db, dbMssql } = req.app.locals;
-    const { callIds } = req.query;
+    const { callIds } = req.body;
 
     if (!callIds) throw new Error('Thiếu trường callIds');
 
-    const dataResult = await _model.getCallDetailWithCallIds(db, dbMssql, req.query);
+    const dataResult = await _model.getCallDetailWithCallIds(db, dbMssql, req.body);
 
     if (!dataResult) throw new Error('Not Found');
 
