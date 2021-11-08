@@ -405,11 +405,17 @@ exports.reportInboundMissCallOverallDefault = async (dbMssql, query) => {
     });
 
     if (type == 'overall') {
-      _procedure = 'EXEC dev_report_inbound_misscall_overall_default_sp @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_skillgroups'
+      _procedure = 'EXEC dev_report_inbound_misscall_overall_default_sp @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_skillgroups';
     }
 
     if (type == 'detail') {
-      _procedure = 'EXEC dev_report_inbound_misscall_detail_default_sp @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_skillgroups, @p_page, @p_limit, @p_count'
+      _procedure = `
+        DECLARE @p_page varchar(10) = ${page || "'#'"};
+        DECLARE @p_limit varchar(10) = ${limit || "'#'"};
+        DECLARE @p_count varchar(10) = ${count ? "'true'" : "'#'"}
+
+        EXEC dev_report_inbound_misscall_detail_default_sp @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_skillgroups, @p_page, @p_limit, @p_count
+      `;
     }
 
     _query = `
@@ -421,9 +427,6 @@ exports.reportInboundMissCallOverallDefault = async (dbMssql, query) => {
       DECLARE @p_CT varchar(2000) = '${g_CallType.join(';')}'; -- 'CT_ToAgentGroup1,CT_Queue1;CT_ToAgentGroup2,CT_Queue2...'
       DECLARE @p_SG varchar(2000) = '${g_SkillGroup.join(',')}';
       DECLARE @p_skillgroups varchar(2000) = '${skillGroups || '#'}';
-      DECLARE @p_page varchar(10) = ${page || '#'};
-			DECLARE @p_limit varchar(10) = ${limit || '#'};
-			DECLARE @p_count varchar(10) = ${count || '#'}
 
       ${_procedure}
     `;
