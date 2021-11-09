@@ -405,7 +405,7 @@ exports.reportInboundMissCallOverallDefault = async (dbMssql, query) => {
     });
 
     if (type == 'overall') {
-      _procedure = 'EXEC dev_report_inbound_misscall_overall_default_sp @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_skillgroups';
+      _procedure = 'EXEC report_inbound_misscall_overall_default_sp @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_skillgroups';
     }
 
     if (type == 'detail') {
@@ -414,7 +414,7 @@ exports.reportInboundMissCallOverallDefault = async (dbMssql, query) => {
         DECLARE @p_limit varchar(10) = ${limit || "'#'"};
         DECLARE @p_count varchar(10) = ${count ? "'true'" : "'#'"}
 
-        EXEC dev_report_inbound_misscall_detail_default_sp @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_skillgroups, @p_page, @p_limit, @p_count
+        EXEC report_inbound_misscall_detail_default_sp @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_skillgroups, @p_page, @p_limit, @p_count
       `;
     }
 
