@@ -425,3 +425,41 @@ exports.reportInbound2080 = async (req, res, next) => {
         next(error);
     }
 }
+
+exports.reportInboundMissCallOverallDefault = async (req, res, next) => {
+    try {
+        const dbMssql = req.app.locals.dbMssql;
+        const { startDate, endDate, CT_IVR } = req.query;
+        const query = req.query;
+
+        if (!startDate || !endDate || !CT_IVR) return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+        for (let i = 0; i < Object.keys(query).length; i++) {
+            const item = Object.keys(query)[i];
+
+            if (item.includes("CT_ToAgentGroup")) {
+                let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+                if (!query[`CT_Queue${groupNumber}`]) {
+                    return next(new ResError(ERR_400.code, `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`), req, res, next);
+                }
+
+                if (!query[`SG_Voice_${groupNumber}`]) {
+                    return next(new ResError(ERR_400.code, `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`), req, res, next);
+                }
+            }
+        }
+
+        const dataResult = await _model.reportInboundMissCallOverallDefault(dbMssql, query);
+
+        if (!dataResult) return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+
+        return res.status(SUCCESS_200.code).json({ data: dataResult });
+    } catch (error) {
+        console.log(`------- error ------- `);
+        console.log(error);
+        console.log(`------- error ------- `);
+        
+        next(error);
+    }
+}

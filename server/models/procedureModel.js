@@ -387,3 +387,59 @@ exports.reportInbound2080 = async (dbMssql, query) => {
     throw new Error(error);
   }
 };
+
+exports.reportInboundMissCallOverallDefault = async (dbMssql, query) => {
+  try {
+    let { CT_IVR, CT_Tranfer, startDate, endDate, skillGroups, type, page, limit, count } = query;
+    let _query = '';
+    let _procedure = '';
+    let g_CallType = [];
+    let g_SkillGroup = [];
+
+    Object.keys(query).forEach((item) => {
+      if (item.includes("SG_Voice_")) {
+        let groupNumber = item.replace("SG_Voice_", "");
+        g_CallType.push(`${query[`CT_ToAgentGroup${groupNumber}`]},${query[`CT_Queue${groupNumber}`]}`);
+        g_SkillGroup.push(`${query[item]}`);
+      }
+    });
+
+    if (type == 'overall') {
+      _procedure = 'EXEC report_inbound_misscall_overall_default_sp @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_skillgroups';
+    }
+
+    if (type == 'detail') {
+      _procedure = `
+        DECLARE @p_page varchar(10) = ${page || "'#'"};
+        DECLARE @p_limit varchar(10) = ${limit || "'#'"};
+        DECLARE @p_count varchar(10) = ${count ? "'true'" : "'#'"}
+
+        EXEC report_inbound_misscall_detail_default_sp @p_startTime, @p_endTime, @p_CT_IVR, @p_CT_Tranfer, @p_CT, @p_SG, @p_skillgroups, @p_page, @p_limit, @p_count
+      `;
+    }
+
+    _query = `
+      USE ins1_recording
+      DECLARE @p_startTime  varchar(2000) = '${startDate}';
+      DECLARE @p_endTime  varchar(2000) =  '${endDate}';
+      DECLARE @p_CT_IVR varchar(2000) = '${CT_IVR}';
+      DECLARE @p_CT_Tranfer varchar(2000)  = '${CT_Tranfer || '#'}';
+      DECLARE @p_CT varchar(2000) = '${g_CallType.join(';')}'; -- 'CT_ToAgentGroup1,CT_Queue1;CT_ToAgentGroup2,CT_Queue2...'
+      DECLARE @p_SG varchar(2000) = '${g_SkillGroup.join(',')}';
+      DECLARE @p_skillgroups varchar(2000) = '${skillGroups || '#'}';
+
+      ${_procedure}
+    `;
+
+    _logger.log('info', `------- _query ------- reportAcdSummaryDaily`);
+    _logger.log('info', _query);
+    _logger.log('info', `------- _query ------- reportAcdSummaryDaily`);
+
+    let resultQuery = await dbMssql.query(_query);
+
+    return resultQuery.recordset;
+  } catch (error) {
+    console.log('error: ', error);
+    throw new Error(error);
+  }
+};
