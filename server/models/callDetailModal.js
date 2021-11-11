@@ -130,7 +130,8 @@ function selectCallDetailByCustomer(query, body, nameTable, nameTCDDetail,nameTa
     if(query.url == "/handleByAgent"){
       reportName = `AND ${nameTable}.AgentSkillTargetID is not null
       AND ${nameTable}.TalkTime >= 0
-      AND ${nameTable}.CallDisposition	in (13,28)`
+      AND ${nameTable}.CallDisposition	in (13,28)
+	  AND CDR.outgoingProtocolCallRef is not null`
     }
 
     if (startDateFilter && endDateFilter) {
