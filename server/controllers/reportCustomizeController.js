@@ -52,6 +52,7 @@ const TEXT_20_80 = {
 
 // Định nghĩa các function ở đây cho dễ controls
 exports.reportAgentStatusByTime = reportAgentStatusByTime;
+exports.mapping2080 = mapping2080;
 
 /**
  * Report 20 - 80 của GGG
@@ -672,8 +673,7 @@ function ratioCallQueueHandle(data, query) {
       result.childs.push(
         rowData(
           i.name,
-          `${RTCQueueHandle[index] ? RTCQueueHandle[index].result : ""} / ${
-            RTCQueue[index].result
+          `${RTCQueueHandle[index] ? RTCQueueHandle[index].result : ""} / ${RTCQueue[index].result
           }`,
           (RTCQueueHandle[index]
             ? (RTCQueueHandle[index].result / RTCQueue[index].result) * 100
@@ -827,7 +827,7 @@ function mappingIncomingCallTrends(data, query) {
       reduceTemp.Efficiency =
         reduceTemp.ReceivedCall - reduceTemp.AbdIn15s
           ? reduceTemp.ServedCall /
-            (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
+          (reduceTemp.ReceivedCall - reduceTemp.AbdIn15s)
           : 0;
 
       reduceTemp.LongestWaitingTime = reduceTemp.LongestWaitingTime;
@@ -842,6 +842,8 @@ function mappingIncomingCallTrends(data, query) {
       rowTotal.Inbound += reduceTemp.Inbound; // kplus
       rowTotal.StopIVR += reduceTemp.StopIVR; // kplus
       rowTotal.ReceivedCall += reduceTemp.ReceivedCall; // kplus
+      rowTotal.ReceivedCall1900MB += reduceTemp.ReceivedCall1900MB; // kplus
+      rowTotal.ReceivedCall1900MN += reduceTemp.ReceivedCall1900MN; // kplus
       rowTotal.ServedCall += reduceTemp.ServedCall; // kplus
       rowTotal.MissCall += reduceTemp.MissCall; // kplus
       rowTotal.AbdCall += reduceTemp.AbdCall; // kplus
@@ -876,9 +878,9 @@ function mappingIncomingCallTrends(data, query) {
   rowTotal.Efficiency =
     rowTotal.ReceivedCall - rowTotal.AbdIn15s
       ? parseFloat(
-          (rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s)) *
-            100
-        ).toFixed(2)
+        (rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s)) *
+        100
+      ).toFixed(2)
       : 0;
   rowTotal.avgTimeWaiting = roundAvg(
     rowTotal.ReceivedCall
@@ -892,7 +894,7 @@ function mappingIncomingCallTrends(data, query) {
   );
   rowTotal.MaxNumSimultaneousCall = result
     ? _.max(result, (result) => result.MaxNumSimultaneousCall)
-        .MaxNumSimultaneousCall
+      .MaxNumSimultaneousCall
     : 0;
   rowTotal.LongestWaitingTime = result
     ? _.max(result, (result) => result.LongestWaitingTime).LongestWaitingTime
@@ -938,6 +940,15 @@ function handleReduceFunc(pre, cur) {
 
   if (cur.CallTypeTXT != reasonToTelehub(TYPE_MISSCALL.MissIVR)) {
     pre.ReceivedCall++;
+    
+    if(cur.DigitsDialed == "02437525618"){
+      pre.ReceivedCall1900MB++;
+    }
+
+    if(cur.DigitsDialed == "02435659598"){
+      pre.ReceivedCall1900MN++;
+    }
+
     pre.totalWaitTimeQueue += waitTimeQueue || 0;
 
     if (waitTimeQueue > pre.LongestWaitingTime)
@@ -962,10 +973,10 @@ function handleReduceFunc(pre, cur) {
     || (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.Other)) // && cur.CallDisposition == 1 =1 Lỗi mạng
   ) {
 
-    if(cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue)) {
+    if (cur.CallTypeTXT == reasonToTelehub(TYPE_MISSCALL.MissQueue)) {
       pre.missQueue++; // dash board MBB
     }
-    
+
     if (waitTimeQueue <= 15) {
       pre.AbdIn15s++;
     }
@@ -986,6 +997,8 @@ function initDataRow(name, Inbound) {
     Inbound,
     StopIVR: 0,
     ReceivedCall: 0,
+    ReceivedCall1900MB: 0,
+    ReceivedCall1900MN: 0,
     ServedCall: 0,
     MissCall: 0,
     Aband: 0,
@@ -1036,7 +1049,7 @@ function mappingACDSummary(data, query) {
     // end reduce
 
     reduceTemp.AbdCall = reduceTemp.ReceivedCall - reduceTemp.ServedCall;
-    reduceTemp.Aband = roundAvg(reduceTemp.AbdCall > 0 ? reduceTemp.AbdCall/ reduceTemp.ReceivedCall : 0);
+    reduceTemp.Aband = roundAvg(reduceTemp.AbdCall > 0 ? reduceTemp.AbdCall / reduceTemp.ReceivedCall : 0);
     /**
      * chờ confirm để tính
      * 20/11/2020:
@@ -1108,7 +1121,7 @@ function mappingACDSummary(data, query) {
   rowTotal.Efficiency =
     rowTotal.ReceivedCall - rowTotal.AbdIn15s
       ? (rowTotal.ServedCall / (rowTotal.ReceivedCall - rowTotal.AbdIn15s)) *
-        100
+      100
       : 0;
 
   data.rowTotal = rowTotal;
@@ -1193,7 +1206,7 @@ function mappingStatistic(
     temp["1800"] = rowInitStatistic();
 
     if (_1800Found) {
-      
+
 
       temp["1800"] = Object.assign({}, _1800Found);
 
@@ -1311,9 +1324,9 @@ async function reportAgentStatusByTime(req, res, next) {
         next
       );
 
-    if(query.agentId && typeof query.agentId == 'string') {
+    if (query.agentId && typeof query.agentId == 'string') {
       query.agentId = query.agentId.split(',');
-    }else {
+    } else {
       query.agentId = [];
     }
 
@@ -1321,7 +1334,7 @@ async function reportAgentStatusByTime(req, res, next) {
 
     if (!doc || (doc.recordset && doc.recordset.length == 0))
       return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
-    
+
     // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
     res
       .status(SUCCESS_200.code)
@@ -1376,7 +1389,7 @@ function mappingAgentStatusByTime(data, query) {
 }
 
 function initRowAgentStatusByTime(id, query, data, agents) {
-  let {status, startDateFilter, endDateFilter} = query;
+  let { status, startDateFilter, endDateFilter } = query;
   let result = { id, status };
   startDateFilter = moment(startDateFilter, "YYYY-MM-DD HH:mm:ss", true)._d;
   endDateFilter = moment(endDateFilter, "YYYY-MM-DD HH:mm:ss", true)._d;
@@ -1388,8 +1401,8 @@ function initRowAgentStatusByTime(id, query, data, agents) {
       let valueFound = data.filter((i) => {
         let DateTime = moment(i.DateTime, "YYYY-MM-DD HH:mm:ss", true).add(-420, "m")._d;
 
-        if(i.BlockTimeShort === id && i.EnterpriseName === item && DateTime > startDateFilter && DateTime <= endDateFilter){
-          console.log({i});
+        if (i.BlockTimeShort === id && i.EnterpriseName === item && DateTime > startDateFilter && DateTime <= endDateFilter) {
+          console.log({ i });
         }
         return i.BlockTimeShort === id && i.EnterpriseName === item && DateTime > startDateFilter && DateTime <= endDateFilter;
       });
@@ -1412,7 +1425,7 @@ function initRowAgentStatusByTime(id, query, data, agents) {
         return (
           i.BlockTimeShort === id &&
           i.EnterpriseName === item &&
-          i.ReasonTextMapping === status  && DateTime > startDateFilter && DateTime <= endDateFilter
+          i.ReasonTextMapping === status && DateTime > startDateFilter && DateTime <= endDateFilter
         );
       });
       // if(valueFound.length > 0)
@@ -1425,3 +1438,65 @@ function initRowAgentStatusByTime(id, query, data, agents) {
 
   return result;
 }
+
+/**
+ * Report IncomingCallTrends của Kplus
+ */
+exports.reportIncomingCallTrendsV2 = async (req, res, next) => {
+  try {
+    let db = req.app.locals.db;
+    let dbMssql = req.app.locals.dbMssql;
+
+    let query = req.query;
+
+    if (!query.startDate || !query.endDate || !query.CT_IVR)
+      return next(new ResError(ERR_400.code, ERR_400.message), req, res, next);
+
+    /**
+     * Check việc khởi tạo các CallType
+     * nếu truyền thiếu sẽ ảnh hưởng tới việc tổng hợp báo cáo
+     */
+    for (let i = 0; i < Object.keys(query).length; i++) {
+      const item = Object.keys(query)[i];
+      // const element = query[item];
+      if (item.includes("CT_ToAgentGroup")) {
+        let groupNumber = item.replace("CT_ToAgentGroup", "");
+
+        if (!query[`CT_Queue${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} CT_Queue${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+
+        if (!query[`SG_Voice_${groupNumber}`]) {
+          return next(
+            new ResError(
+              ERR_400.code,
+              `${ERR_400.message_detail.missingKey} SG_Voice_${groupNumber}`
+            ),
+            req,
+            res,
+            next
+          );
+        }
+      }
+    }
+
+    const doc = await _model.reportIncomingCallTrendsV2(db, dbMssql, query);
+
+    if (!doc)
+      return next(new ResError(ERR_404.code, ERR_404.message), req, res, next);
+    // if (doc && doc.name === "MongoError") return next(new ResError(ERR_500.code, doc.message), req, res, next);
+    res
+      .status(SUCCESS_200.code)
+      .json({ data: doc });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -37,10 +37,18 @@ router
 router
     .route('/report-statistical-outbound')
     .get(_controller.reportStatisticalOutbound);
-    
+
 router.route('/statistic-inbound-by-day')
     .get(_controller.statisticInboundByDay);
 
+router.route('/report-ACD-summary-daily')
+    .get(_controller.reportAcdSummaryDaily);
+
+router.route('/report-inbound-20-80')
+    .get(_controller.reportInbound2080);
+
+router.route('/report-inbound-misscall-overall-default')
+    .get(_controller.reportInboundMissCallOverallDefault);
 
 module.exports = router;
 

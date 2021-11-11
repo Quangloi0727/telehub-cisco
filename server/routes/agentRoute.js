@@ -24,6 +24,10 @@ router
 router.route('/agent-by-company')
     .get(agentController.getAgentsByCompany);
 
+// Active Directory
+router.route('/reset-pass-ad')
+    .put(agentController.resetPass);
+
 module.exports = router;
 
 /**

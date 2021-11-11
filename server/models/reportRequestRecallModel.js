@@ -26,11 +26,11 @@ exports.lastTCDRecord = async (db, dbMssql, query) => {
         });
 
         if(flag == 2) {
-            _query = `USE tempdb
+            _query = `USE ins1_recording
             exec report_request_recall_sp '${startDate}', '${endDate}', ${pages}, ${rows}, 0, ${CT_IVR}, ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}', '${Agent_Team}', '${status || "#"}' , '${queue || "#"}'
             `;
         }else if(flag == 3){
-            _query = `USE tempdb
+            _query = `USE ins1_recording
             exec report_request_recall_sp '${startDate}', '${endDate}', null, null, 1, ${CT_IVR},  ${CT_Tranfer}, '${g_CallType.join(';')}', '${g_SkillGroup.join(',')}', '${Agent_Team}' , '${status || "#"}' , '${queue || "#"}'
             `;
         }

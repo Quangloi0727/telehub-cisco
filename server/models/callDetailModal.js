@@ -284,7 +284,7 @@ function selectCallDetailByCustomer(query, body, nameTable, nameTCDDetail,nameTa
     on ${nameTable}.SkillGroupSkillTargetID = SG.SkillTargetID
       ${JOIN_Dynamic.join("")}
 
-  LEFT join [ins1_recording].[dbo].[call_detail_record] CDR
+  LEFT join [ins1_recording].[dbo].[CDR] CDR
       on t_TCD_last.PeripheralCallKey = CDR.callId + 16777216
       and CDR.called = '${ternalID}'
   WHERE rn = 1

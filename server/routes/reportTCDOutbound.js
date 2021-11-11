@@ -18,7 +18,34 @@ router
     .route('/report-outbound-agent-detail')
     .get(_controller.reportOutboundAgentProductivityDetail);
 
+router
+    .route('/report-outbound-by-time')
+    .get(_controller.reportOutboundByTime);
 
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+router
+    .route('/report-outbound-daily')
+    .get(_controller.reportOutboundDaily);
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+router
+    .route('/report-outbound-daily-by-agent')
+    .get(_controller.reportOutboundDailyByAgent);
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+router
+    .route('/report-outbound-overall-pds')
+    .get(_controller.reportOutboundOverallPDS);
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+router
+    .route('/report-outbound-total-call-by-time')
+    .get(_controller.reportOutboundTotalCallByTime);
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+router
+    .route('/call-detail-with-callid')
+    .post(_controller.getCallDetailWithCallIds);
 
 module.exports = router;
 

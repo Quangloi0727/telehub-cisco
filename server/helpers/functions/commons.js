@@ -88,3 +88,6 @@ exports.baseHttpIP = (ip = IP_PUBLIC, port = PORT) => {
     
     return `http://${ip}:${port}`;
   };
+exports.logDebug = (id, startTime) => {
+    console.log(`${id} after: ${(Date.now() - startTime)/1000} Seconds`);
+};

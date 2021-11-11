@@ -100,19 +100,25 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
       endDate,
       agentId,
       agentTeamId,
+      exportExcel
     } = query;
 
     let queryAgent = '';
     let queryStartDate = '';
     let queryEndDate = '';
+    let queryExcelSelect = '';
+    let queryExcelGroupBy = '';
 
     if (startDate) queryStartDate = `AND TCD_Table.[DateTime] >= '${startDate}'`;
     if (endDate) queryEndDate = `AND TCD_Table.[DateTime] <= '${endDate}'`;
     if (agentId) queryAgent = `AND Agent_Table.[PeripheralNumber] IN ( ${agentId} )`;
+    if (exportExcel) queryExcelSelect = `DATEPART(hour,TCD_Table.[DateTime]) AS blockTime,`;
+    if (exportExcel) queryExcelGroupBy = `,DATEPART(hour,TCD_Table.[DateTime])`;
 
     let _queryData = `
       SELECT
         Agent_Table.[PeripheralNumber] agentID,
+        ${queryExcelSelect}
         SUM ( 1 ) AS totalCall,
         SUM ( TCD_Table.[Duration] ) AS totalCallTime,
         AVG ( TCD_Table.[Duration] ) AS avgCallTime,
@@ -126,7 +132,7 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
         LEFT JOIN [${DB_AWDB}].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID] 
         INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Agent_Team 
           ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
-          AND Agent_Team.[AgentTeamID] = ${agentTeamId}
+          AND Agent_Team.[AgentTeamID] IN (${agentTeamId})
       WHERE
         TCD_Table.[PeripheralCallType] IN (9, 10, 33)
         AND TCD_Table.[AgentSkillTargetID] IS NOT NULL
@@ -136,6 +142,7 @@ exports.reportOutboundAgentProductivity = async (db, dbMssql, query) => {
         ${queryEndDate}
       GROUP BY
       Agent_Table.[PeripheralNumber]
+      ${queryExcelGroupBy}
     `;
 
     console.log(`------- _queryData ------- query reportOutboundAgentProductivity`);
@@ -319,4 +326,225 @@ exports.countNumRowsTCD = async (db, dbMssql, query) => {
     throw new Error(error);
   }
 }
+
+exports.reportOutboundByTime = async (db, dbMssql, query) => {
+  try {
+    let {
+      startDate,
+      endDate,
+      agentId,
+      agentTeamId,
+    } = query;
+
+    let queryAgent = '';
+    let queryStartDate = '';
+    let queryEndDate = '';
+
+    if (startDate) queryStartDate = `AND TCD_Table.[DateTime] >= '${startDate}'`;
+    if (endDate) queryEndDate = `AND TCD_Table.[DateTime] <= '${endDate}'`;
+    if (agentId) queryAgent = `AND Agent_Table.[PeripheralNumber] IN ( ${agentId} )`;
+
+    let _queryData = `
+      SELECT
+      FORMAT (TCD_Table.[DateTime], 'MM/yyyy') AS createDate,
+      SUM ( 1 ) AS totalCall,
+      SUM ( TCD_Table.[Duration] ) AS totalCallTime,
+      AVG ( TCD_Table.[Duration] ) AS avgCallTime,
+      SUM ( CASE WHEN TCD_Table.[TalkTime] > 0 THEN 1 ELSE 0 END ) AS totalCallConnect,
+      SUM ( TCD_Table.[DelayTime] ) AS totalWaitTime,
+      SUM ( TCD_Table.[TalkTime] ) AS totalTalkTime,
+      AVG ( TCD_Table.[TalkTime] ) AS avgTalkTime 
+    FROM
+      [${DB_HDS}].[dbo].[t_Termination_Call_Detail] TCD_Table
+      LEFT JOIN [${DB_AWDB}].[dbo].[t_Agent] Agent_Table ON Agent_Table.[SkillTargetID] = TCD_Table.[AgentSkillTargetID]
+      LEFT JOIN [${DB_AWDB}].[dbo].[t_Skill_Group] Skill_Group_Table ON Skill_Group_Table.[SkillTargetID] = TCD_Table.[SkillGroupSkillTargetID]
+      INNER JOIN [${DB_AWDB}].[dbo].[t_Agent_Team_Member] Agent_Team ON Agent_Team.[SkillTargetID] = TCD_Table.[AgentSkillTargetID] 
+      AND Agent_Team.[AgentTeamID] IN ( ${agentTeamId} ) 
+    WHERE
+      TCD_Table.[PeripheralCallType] IN ( 9, 10, 33 ) 
+      AND TCD_Table.[AgentSkillTargetID] IS NOT NULL 
+      ${queryAgent} 
+      ${queryStartDate}
+      ${queryEndDate}
+    GROUP BY
+    FORMAT (TCD_Table.[DateTime], 'MM/yyyy')
+    ORDER BY createDate ASC
+    `;
+
+    console.log(`------- _queryData ------- query reportOutboundByTime`);
+    console.log(_queryData);
+    console.log(`------- _queryData ------- query reportOutboundByTime`);
+
+    let queryResult = await dbMssql.query(_queryData);
+
+    return queryResult;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.reportOutboundDaily = async (db, dbMssql, query) => {
+  try {
+    const { startTime, endTime, type, agents, agentTeams, campaigns } = query;
+    let _query = '';
+
+    if (type == 'login-daily') {
+      _query = `USE ins1_recording exec total_agent_login_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'`;
+    }
+
+    if (type == 'click-to-call-daily') {
+      _query = `USE ins1_recording exec report_total_click_to_call_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'`;
+    }
+
+    if (type == 'auto-dialing-daily') {
+      _query = `USE ins1_recording exec report_total_auto_dialing_per_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}', '${campaigns}'`;
+    }
+
+    console.info(`------- _query ------- reportOutboundDaily`);
+    console.info(_query);
+    console.info(`------- _query ------- reportOutboundDaily`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.reportOutboundDailyByAgent = async (db, dbMssql, query) => {
+  try {
+    const { startTime, endTime, type, agents, agentTeams, campaigns } = query;
+    let _query = '';
+
+    if (type == 'login-daily') {
+      _query = `USE ins1_recording exec total_login_daily_by_agent_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'`;
+    }
+
+    if (type == 'click-to-call-daily') {
+      _query = `USE ins1_recording exec report_total_click_to_call_daily_by_day_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}'`;
+    }
+
+    if (type == 'auto-dialing-daily') {
+      _query = `USE ins1_recording exec report_total_auto_dialing_daily_by_agent_sp '${startTime}', '${endTime}', '${agentTeams}', '${agents || '#'}', '${campaigns}'`;
+    }
+
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
+    console.info(_query);
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.reportOutboundOverallPDS = async (db, dbMssql, query) => {
+  try {
+    const { startTime, endTime, type, campaigns } = query;
+    let _query = '';
+
+    if (type == 'total-call') {
+      _query = `USE ins1_recording exec report_total_call_auto_dialing_sp '${startTime}', '${endTime}', '${campaigns}'`;
+    }
+
+    if (type == 'total-time') {
+      _query = `USE ins1_recording exec report_total_call_auto_dialing_detail_sp '${startTime}', '${endTime}', '${campaigns}'`;
+    }
+
+    console.info(`------- _query ------- reportOutboundOverallPDS`);
+    console.info(_query);
+    console.info(`------- _query ------- reportOutboundOverallPDS`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.reportOutboundTotalCallByTime = async (db, dbMssql, query) => {
+  try {
+    const {
+      startTime,
+      endTime,
+      type,
+      agentTeams,
+      campaigns = '#',
+      dateStr = '#',
+      agentId = '#',
+      isFindPDS,
+      isFindC2C
+    } = query;
+    let _query = '';
+
+    if (type == 'by-month') {
+      _query = `
+        USE ins1_recording exec report_outbound_total_call_by_month '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}'
+      `;
+    }
+
+    if (type == 'by-day') {
+      _query = `
+        USE ins1_recording exec report_outbound_total_call_by_day '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}'
+      `;
+    }
+
+    if (type == 'by-agent') {
+      _query = `
+        USE ins1_recording exec report_outbound_total_call_by_agent '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}'
+      `;
+    }
+
+    if (type == 'detail') {
+      _query = `
+        USE ins1_recording exec report_outbound_total_call_detail '${startTime}', '${endTime}', '${agentTeams}', '${isFindPDS}', '${isFindC2C}', '${campaigns}', '${dateStr}', '${agentId}'
+      `;
+    }
+
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
+    console.info(_query);
+    console.info(`------- _query ------- reportOutboundDailyByAgent`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+// Báo cáo này được sử dụng trong dự án migrate PVI-HCM 
+exports.getCallDetailWithCallIds = async (db, dbMssql, query) => {
+  try {
+    const { callIds } = query;
+
+    let _query = `
+      SELECT
+        TCD_Table.PeripheralCallKey AS CallId,
+        Agent_Table.PeripheralNumber AS AgentId,
+        TCD_Table.PeripheralCallType,
+        TCD_Table.Duration,
+        TCD_Table.RingTime,
+        TCD_Table.DelayTime,
+        TCD_Table.HoldTime,
+        TCD_Table.TalkTime,
+        TCD_Table.DigitsDialed,
+        TCD_Table.ANI,
+        TCD_Table.DateTime
+      FROM ${DB_HDS}.dbo.t_Termination_Call_Detail TCD_Table
+      LEFT JOIN ${DB_AWDB}.dbo.t_Agent Agent_Table ON Agent_Table.SkillTargetID = TCD_Table.AgentSkillTargetID
+      WHERE
+        TCD_Table.PeripheralCallKey IN ( ${callIds} )
+        AND TCD_Table.AgentSkillTargetID IS NOT NULL
+    `;
+
+    console.info(`------- _query ------- getCallDetailWithCallIds`);
+    console.info(_query);
+    console.info(`------- _query ------- getCallDetailWithCallIds`);
+
+    return await dbMssql.query(_query);
+  } catch (error) {
+    throw new Error(error);
+  }
+};
 

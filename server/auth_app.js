@@ -40,6 +40,7 @@ function initServer(db, dbMssql) {
     app.use(express.static("public"));
 
     app.use('/static', express.static("uploads"));
+    app.use('/public', express.static('public'));
 
     app.use(favicon(path.join(_rootPath, 'public', 'favicon.ico')))
 
@@ -94,14 +95,17 @@ function initServer(db, dbMssql) {
     app.use("/api/v1/reportTCDoutbound", require("./routes/reportTCDOutbound"));
     app.use("/api/v1/dataTCDInbound", require("./routes/dataTCDInboundRoute"));
     app.use("/api/v1", require("./routes/reportLoginLogout"));
+    app.use("/api/v1", require("./routes/reportDoNotCallRouter"));
 
 
     // api su dung query bang procedure
     app.use("/api/v1/procedure", require("./routes/procedureRoute"));
+    // báo cáo tổng hợp
+    app.use("/api/v1/statistic", require("./routes/statisticRoute"));
 
     app.use("/api/v1/exceldemo", require("./routes/excelDemoRoute"));
 
-
+    
     app.use("*", (req, res, next) => {
         const err = new ResError(ERR_404.code, `Page ${ERR_404.message}`);
         next(err, req, res, next);
